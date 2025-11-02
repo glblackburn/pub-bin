@@ -38,3 +38,58 @@ A utility script that helps identify which scripts from the old private reposito
 ```
 
 This script is useful during the migration process to track progress and ensure no scripts are missed when migrating from the old repository.
+
+### shell-template.sh
+
+A comprehensive bash script template that demonstrates common patterns and best practices for writing bash scripts.
+
+**What it demonstrates:**
+- CLI parameter parsing using `getopts` with options for help, quiet, verbose, test mode, AWS profile, and region
+- Usage function with formatted help output
+- Terminal colors using `tput` commands
+- Math operations using `let` command
+- Array operations and string splitting (CSV parsing)
+- File operations including temporary directories and files with cleanup traps
+- Error handling patterns and exit code checking
+- Date/time formatting for various use cases (timestamps, Excel-compatible formats, epoch time)
+- Input/output patterns (reading secure input, confirmation prompts, reading from commands into arrays)
+- Formatting output using `printf` for aligned columns
+- Setting terminal window title
+- System bell notifications
+
+**Usage:**
+```bash
+./shell-template.sh [-hqtv] [-p <aws_profile>] [-r <region>]
+```
+
+**Options:**
+- `-h` : Display help message
+- `-p <aws_profile>` : AWS Profile (Default: default-aws-profile)
+- `-r <region>` : AWS region (Default: default-region)
+- `-q` : Quiet mode (output as little as possible)
+- `-t` : Test mode (do not perform actual operations)
+- `-v` : Verbose output (may contain sensitive data)
+
+This template serves as a reference for implementing common bash scripting patterns and can be copied and modified when creating new scripts.
+
+### clean-emacs-files.sh
+
+A utility script to find and optionally remove Emacs backup files (files ending with `~`) from the current directory and subdirectories.
+
+**What it does:**
+- Searches for all files ending with `~` in the current directory tree using `find`
+- Prompts the user for confirmation before deleting any files
+- Removes the backup files only if the user confirms with 'y'
+
+**Usage:**
+```bash
+./clean-emacs-files.sh
+```
+
+**Behavior:**
+1. Lists all files matching the pattern `*~` in the current directory and subdirectories
+2. Prompts: "remove these? [y/n]"
+3. If 'y' is entered, removes all matching files
+4. If anything else is entered, displays "NOT REMOVED" and exits without deleting files
+
+This script is useful for cleaning up Emacs backup files that accumulate during editing sessions.
