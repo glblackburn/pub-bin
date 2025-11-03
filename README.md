@@ -20,6 +20,7 @@ create a script, I will specificly note that.
 When AI agents are used to modify or create files in this repository:
 
 - **No trailing spaces**: Do not leave trailing spaces on any line in any file. Trailing whitespace should be removed.
+- **Clean up backup files before commits**: Run `./clean-emacs-files.sh` to remove Emacs backup files (files ending with `~`) before creating any commits. This ensures backup files are not accidentally committed to the repository.
 
 ## Scripts
 
@@ -93,3 +94,22 @@ A utility script to find and optionally remove Emacs backup files (files ending 
 4. If anything else is entered, displays "NOT REMOVED" and exits without deleting files
 
 This script is useful for cleaning up Emacs backup files that accumulate during editing sessions.
+
+### start-cursor-agent.sh
+
+A convenience script to resume a specific Cursor AI agent chat session using the `cursor-agent` command-line tool.
+
+**What it does:**
+- Resumes a Cursor AI agent chat session with a predefined session ID
+- Uses the `cursor-agent` command with the `--resume` option
+
+**Usage:**
+```bash
+./start-cursor-agent.sh
+```
+
+**Details:**
+- The script runs `cursor-agent --resume=<session-id>` where `<session-id>` is a specific chat session identifier
+- This allows you to quickly resume a previous conversation with the Cursor AI agent without needing to remember or type the full command each time
+
+This script is useful for quickly continuing work with a specific Cursor AI agent session.
