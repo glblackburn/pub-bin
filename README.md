@@ -18,6 +18,7 @@ create a script, I will specificly note that.
 ## Table of Contents
 
 - [Resources](#resources)
+- [Installation](#installation)
 - [AI Coding Standards](#ai-coding-standards)
 - [Scripts](#scripts)
 
@@ -31,6 +32,12 @@ A collection of useful tips and tricks for common development tasks.
 - Multiple SSH keys for GitHub
 
 Refer to [tips-and-tricks.md](tips-and-tricks.md) for detailed instructions on each topic.
+
+## Installation
+
+### Installing cursor-agent
+
+The `start-cursor-agent.sh` script requires the `cursor-agent` command-line tool. Install Cursor IDE from https://cursor.sh/ - the `cursor-agent` command is included with Cursor IDE.
 
 ## AI Coding Standards
 
