@@ -113,3 +113,14 @@ A convenience script to resume a specific Cursor AI agent chat session using the
 - This allows you to quickly resume a previous conversation with the Cursor AI agent without needing to remember or type the full command each time
 
 This script is useful for quickly continuing work with a specific Cursor AI agent session.
+
+## Resources
+
+### [tips-and-tricks.md](tips-and-tricks.md)
+
+A collection of useful tips and tricks for common development tasks.
+
+**Contents:**
+- Multiple SSH keys for GitHub
+
+Refer to [tips-and-tricks.md](tips-and-tricks.md) for detailed instructions on each topic.
