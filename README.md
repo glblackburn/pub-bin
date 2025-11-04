@@ -48,6 +48,12 @@ When AI agents are used to modify or create files in this repository:
 
 ## Scripts
 
+- [what-is-left.sh](#what-is-leftsh)
+- [shell-template.sh](#shell-templatesh)
+- [clean-emacs-files.sh](#clean-emacs-filessh)
+- [start-cursor-agent.sh](#start-cursor-agentsh)
+- [rename-email.sh](#rename-emailsh)
+
 ### what-is-left.sh
 
 A utility script that helps identify which scripts from the old private repository (`../bin`) have not yet been migrated to this public repository (`pub-bin`).
@@ -137,3 +143,37 @@ A convenience script to resume a specific Cursor AI agent chat session using the
 - This allows you to quickly resume a previous conversation with the Cursor AI agent without needing to remember or type the full command each time
 
 This script is useful for quickly continuing work with a specific Cursor AI agent session.
+
+### rename-email.sh
+
+A utility script to rename email files by extracting the Date header and prefixing the filename with a formatted timestamp.
+
+**What it does:**
+- Takes an email file as a command-line argument
+- Extracts the `Date:` header from the email
+- Parses the date and formats it as `YYYY-MM-DD_HHMMSS`
+- Replaces spaces in the filename with underscores
+- Renames the file with the date prefix: `{date}_{original_filename}`
+
+**Usage:**
+```bash
+./rename-email.sh <email_file>
+```
+
+**Details:**
+- The script uses `gdate` (GNU date command) to parse the email date header
+- Spaces in the filename are replaced with underscores for better compatibility
+- Requires GNU coreutils (typically installed via Homebrew on macOS)
+
+This script is useful for organizing email files chronologically by their sent/received date.
+
+**TODO - Needed fixes:**
+- Fix path handling bug: Extract directory and basename separately, normalize spaces only in basename, then reconstruct full path
+- Add argument validation: Check if argument is provided
+- Add file existence check: Verify the email file exists before processing
+- Add Date header validation: Check if Date header exists in the email
+- Fix sed pattern: Change `[A-z]` to `[A-Za-z]` (correct ASCII character range)
+- Add dependency check: Verify `gdate` is available before using it
+- Remove unused variables: `script_name` and `script_dir` are set but never used
+- Add usage/help function: Display usage information when no arguments provided or with `-h` flag
+- Improve error handling: Add better error messages and handling for edge cases
