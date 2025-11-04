@@ -30,6 +30,7 @@ A collection of useful tips and tricks for common development tasks.
 
 **Contents:**
 - Multiple SSH keys for GitHub
+- Markdown Viewer Chrome Extension
 
 Refer to [tips-and-tricks.md](tips-and-tricks.md) for detailed instructions on each topic.
 
