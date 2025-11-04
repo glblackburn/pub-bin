@@ -24,4 +24,3 @@ new_file  =[${new_file}]
 EOF
 
 mv "${email_file}" "${new_file}"
-
