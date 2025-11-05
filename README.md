@@ -54,6 +54,7 @@ When AI agents are used to modify or create files in this repository:
 - [clean-emacs-files.sh](#clean-emacs-filessh)
 - [start-cursor-agent.sh](#start-cursor-agentsh)
 - [rename-email.sh](#rename-emailsh)
+- [load-ssh-key.sh](#load-ssh-keysh)
 
 ### what-is-left.sh
 
@@ -178,3 +179,49 @@ This script is useful for organizing email files chronologically by their sent/r
 - Remove unused variables: `script_name` and `script_dir` are set but never used
 - Add usage/help function: Display usage information when no arguments provided or with `-h` flag
 - Improve error handling: Add better error messages and handling for edge cases
+
+### load-ssh-key.sh
+
+A utility script to automatically load SSH keys from `~/.ssh` into the SSH agent.
+
+**What it does:**
+- Finds all SSH private keys in `~/.ssh` directory (excludes `.pub`, `known_hosts*`, and `ssh-agent.config`)
+- Starts or loads an existing SSH agent configuration
+- Checks if each key is already loaded in the agent
+- Adds keys to the SSH agent with a timeout (default: 8 hours)
+- Verifies keys exist before attempting to load them
+- Reports errors if any keys are missing or cannot be loaded
+
+**Usage:**
+```bash
+. ./load-ssh-key.sh
+```
+or
+```bash
+source ./load-ssh-key.sh
+```
+
+**Important:** This script must be sourced (using `.` or `source`) to load the SSH agent environment variables into your current shell session.
+
+**Details:**
+- **KEY_TIMEOUT**: Default is 28800 seconds (8 hours). Keys are added with this timeout.
+- **CONFIG**: SSH agent configuration is stored in `~/.ssh/ssh-agent.config`
+- The script automatically finds all private keys in `~/.ssh` directory
+- It checks if keys are already loaded before adding them to avoid duplicates
+- Returns error code 1 if any keys fail to load
+
+**Behavior:**
+1. Checks if SSH agent config exists, loads it if present
+2. Starts new SSH agent if config doesn't exist or agent is not running
+3. Finds all private keys in `~/.ssh` (excluding public keys and known_hosts)
+4. For each key, checks if it's already loaded by comparing fingerprints
+5. Adds keys that aren't already loaded to the agent with timeout
+6. Reports any errors encountered during the process
+
+This script is useful for automatically loading all SSH keys into your SSH agent session without manually adding each key.
+
+**TODO - Needed fixes:**
+- Add CLI options and usage function
+- Add KEY_TIMEOUT CLI option
+- Add KEY_LIST CLI option
+- Add CONFIG CLI option

@@ -348,7 +348,7 @@ if [ -z "${aws_profile}" ] ; then
     usage "aws_profile is blank"
 fi
 
-cat<<EOF 
+cat<<EOF
 ################################################################################
 Example of catching and error from a called command or script
 ################################################################################
