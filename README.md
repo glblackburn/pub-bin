@@ -30,6 +30,8 @@ A collection of useful tips and tricks for common development tasks.
 
 **Contents:**
 - Multiple SSH keys for GitHub
+- SSH Key Usage Pitfalls
+- Apache Infrastructure Downtime Report
 - Markdown Viewer Chrome Extension
 
 Refer to [tips-and-tricks.md](tips-and-tricks.md) for detailed instructions on each topic.
@@ -219,6 +221,9 @@ source ./load-ssh-key.sh
 6. Reports any errors encountered during the process
 
 This script is useful for automatically loading all SSH keys into your SSH agent session without manually adding each key.
+
+**Related resources:**
+- See [SSH Key Usage Pitfalls](tips-and-tricks.md#ssh-key-usage-pitfalls) in [tips-and-tricks.md](tips-and-tricks.md) for information about common SSH key and agent pitfalls.
 
 **TODO - Needed fixes:**
 - Add CLI options and usage function
