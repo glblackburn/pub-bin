@@ -16,7 +16,7 @@ https://github.com/glblackburn/pub-bin
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7391806542460846081-IHIq)
 
-New script of the day: load-ssh-key.sh
+New script of the day: load-ssh-key​.sh
 
 https://github.com/glblackburn/pub-bin/blob/main/README.md#load-ssh-keysh
 
@@ -29,3 +29,26 @@ What it does:
 * Adds keys to the SSH agent with a timeout (default: 8 hours)
 * Verifies keys exist before attempting to load them
 * Reports errors if any keys are missing or cannot be loaded
+
+---
+
+## [November 6, 2024](https://www.linkedin.com/posts/activity-7392278705642876928-8NDc)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7392278705642876928-8NDc)
+
+New scripts of the day: fix-spaces-in-filename​.sh and fix-spaces-in-filenames​.sh
+
+https://github.com/glblackburn/pub-bin/blob/main/README.md#fix-spaces-in-filenamesh
+https://github.com/glblackburn/pub-bin/blob/main/README.md#fix-spaces-in-filenamessh
+
+Two utility scripts to normalize filenames by removing spaces and special characters.
+
+**fix-spaces-in-filename​.sh** - Renames a single file by replacing non-alphanumeric characters (except dots, slashes, and hyphens) with underscores.
+
+**fix-spaces-in-filenames​.sh** - Batch processes multiple files by calling fix-spaces-in-filename​.sh for each file. Can process from a directory or read file paths from stdin.
+
+What they do:
+* fix-spaces-in-filename​.sh: Takes a single file path, validates it exists, replaces non-alphanumeric characters with underscores, and renames the file only if the new name differs
+* fix-spaces-in-filenames​.sh: Processes multiple files either from a directory argument or from stdin, finds files with spaces, and calls fix-spaces-in-filename​.sh for each
+
+These scripts are useful for normalizing filenames to remove spaces and special characters, making them more compatible across different systems and easier to work with in scripts.
