@@ -57,6 +57,8 @@ When AI agents are used to modify or create files in this repository:
 - [start-cursor-agent.sh](#start-cursor-agentsh)
 - [rename-email.sh](#rename-emailsh)
 - [load-ssh-key.sh](#load-ssh-keysh)
+- [fix-spaces-in-filename.sh](#fix-spaces-in-filenamesh)
+- [fix-spaces-in-filenames.sh](#fix-spaces-in-filenamessh)
 
 ### what-is-left.sh
 
@@ -230,3 +232,69 @@ This script is useful for automatically loading all SSH keys into your SSH agent
 - Add KEY_TIMEOUT CLI option
 - Add KEY_LIST CLI option
 - Add CONFIG CLI option
+
+### fix-spaces-in-filename.sh
+
+A utility script to rename a single file by replacing non-alphanumeric characters (except dots, slashes, and hyphens) with underscores.
+
+**What it does:**
+- Takes a single file path as a command-line argument
+- Validates that the file exists and is a regular file
+- Replaces non-alphanumeric characters (except `.`, `/`, and `-`) with underscores
+- Renames the file only if the new name differs from the original
+- Displays verbose output when VERBOSE is set to true
+
+**Usage:**
+```bash
+./fix-spaces-in-filename.sh <file>
+```
+
+**Details:**
+- The script uses `sed` to replace characters that are not alphanumeric, dots, slashes, or hyphens with underscores
+- It validates the file exists before processing
+- Only renames the file if the new name is different from the original
+- Supports verbose mode (though VERBOSE variable is not currently exposed via CLI)
+
+**Example:**
+```bash
+./fix-spaces-in-filename.sh "my file name.txt"
+# Renames to: my_file_name.txt
+```
+
+This script is useful for normalizing filenames by removing spaces and special characters.
+
+### fix-spaces-in-filenames.sh
+
+A utility script to process multiple files and remove spaces from their filenames by calling `fix-spaces-in-filename.sh` for each file.
+
+**What it does:**
+- Processes multiple files either from a directory or from stdin
+- Finds files with spaces in their names
+- Calls `fix-spaces-in-filename.sh` for each file to rename it
+- Can process a directory recursively or read file paths from stdin
+
+**Usage:**
+```bash
+# Process all files with spaces in a directory
+./fix-spaces-in-filenames.sh <directory>
+
+# Process files from stdin (e.g., from find command)
+find . -type f | grep " " | ./fix-spaces-in-filenames.sh
+```
+
+**Details:**
+- If a directory is provided as an argument, it finds all files with spaces in that directory
+- If no argument is provided, it reads file paths from stdin
+- Validates that the directory exists if a directory argument is provided
+- Uses `fix-spaces-in-filename.sh` to handle the actual renaming of each file
+
+**Example:**
+```bash
+# Process all files with spaces in current directory
+./fix-spaces-in-filenames.sh .
+
+# Process specific files from find command
+find . -type f -name "*.txt" | grep " " | ./fix-spaces-in-filenames.sh
+```
+
+This script is useful for batch processing multiple files to normalize their filenames by removing spaces and special characters.
