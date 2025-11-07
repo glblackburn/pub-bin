@@ -52,3 +52,19 @@ What they do:
 * fix-spaces-in-filenames​.sh: Processes multiple files either from a directory argument or from stdin, finds files with spaces, and calls fix-spaces-in-filename​.sh for each
 
 These scripts are useful for normalizing filenames to remove spaces and special characters, making them more compatible across different systems and easier to work with in scripts.
+
+---
+
+## [November 7, 2024](https://www.linkedin.com/posts/activity-7392575729818968065-idu1)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7392575729818968065-idu1)
+
+So I did a different thing this morning. I have been thinking about how coding agents can help with security. One of the things I wanted to try was doing a full security review using cursor. Well the post below ticked all the boxes I wanted to try. First, the project looked cool, it gave visibility into something interesting, the project was not too big and it ran with full color in the terminal, which come on just supports the first point.
+
+I forked the GitHub repos and did a security review with cursor to see what would pop out. Below is a link to the report that cursor produced with a little coaching.
+
+https://github.com/glblackburn/DEATH_STAR/blob/security-analysis/SECURITY_ANALYSIS.md
+
+I did a screen recording of the process, so stay tuned for that release down the road.
+
+https://www.linkedin.com/posts/pxquirk_cybersecurity-networksecurity-infosec-activity-7391912200308731904-s0vS
