@@ -68,3 +68,36 @@ https://github.com/glblackburn/DEATH_STAR/blob/security-analysis/SECURITY_ANALYS
 I did a screen recording of the process, so stay tuned for that release down the road.
 
 https://www.linkedin.com/posts/pxquirk_cybersecurity-networksecurity-infosec-activity-7391912200308731904-s0vS
+
+---
+
+## [November 9, 2024](https://www.linkedin.com/posts/activity-7393305569874407424-DIt6)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7393305569874407424-DIt6)
+
+I've been developing with AI coding assistants across multiple projects, and I noticed something interesting: each project evolved to have its own set of rules scattered in README files. Some rules were duplicated, some were project-specific, and it was getting hard to maintain consistency.
+
+So I decided to consolidate them. I analyzed AI coding standards across 6 projects and created a standardized reference document (README-AI-CODING-STANDARDS.md) that all projects now reference.
+
+**The Pattern:**
+* Each project has a standardized README-AI-CODING-STANDARDS.md file with common rules
+* Each project's README.md links to the standardized file
+* Project-specific rules stay in each project's README.md
+
+**What got consolidated:**
+* Core Standards (Code Quality, Git Operations, File Creation, Verification)
+* General Principles (Readability, Error Handling, DRY, Defensive Programming)
+* Bash-Specific Standards (Function Organization, Variable Usage, Error Handling, Code Structure, Best Practices, Script Patterns)
+* Common Patterns (Function, Error Handling, Validation)
+
+**The benefits:**
+* Consistency across all projects
+* Single source of truth for common rules
+* Easier to maintain and update
+* Projects can still have their own specific rules (like history analysis rules in the bin/history project)
+
+This pattern works really well for maintaining standards across multiple repositories. If you're working with AI coding assistants across multiple projects, consider consolidating your rules into a standardized reference document.
+
+The standardized document is available in the pub-bin repo:
+
+https://github.com/glblackburn/pub-bin/blob/main/README-AI-CODING-STANDARDS.md
