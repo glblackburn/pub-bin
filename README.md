@@ -44,10 +44,15 @@ The `start-cursor-agent.sh` script requires the `cursor-agent` command-line tool
 
 ## AI Coding Standards
 
-When AI agents are used to modify or create files in this repository:
+This repository follows standardized AI coding standards. See [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for the complete set of rules and guidelines.
 
-- **No trailing spaces**: Do not leave trailing spaces on any line in any file. Trailing whitespace should be removed.
-- **Clean up backup files before commits**: Run `./clean-emacs-files.sh` to remove Emacs backup files (files ending with `~`) before creating any commits. This ensures backup files are not accidentally committed to the repository.
+The standards include:
+- Core Standards (Code Quality, Git Operations, File Creation, Verification)
+- General Principles (Readability, Error Handling, DRY, Defensive Programming)
+- Bash-Specific Standards (Function Organization, Variable Usage, Error Handling, Code Structure, Best Practices, Script Patterns)
+- Common Patterns (Function, Error Handling, Validation)
+
+Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for detailed guidelines.
 
 ## Scripts
 

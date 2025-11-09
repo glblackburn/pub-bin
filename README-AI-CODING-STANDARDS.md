@@ -58,6 +58,107 @@ done
 find . -name "*~"
 ```
 
+## General Principles
+
+1. **Readability First**
+   - Clear, descriptive variable and function names
+   - Comments explain why, not what
+   - Consistent formatting and indentation
+
+2. **Error Handling**
+   - Check for command failures
+   - Validate inputs
+   - Provide meaningful error messages
+   - Handle edge cases
+
+3. **DRY (Don't Repeat Yourself)**
+   - Extract common logic into functions
+   - Avoid code duplication
+   - Reusable components
+
+4. **Defensive Programming**
+   - Validate inputs before use
+   - Check for null/empty values
+   - Handle edge cases (low resources, missing files, etc.)
+   - Use safe defaults
+
+## Bash-Specific Standards
+
+1. **Function Organization**
+   - Functions before main logic
+   - Clear function names (verb-noun pattern)
+   - Local variables in functions
+   - Return codes for success/failure
+
+2. **Variable Usage**
+   - Use `local` for function variables
+   - Quote variables to prevent word splitting
+   - Use `${variable}` for clarity
+   - Uppercase for constants, lowercase for variables
+
+3. **Error Handling**
+   - Check exit codes: `command || handle_error`
+   - Use `set -e` for fail-fast behavior (when appropriate)
+   - Validate inputs before processing
+   - Return meaningful exit codes
+   - Use `set -euET -o pipefail` for error handling
+   - Use the `|| ret=$?` pattern for error handling
+
+4. **Code Structure**
+   - Clear sections with comments
+   - Logical flow: setup → validation → processing → cleanup
+   - Consistent indentation (spaces or tabs, consistent)
+
+5. **Best Practices**
+   - Use `[[ ]]` for conditionals (bash-specific)
+   - Use `$(command)` instead of backticks
+   - Quote strings to prevent globbing
+   - Use `readonly` for constants when possible
+
+6. **Script Patterns**
+   - Follow patterns from `shell-template.sh` in the pub-bin repository
+   - Use `set -euET -o pipefail` for error handling
+   - Use consistent verbose/quiet output control patterns
+   - Use proper directory management (pushd/popd in functions)
+   - Use the `|| ret=$?` pattern for error handling
+
+## Common Patterns
+
+### Function Pattern
+```bash
+function function-name {
+    local param1=${1}
+    local param2=${2}
+
+    # Validation
+    if [ -z "$param1" ]; then
+        echo "ERROR: param1 required" >&2
+        return 1
+    fi
+
+    # Processing
+    # ...
+
+    # Return result
+    echo "$result"
+}
+```
+
+### Error Handling Pattern
+```bash
+if ! command; then
+    echo "ERROR: command failed" >&2
+    return 1
+fi
+```
+
+### Validation Pattern
+```bash
+if [ -z "$variable" ] || [ "$variable" = "null" ]; then
+    # handle error
+fi
+```
+
 ## Project-Specific Standards
 
 Projects may have additional standards beyond these core rules. Refer to each project's README.md for project-specific AI coding standards.
