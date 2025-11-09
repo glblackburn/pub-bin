@@ -59,6 +59,7 @@ When AI agents are used to modify or create files in this repository:
 - [load-ssh-key.sh](#load-ssh-keysh)
 - [fix-spaces-in-filename.sh](#fix-spaces-in-filenamesh)
 - [fix-spaces-in-filenames.sh](#fix-spaces-in-filenamessh)
+- [check-ai-readmes.sh](#check-ai-readmesh)
 
 ### what-is-left.sh
 
@@ -298,3 +299,33 @@ find . -type f -name "*.txt" | grep " " | ./fix-spaces-in-filenames.sh
 ```
 
 This script is useful for batch processing multiple files to normalize their filenames by removing spaces and special characters.
+
+### check-ai-readmes.sh
+
+A utility script to find README files that contain AI coding standards and check their git status across multiple repositories.
+
+**What it does:**
+- Searches for all `README*.md` files in `~/data` directory tree
+- Filters for files containing "ai " (case-insensitive) and "commit" (case-insensitive)
+- Excludes files with "third-party" in the path
+- For each matching file, displays the file path and directory
+- Runs `git status` in each file's directory to check repository status
+
+**Usage:**
+```bash
+./check-ai-readmes.sh
+```
+
+**Details:**
+- The script searches recursively through `~/data` for README files
+- It uses `grep` to filter files that mention both "ai" and "commit" (indicating AI coding standards)
+- For each matching file, it shows the full path and runs `git status` in that directory
+- This helps identify repositories that have AI coding standards documented
+
+**Example output:**
+The script will list all README files that contain AI coding standards, showing:
+- Full file path
+- Directory path
+- Git status for each repository
+
+This script is useful for finding and reviewing AI coding standards across multiple projects to ensure consistency.
