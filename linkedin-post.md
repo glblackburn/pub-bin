@@ -77,12 +77,12 @@ https://www.linkedin.com/posts/pxquirk_cybersecurity-networksecurity-infosec-act
 
 I've been developing with AI coding assistants across multiple projects, and I noticed something interesting: each project evolved to have its own set of rules scattered in README files. Some rules were duplicated, some were project-specific, and it was getting hard to maintain consistency.
 
-So I decided to consolidate them. I analyzed AI coding standards across 6 projects and created a standardized reference document (README-AI-CODING-STANDARDS.md) that all projects now reference.
+So I decided to consolidate them. I analyzed AI coding standards across 6 projects and created a standardized reference document (README-AI-CODING-STANDARDS​.md) that all projects now reference.
 
 **The Pattern:**
-* Each project has a standardized README-AI-CODING-STANDARDS.md file with common rules
-* Each project's README.md links to the standardized file
-* Project-specific rules stay in each project's README.md
+* Each project has a standardized README-AI-CODING-STANDARDS​.md file with common rules
+* Each project's README​.md links to the standardized file
+* Project-specific rules stay in each project's README​.md
 
 **What got consolidated:**
 * Core Standards (Code Quality, Git Operations, File Creation, Verification)
@@ -100,4 +100,4 @@ This pattern works really well for maintaining standards across multiple reposit
 
 The standardized document is available in the pub-bin repo:
 
-https://github.com/glblackburn/pub-bin/blob/main/README-AI-CODING-STANDARDS.md
+https://github.com/glblackburn/pub-bin/blob/main/README-AI-CODING-STANDARDS​.md
