@@ -101,3 +101,27 @@ This pattern works really well for maintaining standards across multiple reposit
 The standardized document is available in the pub-bin repo:
 
 https://github.com/glblackburn/pub-bin/blob/main/README-AI-CODING-STANDARDS​.md
+
+---
+
+## [November 10, 2024](https://www.linkedin.com/posts/activity-7393701785632260097-w13H)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7393701785632260097-w13H)
+
+New script of the day: monitor-ai-agent-progress​.sh
+
+https://github.com/glblackburn/pub-bin/blob/main/README.md#monitor-ai-agent-progresssh
+
+A monitoring script to track AI agent activity by watching temp files and git changes with audio feedback.
+
+What it does:
+* Runs in an infinite loop
+* Monitors temp files: counts files in `/tmp/` directory and speaks the count
+* Monitors git changes: counts lines in `git diff` and speaks the count with repository name
+* Displays the current date
+* Configurable update interval (default: 60 seconds)
+* Supports quiet and verbose modes
+
+The whole point of this script is to provide audio feedback so you don't have to watch the terminal. It speaks the temp file count and git diff line count (with repository name) so you can track AI agent activity while working on other things.
+
+This is especially useful when working with AI coding assistants on long-running tasks - you can hear when the agent is making changes without constantly checking the terminal.
