@@ -59,9 +59,9 @@ These scripts are useful for normalizing filenames to remove spaces and special 
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7392575729818968065-idu1)
 
-So I did a different thing this morning. I have been thinking about how coding agents can help with security. One of the things I wanted to try was doing a full security review using cursor. Well the post below ticked all the boxes I wanted to try. First, the project looked cool, it gave visibility into something interesting, the project was not too big and it ran with full color in the terminal, which come on just supports the first point.
+So I did a different thing this morning. I have been thinking about how coding agents can help with security. One of the things I wanted to try was doing a full security review using Cursor. Well the post below ticked all the boxes I wanted to try. First, the project looked cool, it gave visibility into something interesting, the project was not too big and it ran with full color in the terminal, which come on just supports the first point.
 
-I forked the GitHub repos and did a security review with cursor to see what would pop out. Below is a link to the report that cursor produced with a little coaching.
+I forked the GitHub repos and did a security review with Cursor to see what would pop out. Below is a link to the report that Cursor produced with a little coaching.
 
 https://github.com/glblackburn/DEATH_STAR/blob/security-analysis/SECURITY_ANALYSIS.md
 
