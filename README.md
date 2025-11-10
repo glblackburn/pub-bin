@@ -345,16 +345,36 @@ A monitoring script to track AI agent activity by watching temp files and git ch
 - Monitors temp files: counts files in `/tmp/` directory and speaks the count
 - Monitors git changes: counts lines in `git diff` and speaks the count
 - Displays the current date
-- Sleeps for 60 seconds between iterations
+- Configurable update interval (default: 60 seconds)
+- Supports quiet and verbose modes
 
 **Usage:**
 ```bash
-./monitor-ai-agent-progress.sh
+./monitor-ai-agent-progress.sh [-hqv] [-i <interval>]
 ```
+
+**Options:**
+- `-h` : Display help message
+- `-i <interval>` : Update interval in seconds (Default: 60)
+- `-q` : Quiet mode (output as little as possible)
+- `-v` : Verbose output
 
 **Details:**
 - Uses `say` command to provide audio feedback for temp file count and git diff line count
-- Updates every 60 seconds
+- Updates at configurable intervals (default: 60 seconds)
 - Provides real-time monitoring of AI agent activity through temp file creation and git changes
+- Follows shell-template.sh patterns: proper error handling, CLI options, functions, and structure
+
+**Examples:**
+```bash
+# Default: 60 second interval
+./monitor-ai-agent-progress.sh
+
+# 30 second interval
+./monitor-ai-agent-progress.sh -i 30
+
+# Quiet mode with 120 second interval
+./monitor-ai-agent-progress.sh -q -i 120
+```
 
 This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal.
