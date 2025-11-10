@@ -342,25 +342,34 @@ A monitoring script to track AI agent activity by watching temp files and git ch
 
 **What it does:**
 - Runs in an infinite loop
-- Monitors temp files: counts files in `/tmp/` directory and speaks the count
-- Monitors git changes: counts lines in `git diff` and speaks the count
+- Monitors temp files: counts files in `/tmp/` directory and speaks the count with status
+- Monitors git changes: counts lines in `git diff` and speaks the count with status
+- Tracks status changes: displays "new", "increasing", "decreasing", or "stable" for both temp and diff counts
 - Displays the current date
 - Configurable update interval (default: 60 seconds)
 - Supports quiet and verbose modes
+- Optional repository name display in diff output (off by default)
 
 **Usage:**
 ```bash
-./monitor-ai-agent-progress.sh [-hqv] [-i <interval>]
+./monitor-ai-agent-progress.sh [-hqrv] [-i <interval>]
 ```
 
 **Options:**
 - `-h` : Display help message
 - `-i <interval>` : Update interval in seconds (Default: 60)
 - `-q` : Quiet mode (output as little as possible)
+- `-r` : Show repository name in diff output
 - `-v` : Verbose output
 
 **Details:**
-- Uses `say` command to provide audio feedback for temp file count and git diff line count
+- Uses `say` command to provide audio feedback for temp file count and git diff line count with status
+- Tracks status by comparing current counts with previous values:
+  - "new" on first run
+  - "increasing" when count goes up
+  - "decreasing" when count goes down
+  - "stable" when count remains the same
+- Output format: `temp: <count> (<status>)` and `diff: <count> (<status>)` or `diff: <count> (<status>) (<repo_name>)` with `-r` flag
 - Updates at configurable intervals (default: 60 seconds)
 - Provides real-time monitoring of AI agent activity through temp file creation and git changes
 - Follows shell-template.sh patterns: proper error handling, CLI options, functions, and structure
@@ -375,6 +384,12 @@ A monitoring script to track AI agent activity by watching temp files and git ch
 
 # Quiet mode with 120 second interval
 ./monitor-ai-agent-progress.sh -q -i 120
+
+# Show repository name in diff output
+./monitor-ai-agent-progress.sh -r
+
+# Verbose mode with repository name and custom interval
+./monitor-ai-agent-progress.sh -v -r -i 30
 ```
 
-This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal.
+This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal. The status tracking helps you understand whether activity is increasing, decreasing, or stable.
