@@ -65,6 +65,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [fix-spaces-in-filename.sh](#fix-spaces-in-filenamesh)
 - [fix-spaces-in-filenames.sh](#fix-spaces-in-filenamessh)
 - [check-ai-readmes.sh](#check-ai-readmesh)
+- [monitor-ai-agent-progress.sh](#monitor-ai-agent-progresssh)
 
 ### what-is-left.sh
 
@@ -334,3 +335,26 @@ The script will list all README files that contain AI coding standards, showing:
 - Git status for each repository
 
 This script is useful for finding and reviewing AI coding standards across multiple projects to ensure consistency.
+
+### monitor-ai-agent-progress.sh
+
+A monitoring script to track AI agent activity by watching temp files and git changes with audio feedback.
+
+**What it does:**
+- Runs in an infinite loop
+- Monitors temp files: counts files in `/tmp/` directory and speaks the count
+- Monitors git changes: counts lines in `git diff` and speaks the count
+- Displays the current date
+- Sleeps for 60 seconds between iterations
+
+**Usage:**
+```bash
+./monitor-ai-agent-progress.sh
+```
+
+**Details:**
+- Uses `say` command to provide audio feedback for temp file count and git diff line count
+- Updates every 60 seconds
+- Provides real-time monitoring of AI agent activity through temp file creation and git changes
+
+This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal.
