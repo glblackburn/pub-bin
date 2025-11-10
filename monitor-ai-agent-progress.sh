@@ -38,18 +38,13 @@ EOF
 
 function monitor-temp-files {
     local temp_count=$(ls -ltr /tmp/ 2>/dev/null | wc -l | tr -d ' ')
-    if [ "${QUIET}" != true ] ; then
-	echo "temp: ${temp_count}"
-    fi
-    echo "${temp_count}" | tee >(say) >/dev/null 2>&1 || true
+    echo "temp: ${temp_count}" | tee >(say) || true
 }
 
 function monitor-git-diff {
     local diff_lines=$(git diff 2>/dev/null | wc -l | tr -d ' ')
-    if [ "${QUIET}" != true ] ; then
-	echo "diff: ${diff_lines}"
-    fi
-    echo "diff: ${diff_lines}" | tee >(say) >/dev/null 2>&1 || true
+    local repo_name=$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null || echo "unknown")
+    echo "diff: ${diff_lines} (${repo_name})" | tee >(say) || true
 }
 
 function show-status {
