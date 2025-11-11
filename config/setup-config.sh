@@ -46,24 +46,12 @@ This script will create a configuration file for pub-bin scripts.
 Press Enter to use defaults or provide custom values.
 EOF
 
-    # Email (optional)
-    if [ -z "${email:-}" ] ; then
-        echo "Enter email (optional, press Enter to skip):"
-        read email
-    fi
-
-    # Name (optional)
-    if [ -z "${name:-}" ] ; then
-        echo "Enter name (optional, press Enter to skip):"
-        read name
-    fi
-
     # Screenshot directory (required for clean-screenshots.sh)
     if [ -z "${screenshot_dir:-}" ] ; then
-        default_screenshot_dir="${HOME}/Pictures/Screenshots"
-        echo "Enter screenshot directory (default: ${default_screenshot_dir}):"
-        read screenshot_dir
-        screenshot_dir="${screenshot_dir:-${default_screenshot_dir}}"
+        screenshot_dir=$(setup-config-value "screenshot_dir" \
+            "Enter the directory where screenshots should be archived. This directory will contain timestamped subdirectories for each cleanup session." \
+            "${HOME}/Pictures/Screenshots" \
+            "false")
     fi
 }
 
@@ -77,12 +65,6 @@ Saving config to ${config_file}
 EOF
 
     {
-        if [ ! -z "${email:-}" ] ; then
-            echo "email=\"${email}\""
-        fi
-        if [ ! -z "${name:-}" ] ; then
-            echo "name=\"${name}\""
-        fi
         if [ ! -z "${screenshot_dir:-}" ] ; then
             echo "screenshot_dir=\"${screenshot_dir}\""
         fi

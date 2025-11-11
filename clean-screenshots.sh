@@ -21,10 +21,31 @@ load-config "noerror"
 load-script-config "clean-screenshots"
 
 ################################################################################
-# Default values
+# Default values and interactive setup
 ################################################################################
-# Use config value, CLI override, or default
-SCREENSHOT_DIR="${SCREENSHOT_DIR:-${screenshot_dir:-${HOME}/Pictures/Screenshots}}"
+# Use CLI override first, then config value, or prompt interactively
+if [ -z "${SCREENSHOT_DIR}" ] ; then
+    if [ -z "${screenshot_dir:-}" ] ; then
+        # Config doesn't exist, prompt interactively
+        cat<<EOF
+================================================================================
+Configuration Required
+================================================================================
+screenshot_dir is not set in config file: ${config_file}
+EOF
+        SCREENSHOT_DIR=$(setup-config-value "screenshot_dir" \
+            "Enter the directory where screenshots should be archived. This directory will contain timestamped subdirectories for each cleanup session." \
+            "${HOME}/Pictures/Screenshots" \
+            "true")
+        save-config-value "screenshot_dir" "${SCREENSHOT_DIR}"
+        # Reload config to get the saved value
+        load-config "noerror"
+        screenshot_dir="${SCREENSHOT_DIR}"
+    else
+        SCREENSHOT_DIR="${screenshot_dir}"
+    fi
+fi
+
 SCREENSHOT_PREFIX="Screen*"
 
 ################################################################################

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # config.sh - Configuration library for pub-bin scripts
-# Follows the modular sourcing pattern from set-h3-env.sh
 
 ################################################################################
 # default values
@@ -113,4 +112,126 @@ EOF
 Public config not found: ${config_file}
 EOF
     fi
+}
+
+# Generic interactive setup for any config value
+# Usage: setup-config-value <var_name> <description> <default_value> <required>
+# Returns: the value via echo
+function setup-config-value {
+    local var_name=$1
+    local description=$2
+    local default_value=$3
+    local required=${4:-false}
+
+    # Get current value if config exists
+    local current_value=""
+    if [ -e "${config_file}" ] ; then
+        . "${config_file}"
+        eval "current_value=\${${var_name}:-}"
+    fi
+
+    # Output informational messages to stderr so they don't get captured
+    cat<<EOF>&2
+================================================================================
+${var_name} Configuration
+================================================================================
+EOF
+
+    if [ ! -z "${current_value}" ] ; then
+        cat<<EOF>&2
+Current ${var_name}=[${current_value}]
+EOF
+    fi
+
+    cat<<EOF>&2
+${description}
+EOF
+
+    local default="${default_value}"
+    if [ ! -z "${current_value}" ] ; then
+        default="${current_value}"
+    fi
+
+    if [ ! -z "${default}" ] ; then
+        cat<<EOF>&2
+Default: ${default}
+EOF
+    fi
+
+    local prompt_text="${var_name}"
+    if [ "${required}" = "true" ] ; then
+        prompt_text="${var_name} (required)"
+    else
+        prompt_text="${var_name} (optional)"
+    fi
+
+    # Prompt goes to stderr, input from stdin
+    echo -n "${prompt_text}: " >&2
+    read input_value
+
+    # Use input, current value, or default
+    local final_value="${input_value}"
+    if [ -z "${final_value}" ] ; then
+        if [ ! -z "${current_value}" ] ; then
+            final_value="${current_value}"
+        else
+            final_value="${default}"
+        fi
+    fi
+
+    # If required and still empty, error
+    if [ "${required}" = "true" ] && [ -z "${final_value}" ] ; then
+        cat<<EOF>&2
+Error: ${var_name} is required but was not provided.
+EOF
+        return 1
+    fi
+
+    # Expand ~ and resolve path if it looks like a path
+    if [[ "${final_value}" =~ ^~ ]] || [[ "${final_value}" =~ ^/ ]] ; then
+        final_value=$(eval echo "${final_value}")
+    fi
+
+    cat<<EOF>&2
+================================================================================
+${var_name}=[${final_value}]
+================================================================================
+EOF
+
+    # Only echo the final value to stdout (for capture)
+    echo "${final_value}"
+}
+
+# Save a config value to config file (preserves other values)
+# Usage: save-config-value <var_name> <value>
+function save-config-value {
+    local var_name=$1
+    local value=$2
+
+    ensure-config-dir
+
+    # Load existing config if it exists
+    local temp_config=$(mktemp /tmp/pub-bin-config.XXXXXX)
+    if [ -e "${config_file}" ] ; then
+        . "${config_file}"
+        # Preserve all existing config values
+        while IFS= read -r line ; do
+            if [[ ! "${line}" =~ ^${var_name}= ]] ; then
+                echo "${line}" >> "${temp_config}"
+            fi
+        done < "${config_file}"
+    fi
+
+    # Add/update the config value
+    echo "${var_name}=\"${value}\"" >> "${temp_config}"
+
+    mv "${temp_config}" "${config_file}"
+    chmod 600 "${config_file}"
+
+    cat<<EOF
+================================================================================
+Config updated: ${config_file}
+================================================================================
+EOF
+    show-config
 }

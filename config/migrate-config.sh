@@ -66,12 +66,6 @@ EOF
 
     # Write new config file
     {
-        if [ ! -z "${email:-}" ] ; then
-            echo "email=\"${email}\""
-        fi
-        if [ ! -z "${name:-}" ] ; then
-            echo "name=\"${name}\""
-        fi
         if [ ! -z "${screenshot_dir:-}" ] ; then
             echo "screenshot_dir=\"${screenshot_dir}\""
         fi
