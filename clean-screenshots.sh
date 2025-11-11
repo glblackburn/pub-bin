@@ -71,10 +71,28 @@ function move-screenshots {
     local screenshots=$(find-screenshots "${prefix}")
     local screenshot_count=$(echo "${screenshots}" | grep -v '^$' | wc -l | tr -d ' ')
 
+    cat<<EOF
+================================================================================
+Searching for screenshots in ${src_dir}
+Pattern: ${prefix}
+================================================================================
+EOF
+
     if [ "${screenshot_count}" -eq 0 ] ; then
 	echo "No screenshots found matching pattern: ${prefix}"
 	return 0
     fi
+
+    cat<<EOF
+Found ${screenshot_count} screenshot(s) to move:
+--------------------------------------------------------------------------------
+EOF
+
+    echo "${screenshots}" | while IFS= read -r screenshot ; do
+	if [ ! -z "${screenshot}" ] ; then
+	    echo "  ${screenshot}"
+	fi
+    done
 
     cat<<EOF
 Files to move from ${src_dir} to ${archive_dir}
@@ -95,13 +113,17 @@ EOF
     fi
 
     cat<<EOF
-Create archive dir: ${archive_dir}"
---------------------------------------------------------------------------------
+Creating archive directory: ${archive_dir}
 EOF
     mkdir -p "${archive_dir}" || {
 	echo "Error: Failed to create archive directory: ${archive_dir}" >&2
 	return 1
     }
+
+    cat<<EOF
+Create archive dir: ${archive_dir}"
+--------------------------------------------------------------------------------
+EOF
 
     cat<<EOF
 Move screenshots to archive
@@ -182,6 +204,18 @@ cd "${SRC_DIR}" || {
 
 # Trap to ensure we return to original directory
 trap "cd '${original_dir}'" EXIT
+
+# Show configuration (detailed output)
+cat<<EOF
+================================================================================
+Configuration
+================================================================================
+src_dir=[${SRC_DIR}]
+archive_dir=[${archive_dir}]
+screenshot_prefix=[${SCREENSHOT_PREFIX}]
+dry_run=[${DRY_RUN}]
+================================================================================
+EOF
 
 # Show init vars (matching old script)
 cat<<EOF
