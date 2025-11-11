@@ -10,8 +10,33 @@ config_dir=$(dirname $0)
 . ${config_dir}/config.sh
 
 ################################################################################
+# Default values
+################################################################################
+bin_config=${HOME}/.bin_config
+
+################################################################################
 # Functions
 ################################################################################
+function check-legacy-config {
+    if [ -e "${bin_config}" ] && [ ! -e "${config_file}" ] ; then
+        cat<<EOF
+================================================================================
+Legacy config file found: ${bin_config}
+================================================================================
+EOF
+        cat "${bin_config}"
+        cat<<EOF
+
+Would you like to migrate this config to the new location? (Y/n)
+EOF
+        read migrate
+        if [ -z "${migrate}" ] || [ "${migrate}" = "y" ] || [ "${migrate}" = "Y" ] ; then
+            ${config_dir}/migrate-config.sh
+            exit 0
+        fi
+    fi
+}
+
 function read-config-values {
     cat<<EOF
 ================================================================================
@@ -75,6 +100,7 @@ EOF
 # Main script logic
 ################################################################################
 
+check-legacy-config
 read-config-values
 save-config
 

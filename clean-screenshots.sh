@@ -57,46 +57,35 @@ EOF
 }
 
 function find-screenshots {
-    local search_dir=$1
-    local prefix=$2
-    find "${search_dir}" -maxdepth 1 -name "${prefix}" -type f 2>/dev/null
+    local prefix=$1
+    # Search from current directory (we're already in src_dir)
+    find . -maxdepth 1 -name "${prefix}" -type f 2>/dev/null
 }
 
 function move-screenshots {
     local src_dir=$1
     local archive_dir=$2
     local prefix=$3
-    local count=0
 
-    ${VERBOSE} && cat<<EOF
-================================================================================
-Searching for screenshots in ${src_dir}
-Pattern: ${prefix}
-================================================================================
-EOF
-
-    # Find screenshots
-    local screenshots=$(find-screenshots "${src_dir}" "${prefix}")
+    # Find screenshots (we're already in src_dir, so use relative paths)
+    local screenshots=$(find-screenshots "${prefix}")
     local screenshot_count=$(echo "${screenshots}" | grep -v '^$' | wc -l | tr -d ' ')
 
     if [ "${screenshot_count}" -eq 0 ] ; then
-	${QUIET} || echo "No screenshots found matching pattern: ${prefix}"
+	echo "No screenshots found matching pattern: ${prefix}"
 	return 0
     fi
 
-    ${QUIET} || cat<<EOF
-Found ${screenshot_count} screenshot(s) to move:
+    cat<<EOF
+Files to move from ${src_dir} to ${archive_dir}
 --------------------------------------------------------------------------------
 EOF
 
-    echo "${screenshots}" | while IFS= read -r screenshot ; do
-	if [ ! -z "${screenshot}" ] ; then
-	    ${QUIET} || echo "  ${screenshot}"
-	fi
-    done
+    # Show files with ls -l details (matching old script)
+    find . -name "${prefix}" -exec ls -l {} \;
 
     if [ "${DRY_RUN}" = "true" ] ; then
-	${QUIET} || cat<<EOF
+	cat<<EOF
 --------------------------------------------------------------------------------
 DRY RUN: Would create archive directory: ${archive_dir}
 DRY RUN: Would move ${screenshot_count} screenshot(s) to archive
@@ -105,41 +94,28 @@ EOF
 	return 0
     fi
 
-    # Create archive directory
-    ${VERBOSE} && cat<<EOF
-Creating archive directory: ${archive_dir}
+    cat<<EOF
+Create archive dir: ${archive_dir}"
+--------------------------------------------------------------------------------
 EOF
     mkdir -p "${archive_dir}" || {
 	echo "Error: Failed to create archive directory: ${archive_dir}" >&2
 	return 1
     }
 
-    # Move screenshots
-    ${QUIET} || cat<<EOF
-Moving screenshots to archive...
-EOF
-
-    echo "${screenshots}" | while IFS= read -r screenshot ; do
-	if [ ! -z "${screenshot}" ] && [ -f "${screenshot}" ] ; then
-	    local basename=$(basename "${screenshot}")
-	    if mv "${screenshot}" "${archive_dir}/${basename}" 2>/dev/null ; then
-		${VERBOSE} && echo "  Moved: ${basename}"
-		((count++))
-	    else
-		echo "  Error: Failed to move ${basename}" >&2
-	    fi
-	fi
-    done
-
-    ${QUIET} || cat<<EOF
-Moved ${screenshot_count} screenshot(s) to ${archive_dir}
-EOF
-
-    ${VERBOSE} && cat<<EOF
-Archive directory contents:
+    cat<<EOF
+Move screenshots to archive
 --------------------------------------------------------------------------------
 EOF
-    ${VERBOSE} && ls -lh "${archive_dir}" 2>/dev/null || true
+
+    # Move screenshots (matching old script pattern)
+    find . -name "${prefix}" | xargs -I {} mv '{}' "${archive_dir}"
+
+    cat<<EOF
+Archive Dir List
+--------------------------------------------------------------------------------
+EOF
+    find "${archive_dir}" -type f -exec ls -l {} \;
 }
 
 ################################################################################
@@ -197,17 +173,6 @@ fi
 timestamp=$(date +%Y-%m-%d_%H%M%S)
 archive_dir="${SCREENSHOT_DIR}/${timestamp}"
 
-${VERBOSE} && cat<<EOF
-================================================================================
-Configuration
-================================================================================
-src_dir=[${SRC_DIR}]
-archive_dir=[${archive_dir}]
-screenshot_prefix=[${SCREENSHOT_PREFIX}]
-dry_run=[${DRY_RUN}]
-================================================================================
-EOF
-
 # Change to source directory
 original_dir=$(pwd)
 cd "${SRC_DIR}" || {
@@ -218,7 +183,16 @@ cd "${SRC_DIR}" || {
 # Trap to ensure we return to original directory
 trap "cd '${original_dir}'" EXIT
 
+# Show init vars (matching old script)
+cat<<EOF
+Init vars
+--------------------------------------------------------------------------------
+src_dir=[${SRC_DIR}]
+archive_dir=[${archive_dir}]
+screenshot_prefix=[${SCREENSHOT_PREFIX}]
+EOF
+
 # Move screenshots
 move-screenshots "${SRC_DIR}" "${archive_dir}" "${SCREENSHOT_PREFIX}"
 
-${QUIET} || echo "Done"
+echo "Done"

@@ -31,7 +31,7 @@ EOF
         if [ "${noerror}" != "noerror" ] ; then
             cat<<EOF>&2
 Config not found: ${config_file}
-Please run ${config_dir}/setup-config.sh
+Please run ${config_dir}/setup-config.sh or ${config_dir}/migrate-config.sh
 EOF
             return 1
         fi
