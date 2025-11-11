@@ -5,7 +5,6 @@
 # default values
 ################################################################################
 config_dir=$(dirname $0)
-pub_bin_dir=$(dirname ${config_dir})
 config_file=${HOME}/.config/pub-bin/config
 secure_dir=${HOME}/.secure
 secure_config=${secure_dir}/secure-config.sh
@@ -30,7 +29,7 @@ EOF
         if [ "${noerror}" != "noerror" ] ; then
             cat<<EOF>&2
 Config not found: ${config_file}
-Please run ${config_dir}/setup-config.sh or ${config_dir}/migrate-config.sh
+Scripts will prompt interactively for configuration when needed.
 EOF
             return 1
         fi
@@ -64,22 +63,6 @@ EOF
 function load-all-configs {
     load-config "${1:-}"
     load-secure-config "noerror"  # Don't error if secure config missing
-}
-
-# Load script-specific config (e.g., config/clean-screenshots-config.sh)
-function load-script-config {
-    local script_name=$1
-    local config_script="${config_dir}/${script_name}-config.sh"
-    local verbose=${VERBOSE:-false}
-
-    if [ -e "${config_script}" ] ; then
-        . "${config_script}"
-        if [ "${verbose}" = "true" ] ; then
-            cat<<EOF
-Loaded script config from ${config_script}
-EOF
-        fi
-    fi
 }
 
 # Ensure config directory exists

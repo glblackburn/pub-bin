@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# clean-screenshots-config.sh - Script-specific configuration
-# Copy this file to clean-screenshots-config.sh and customize as needed
-
-# Override default screenshot prefix pattern if needed
-# SCREENSHOT_PREFIX="Screen Shot*"
-
-# Override default source directory if needed
-# SRC_DIR="${HOME}/Desktop"

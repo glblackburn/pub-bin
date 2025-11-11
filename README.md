@@ -19,6 +19,7 @@ create a script, I will specificly note that.
 
 - [Resources](#resources)
 - [Installation](#installation)
+- [Configuration](#configuration)
 - [AI Coding Standards](#ai-coding-standards)
 - [Scripts](#scripts)
 
@@ -41,6 +42,65 @@ Refer to [tips-and-tricks.md](tips-and-tricks.md) for detailed instructions on e
 ### Installing cursor-agent
 
 The `start-cursor-agent.sh` script requires the `cursor-agent` command-line tool. Install Cursor IDE from https://cursor.sh/ - the `cursor-agent` command is included with Cursor IDE.
+
+## Configuration
+
+### [config/config.sh](config/config.sh)
+
+A modular configuration library for pub-bin scripts that provides generic interactive setup and config management.
+
+**What it provides:**
+- Generic config loading from `~/.config/pub-bin/config`
+- Secure config support from `~/.secure/secure-config.sh`
+- Generic interactive setup functions for any config variable
+- Config value saving that preserves existing values
+
+**Configuration Files:**
+- **Public config**: `~/.config/pub-bin/config` - General configuration values
+- **Secure config**: `~/.secure/secure-config.sh` - Sensitive data (API keys, etc.)
+
+**Functions:**
+
+**Config Loading:**
+- `load-config [noerror]` - Load public config file
+- `load-secure-config [noerror]` - Load secure config file
+- `load-all-configs [noerror]` - Load both public and secure configs
+
+**Interactive Setup:**
+- `setup-config-value <var_name> <description> <default_value> <required>` - Generic interactive setup for any config variable
+  - Shows section headers with separators
+  - Displays current value in brackets format
+  - Interactive prompts with description
+  - Handles required/optional validation
+  - Expands ~ paths automatically
+  - Outputs prompts to stderr, returns value via stdout
+- `save-config-value <var_name> <value>` - Save config value while preserving other values
+
+**Utilities:**
+- `ensure-config-dir` - Ensure config directory exists with proper permissions
+- `ensure-secure-dir` - Ensure secure directory exists with proper permissions
+- `show-config` - Display current config values (non-sensitive)
+
+**Usage in Scripts:**
+```bash
+#!/usr/bin/env bash
+. ${script_dir}/config/config.sh
+
+# Load configs
+load-config "noerror"
+
+# Interactive setup if config missing
+if [ -z "${my_config_var:-}" ] ; then
+    my_config_var=$(setup-config-value "my_config_var" \
+        "Description of what this config does" \
+        "default_value" \
+        "true")
+    save-config-value "my_config_var" "${my_config_var}"
+    load-config "noerror"
+fi
+```
+
+This library provides a reusable pattern for any script needing configuration management with interactive setup capabilities. Scripts will automatically prompt for configuration when needed.
 
 ## AI Coding Standards
 
@@ -66,6 +126,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [fix-spaces-in-filenames.sh](#fix-spaces-in-filenamessh)
 - [check-ai-readmes.sh](#check-ai-readmesh)
 - [monitor-ai-agent-progress.sh](#monitor-ai-agent-progresssh)
+- [clean-screenshots.sh](#clean-screenshotssh)
 
 ### what-is-left.sh
 
@@ -393,3 +454,65 @@ A monitoring script to track AI agent activity by watching temp files and git ch
 ```
 
 This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal. The status tracking helps you understand whether activity is increasing, decreasing, or stable.
+
+### clean-screenshots.sh
+
+A utility script to clean up screenshot files from Desktop (or specified source directory) by moving them to an archived directory organized by timestamp.
+
+**What it does:**
+- Searches for screenshot files matching a pattern (default: `Screen*`) in the source directory
+- Moves screenshots to a timestamped archive directory (e.g., `screenshot_dir/2025-11-11_123456/`)
+- Provides detailed output showing files found, moved, and archived
+- Supports dry run mode to preview changes without making them
+- Uses interactive configuration setup if `screenshot_dir` is not configured
+
+**Usage:**
+```bash
+./clean-screenshots.sh [-hqv] [-d <screenshot_dir>] [-s <src_dir>] [-p <prefix>] [-n]
+```
+
+**Options:**
+- `-h` : Display help message
+- `-d <dir>` : Screenshot archive directory (overrides config)
+- `-s <dir>` : Source directory to search (Default: `~/Desktop`)
+- `-p <prefix>` : Screenshot filename prefix pattern (Default: `Screen*`)
+- `-q` : Quiet mode (output as little as possible)
+- `-v` : Verbose output
+- `-n` : Dry run mode (show what would be done without making changes)
+
+**Configuration:**
+- The script uses `screenshot_dir` from `~/.config/pub-bin/config`
+- If not configured, the script will prompt interactively to set it up
+- Configuration is set up interactively when the script runs if not already configured
+
+**Details:**
+- Archive directories are created with timestamp format: `YYYY-MM-DD_HHMMSS`
+- Shows detailed output including:
+  - Configuration and initialization variables
+  - Files found matching the pattern
+  - Files moved with `ls -l` details
+  - Archive directory listing after move
+- Follows shell-template.sh patterns: proper error handling, CLI options, functions, and structure
+
+**Examples:**
+```bash
+# Default: Move screenshots from Desktop to configured archive directory
+./clean-screenshots.sh
+
+# Dry run to see what would be moved
+./clean-screenshots.sh -n
+
+# Override archive directory
+./clean-screenshots.sh -d ~/Pictures/Screenshots
+
+# Search different source directory
+./clean-screenshots.sh -s ~/Downloads
+
+# Custom screenshot pattern
+./clean-screenshots.sh -p "Screenshot*"
+
+# Verbose output
+./clean-screenshots.sh -v
+```
+
+This script is useful for keeping your Desktop clean by automatically organizing screenshots into timestamped archive directories.

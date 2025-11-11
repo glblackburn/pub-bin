@@ -7,8 +7,6 @@ script_dir=$(dirname $0)
 ################################################################################
 # CLI Parameters
 ################################################################################
-QUIET=false
-VERBOSE=false
 DRY_RUN=false
 SCREENSHOT_DIR=""
 SRC_DIR="${HOME}/Desktop"
@@ -18,7 +16,6 @@ SRC_DIR="${HOME}/Desktop"
 ################################################################################
 . ${script_dir}/config/config.sh
 load-config "noerror"
-load-script-config "clean-screenshots"
 
 ################################################################################
 # Default values and interactive setup
@@ -40,7 +37,6 @@ EOF
         save-config-value "screenshot_dir" "${SCREENSHOT_DIR}"
         # Reload config to get the saved value
         load-config "noerror"
-        screenshot_dir="${SCREENSHOT_DIR}"
     else
         SCREENSHOT_DIR="${screenshot_dir}"
     fi
@@ -58,7 +54,7 @@ function usage {
 	echo ""
     fi
     cat<<EOF
-Usage: ${script_name} [-hqv] [-d <screenshot_dir>] [-s <src_dir>] [-p <prefix>]
+Usage: ${script_name} [-hn] [-d <screenshot_dir>] [-s <src_dir>] [-p <prefix>]
 
 Clean up screenshot files from Desktop by moving them to an archived directory
 organized by timestamp.
@@ -68,8 +64,6 @@ Options
   -d <dir>        : Screenshot archive directory (Default: ${SCREENSHOT_DIR})
   -s <dir>        : Source directory to search (Default: ${SRC_DIR})
   -p <prefix>     : Screenshot filename prefix pattern (Default: ${SCREENSHOT_PREFIX})
-  -q               : Quiet mode. Output as little as possible.
-  -v               : Verbose output.
   -n               : Dry run mode. Show what would be done without making changes.
 
 Example:
@@ -164,7 +158,7 @@ EOF
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":d:s:p:hqvn" opt; do
+while getopts ":d:s:p:hn" opt; do
     case ${opt} in
 	d )
             SCREENSHOT_DIR=$OPTARG
@@ -174,12 +168,6 @@ while getopts ":d:s:p:hqvn" opt; do
             ;;
 	p )
             SCREENSHOT_PREFIX=$OPTARG
-            ;;
-	q )
-            QUIET=true
-            ;;
-	v )
-            VERBOSE=true
             ;;
 	n )
             DRY_RUN=true
@@ -200,7 +188,7 @@ shift $((OPTIND -1))
 # Validation
 ################################################################################
 if [ -z "${SCREENSHOT_DIR}" ] ; then
-    usage "screenshot_dir not set. Set via -d option, config file, or run setup-pub-bin-config.sh"
+    usage "screenshot_dir not set. Set via -d option or config file. Script will prompt interactively if config is missing."
     exit 1
 fi
 
