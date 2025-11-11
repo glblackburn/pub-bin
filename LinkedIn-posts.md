@@ -1,5 +1,57 @@
 # LinkedIn Posts
 
+## Formatting Reference for LinkedIn Posts
+
+**Formatting Style:**
+- **Section Headers**: Use Unicode bold characters (𝐖𝐡𝐚𝐭, 𝐓𝐡𝐞, etc.) instead of markdown `**bold**`
+- **Bullet Points**: Use ▶ (black right-pointing triangle) instead of • or *
+- **URLs**: Include zero-width space (​) in URLs to prevent LinkedIn auto-linking
+- **Text File**: Generate posts as plain text files (no markdown code blocks) to avoid line numbers when copying
+
+**Unicode Characters Used:**
+- Bold text: Mathematical Bold Unicode (𝐀-𝐙, 𝐚-𝐳, 𝟎-𝟗)
+- Bullets: ▶ (U+25B6 - Black Right-Pointing Triangle)
+
+**Process:**
+1. Write post content in markdown format
+2. Convert `**text**` to Unicode bold characters
+3. Replace bullet points with ▶
+4. Add zero-width spaces to URLs
+5. Save as plain text file for clean copy-paste
+
+---
+
+## [November 11, 2024]
+
+New scripts: clean-screenshots​.sh and config/config​.sh
+
+https://github.com/glblackburn/pub-bin/blob/main/README.md#clean-screenshotssh
+https://github.com/glblackburn/pub-bin/blob/main/README.md#configconfigsh
+
+I migrated clean-screenshots​.sh from my old private repo and built a new modular configuration system (config/config​.sh) to support it. The script organizes screenshots from your Desktop into timestamped archive directories.
+
+This is one of my daily-use scripts - I take frequent screenshots throughout the day, and this keeps my Desktop clean by automatically organizing them into timestamped archives.
+
+**What clean-screenshots​.sh does:**
+* Finds screenshots matching a pattern (default: `Screen*`) in the source directory
+* Moves them to timestamped archive directories (e.g., `screenshot_dir/2025-11-11_123456/`)
+* Provides detailed output showing what was found and moved
+* Supports dry run mode
+* Handles configuration interactively if not set up
+
+**What config/config​.sh provides:**
+* Generic configuration library for pub-bin scripts
+* Interactive setup functions that any script can use
+* Config value saving that preserves existing values
+* Support for both public and secure config files
+
+**The migration lesson:**
+This took way longer than it should have. Cursor decided to rewrite the code from scratch instead of migrating the existing script as-is. I had to provide side-by-side output comparisons from the old and new scripts multiple times to get Cursor to restore functionality that was working fine in the original.
+
+The lesson? When migrating existing code, explicitly tell the AI to migrate first, then refactor. Don't let it "improve" things that already work. Sometimes the best code is the code that's already running in production.
+
+---
+
 ## [November 10, 2024](https://www.linkedin.com/posts/activity-7393701785632260097-w13H)
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7393701785632260097-w13H)
