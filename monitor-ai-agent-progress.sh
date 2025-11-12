@@ -17,6 +17,7 @@ SHOW_REPO_NAME=false
 ################################################################################
 prev_temp_count=""
 prev_diff_count=""
+prev_status_count=""
 
 ################################################################################
 # Functions
@@ -64,18 +65,17 @@ function get-status {
     echo "${status}"
 }
 
-function monitor-temp-files {
-    local temp_count=$(ls -ltr /tmp/ 2>/dev/null | wc -l | tr -d ' ')
-    local status=$(get-status "${temp_count}" "${prev_temp_count}")
+function format-temp-output {
+    local temp_count=$1
+    local status=$2
 
-    echo "temp: ${temp_count} (${status})" | tee >(say) || true
-
-    prev_temp_count="${temp_count}"
+    echo "temp: ${temp_count} (${status})"
 }
 
-function monitor-git-diff {
-    local diff_lines=$(git diff 2>/dev/null | wc -l | tr -d ' ')
-    local status=$(get-status "${diff_lines}" "${prev_diff_count}")
+function format-diff-output {
+    local diff_lines=$1
+    local status=$2
+
     local message="diff: ${diff_lines} (${status})"
 
     if [ "${SHOW_REPO_NAME}" = true ] ; then
@@ -83,12 +83,17 @@ function monitor-git-diff {
 	message="${message} (${repo_name})"
     fi
 
-    echo "${message}" | tee >(say) || true
-
-    prev_diff_count="${diff_lines}"
+    echo "${message}"
 }
 
-function show-status {
+function format-status-output {
+    local status_count=$1
+    local status=$2
+
+    echo "status: ${status_count} (${status})"
+}
+
+function show-timestamp {
     if [ "${QUIET}" != true ] ; then
 	date
     fi
@@ -136,17 +141,48 @@ fi
 ################################################################################
 
 ${VERBOSE} && cat<<EOF
+================================================================================
 Starting AI agent progress monitor
 Interval: ${INTERVAL} seconds
 Quiet mode: ${QUIET}
 Show repo name: ${SHOW_REPO_NAME}
 Verbose mode: ${VERBOSE}
+================================================================================
 EOF
 
 while true ; do
-    monitor-temp-files
+    show-timestamp
+
+    # Get current counts
+    temp_count=$(ls -ltr /tmp/ 2>/dev/null | wc -l | tr -d ' ')
+    diff_lines=$(git diff 2>/dev/null | wc -l | tr -d ' ')
+    status_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+
+    # Calculate status for each metric
+    temp_status=$(get-status "${temp_count}" "${prev_temp_count}")
+    diff_status=$(get-status "${diff_lines}" "${prev_diff_count}")
+    status_status=$(get-status "${status_count}" "${prev_status_count}")
+
+    # Generate formatted output messages
+    temp_output=$(format-temp-output "${temp_count}" "${temp_status}")
     sleep 2
-    monitor-git-diff
-    show-status
+    diff_output=$(format-diff-output "${diff_lines}" "${diff_status}")
+    sleep 2
+    status_output=$(format-status-output "${status_count}" "${status_status}")
+
+    # Update previous values for next iteration
+    prev_temp_count="${temp_count}"
+    prev_diff_count="${diff_lines}"
+    prev_status_count="${status_count}"
+
+    # Combine outputs and display/speak together
+    combined_message="${temp_output}
+${diff_output}
+${status_output}"
+    echo "${combined_message}"
+    if [ "${QUIET}" != true ] ; then
+	echo "${combined_message}" | say || true
+    fi
+
     sleep ${INTERVAL}
 done
