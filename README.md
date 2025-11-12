@@ -399,14 +399,15 @@ This script is useful for finding and reviewing AI coding standards across multi
 
 ### monitor-ai-agent-progress.sh
 
-A monitoring script to track AI agent activity by watching temp files and git changes with audio feedback.
+A monitoring script to track AI agent activity by watching temp files, git changes, and git status with audio feedback.
 
 **What it does:**
 - Runs in an infinite loop
 - Monitors temp files: counts files in `/tmp/` directory and speaks the count with status
 - Monitors git changes: counts lines in `git diff` and speaks the count with status
-- Tracks status changes: displays "new", "increasing", "decreasing", or "stable" for both temp and diff counts
-- Displays the current date
+- Monitors git status: counts files with changes (modified, added, deleted, untracked) and speaks the count with status
+- Tracks status changes: displays "new", "increasing", "decreasing", or "stable" for all three metrics
+- Displays timestamp at the start of each monitoring cycle
 - Configurable update interval (default: 60 seconds)
 - Supports quiet and verbose modes
 - Optional repository name display in diff output (off by default)
@@ -419,20 +420,22 @@ A monitoring script to track AI agent activity by watching temp files and git ch
 **Options:**
 - `-h` : Display help message
 - `-i <interval>` : Update interval in seconds (Default: 60)
-- `-q` : Quiet mode (output as little as possible)
+- `-q` : Quiet mode (disables audio feedback and timestamp display)
 - `-r` : Show repository name in diff output
-- `-v` : Verbose output
+- `-v` : Verbose output (shows startup configuration with markers)
 
 **Details:**
-- Uses `say` command to provide audio feedback for temp file count and git diff line count with status
+- Uses `say` command to provide audio feedback for all three metrics combined in a single announcement (prevents audio overlap)
 - Tracks status by comparing current counts with previous values:
   - "new" on first run
   - "increasing" when count goes up
   - "decreasing" when count goes down
   - "stable" when count remains the same
-- Output format: `temp: <count> (<status>)` and `diff: <count> (<status>)` or `diff: <count> (<status>) (<repo_name>)` with `-r` flag
+- Output format: `temp: <count> (<status>)`, `diff: <count> (<status>)` or `diff: <count> (<status>) (<repo_name>)` with `-r` flag, and `status: <count> (<status>)`
+- All three metrics are displayed and spoken together in one combined message
+- Timestamp is shown at the start of each monitoring cycle (unless quiet mode)
 - Updates at configurable intervals (default: 60 seconds)
-- Provides real-time monitoring of AI agent activity through temp file creation and git changes
+- Provides real-time monitoring of AI agent activity through temp file creation, git changes, and file status
 - Follows shell-template.sh patterns: proper error handling, CLI options, functions, and structure
 
 **Examples:**
@@ -443,7 +446,7 @@ A monitoring script to track AI agent activity by watching temp files and git ch
 # 30 second interval
 ./monitor-ai-agent-progress.sh -i 30
 
-# Quiet mode with 120 second interval
+# Quiet mode with 120 second interval (no audio, no timestamp)
 ./monitor-ai-agent-progress.sh -q -i 120
 
 # Show repository name in diff output
@@ -453,7 +456,7 @@ A monitoring script to track AI agent activity by watching temp files and git ch
 ./monitor-ai-agent-progress.sh -v -r -i 30
 ```
 
-This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal. The status tracking helps you understand whether activity is increasing, decreasing, or stable.
+This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal. The status tracking helps you understand whether activity is increasing, decreasing, or stable. All three metrics are announced together in a single audio message to prevent overlap.
 
 ### clean-screenshots.sh
 
@@ -468,7 +471,7 @@ A utility script to clean up screenshot files from Desktop (or specified source 
 
 **Usage:**
 ```bash
-./clean-screenshots.sh [-hqv] [-d <screenshot_dir>] [-s <src_dir>] [-p <prefix>] [-n]
+./clean-screenshots.sh [-hn] [-d <screenshot_dir>] [-s <src_dir>] [-p <prefix>]
 ```
 
 **Options:**
@@ -476,8 +479,6 @@ A utility script to clean up screenshot files from Desktop (or specified source 
 - `-d <dir>` : Screenshot archive directory (overrides config)
 - `-s <dir>` : Source directory to search (Default: `~/Desktop`)
 - `-p <prefix>` : Screenshot filename prefix pattern (Default: `Screen*`)
-- `-q` : Quiet mode (output as little as possible)
-- `-v` : Verbose output
 - `-n` : Dry run mode (show what would be done without making changes)
 
 **Configuration:**
@@ -510,9 +511,6 @@ A utility script to clean up screenshot files from Desktop (or specified source 
 
 # Custom screenshot pattern
 ./clean-screenshots.sh -p "Screenshot*"
-
-# Verbose output
-./clean-screenshots.sh -v
 ```
 
 This script is useful for keeping your Desktop clean by automatically organizing screenshots into timestamped archive directories.
