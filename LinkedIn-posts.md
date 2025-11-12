@@ -21,6 +21,31 @@
 
 ---
 
+## [November 12, 2024]
+
+I've been using Cursor to keep my README​.md in sync with code changes as I work. It's become part of my regular workflow - I just ask Cursor to check if the README is accurate after making script changes, and it updates the documentation.
+
+Today I asked it to do a full audit of all scripts to make sure everything was in sync. It systematically went through each script, compared the actual options and features with what was documented, and found a few things that needed updating - including a change from earlier that had been missed:
+
+▶ Added documentation for the new git status metric in monitor-ai-agent-progress​.sh
+▶ Updated quiet mode description (now disables audio feedback, not just "output as little as possible")
+▶ Fixed clean-screenshots​.sh docs to remove options that were removed during dead code cleanup
+▶ Verified all script options match their actual implementations
+
+The process was straightforward - I just asked Cursor to check if the README was in sync with the scripts, and it did the work. It read both the scripts and the README simultaneously, understood the context of recent changes, and updated everything accurately. It even caught that missed change from earlier, which is exactly the kind of thing that can slip through.
+
+What I love about this workflow:
+▶ Cursor can read both the scripts and the README simultaneously
+▶ It understands the context of recent changes
+▶ It maintains consistency in documentation style
+▶ It catches things I might miss (like removed CLI options or previous changes that were overlooked)
+
+Documentation drift doesn't have to be a chore. With AI assistance, keeping README files accurate has become part of my regular workflow.
+
+https://github.com/glblackburn/pub-bin/blob/main/README.md
+
+---
+
 ## [November 11, 2024]
 
 New scripts: clean-screenshots​.sh and config/config​.sh
