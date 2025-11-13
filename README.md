@@ -399,29 +399,31 @@ This script is useful for finding and reviewing AI coding standards across multi
 
 ### monitor-ai-agent-progress.sh
 
-A monitoring script to track AI agent activity by watching temp files, git changes, and git status with audio feedback.
+A monitoring script to track AI agent activity by watching working directory files, git changes, and git status with audio feedback.
 
 **What it does:**
 - Runs in an infinite loop
-- Monitors temp files: counts files in `/tmp/` directory and speaks the count with status
+- Monitors working directory: counts files and directories in working/scratch directory (default: `/tmp`) and speaks the count with status
 - Monitors git changes: counts lines in `git diff` and speaks the count with status
 - Monitors git status: counts files with changes (modified, added, deleted, untracked) and speaks the count with status
 - Tracks status changes: displays "new", "increasing", "decreasing", or "stable" for all three metrics
-- Displays timestamp at the start of each monitoring cycle
+- Displays timestamp at the start of each monitoring cycle (always shown, even in quiet mode)
 - Configurable update interval (default: 60 seconds)
 - Supports quiet and verbose modes
-- Optional repository name display in diff output (off by default)
+- Optional repository name display in diff and status output (off by default)
+- Configurable working directory path
 
 **Usage:**
 ```bash
-./monitor-ai-agent-progress.sh [-hqrv] [-i <interval>]
+./monitor-ai-agent-progress.sh [-hqrv] [-i <interval>] [-t <working_dir>]
 ```
 
 **Options:**
 - `-h` : Display help message
 - `-i <interval>` : Update interval in seconds (Default: 60)
-- `-q` : Quiet mode (disables audio feedback and timestamp display)
-- `-r` : Show repository name in diff output
+- `-q` : Quiet mode (disables audio feedback only, timestamp still shown)
+- `-r` : Show repository name in diff and status output
+- `-t <dir>` : Working/scratch directory to monitor (Default: `/tmp`)
 - `-v` : Verbose output (shows startup configuration with markers)
 
 **Details:**
@@ -431,29 +433,36 @@ A monitoring script to track AI agent activity by watching temp files, git chang
   - "increasing" when count goes up
   - "decreasing" when count goes down
   - "stable" when count remains the same
-- Output format: `temp: <count> (<status>)`, `diff: <count> (<status>)` or `diff: <count> (<status>) (<repo_name>)` with `-r` flag, and `status: <count> (<status>)`
+- Output format: Column-aligned with centered status values:
+  - `work:   <count> (<centered_status>) (<working_dir_path>)`
+  - `diff:   <count> (<centered_status>)` or `diff:   <count> (<centered_status>) (<repo_name>)` with `-r` flag
+  - `status: <count> (<centered_status>)` or `status: <count> (<centered_status>) (<repo_name>)` with `-r` flag
 - All three metrics are displayed and spoken together in one combined message
-- Timestamp is shown at the start of each monitoring cycle (unless quiet mode)
+- Timestamp is always shown at the start of each monitoring cycle
 - Updates at configurable intervals (default: 60 seconds)
-- Provides real-time monitoring of AI agent activity through temp file creation, git changes, and file status
+- Uses `find` to count files and directories in working directory (handles symlinks properly)
+- Provides real-time monitoring of AI agent activity through working directory file creation, git changes, and file status
 - Follows shell-template.sh patterns: proper error handling, CLI options, functions, and structure
 
 **Examples:**
 ```bash
-# Default: 60 second interval
+# Default: 60 second interval, monitor /tmp
 ./monitor-ai-agent-progress.sh
 
 # 30 second interval
 ./monitor-ai-agent-progress.sh -i 30
 
-# Quiet mode with 120 second interval (no audio, no timestamp)
+# Quiet mode with 120 second interval (no audio, timestamp still shown)
 ./monitor-ai-agent-progress.sh -q -i 120
 
-# Show repository name in diff output
+# Show repository name in diff and status output
 ./monitor-ai-agent-progress.sh -r
 
-# Verbose mode with repository name and custom interval
-./monitor-ai-agent-progress.sh -v -r -i 30
+# Monitor different working directory
+./monitor-ai-agent-progress.sh -t ~/scratch
+
+# Verbose mode with repository name, custom working dir, and custom interval
+./monitor-ai-agent-progress.sh -v -r -t /var/tmp -i 30
 ```
 
 This script is useful for monitoring AI agent progress when working on long-running tasks, providing audio feedback so you can track activity without constantly watching the terminal. The status tracking helps you understand whether activity is increasing, decreasing, or stable. All three metrics are announced together in a single audio message to prevent overlap.
