@@ -58,6 +58,19 @@ done
 find . -name "*~"
 ```
 
+### 5. Documentation Verification
+
+**IMPORTANT: README Accuracy Check**
+- Before committing changes to scripts, verify that README.md accurately reflects the current script implementation
+- Check that all script options, features, and behavior described in README.md match the actual script
+- Update README.md if script changes affect:
+  - CLI options or parameters
+  - Script behavior or functionality
+  - Output format or examples
+  - Configuration requirements
+  - Dependencies or requirements
+- When in doubt, ask: "Is the README in sync with the code changes?"
+
 ## General Principles
 
 1. **Readability First**
