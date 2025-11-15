@@ -127,6 +127,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [check-ai-readmes.sh](#check-ai-readmesh)
 - [monitor-ai-agent-progress.sh](#monitor-ai-agent-progresssh)
 - [clean-screenshots.sh](#clean-screenshotssh)
+- [azure/show-location-authenticationDetails.sh](#azureshow-location-authenticationdetailssh)
 
 ### what-is-left.sh
 
@@ -523,3 +524,61 @@ A utility script to clean up screenshot files from Desktop (or specified source 
 ```
 
 This script is useful for keeping your Desktop clean by automatically organizing screenshots into timestamped archive directories.
+
+### azure/show-location-authenticationDetails.sh
+
+A utility script to process Azure Entra ID user Sign-in log JSON downloads and extract authentication details including location and success status.
+
+**What it does:**
+- Processes JSON files downloaded from Azure Entra ID Sign-in logs
+- Extracts specific fields: `createdDateTime`, `userPrincipalName`, `ipAddress`, `location.city`, `location.state`, `location.country`, and `authenticationDetails[].succeeded`
+- Outputs data in multiple formats: table (default), CSV, or JSON
+- Validates input file exists, is readable, and contains valid JSON
+- Checks for required dependencies (`jq`, `column`)
+
+**Usage:**
+```bash
+./azure/show-location-authenticationDetails.sh [-hqv] [-f <file>] [-o <format>] [<file>]
+```
+
+**Options:**
+- `-h` : Display help message
+- `-f <file>` : Input JSON file (required if not provided as positional argument)
+- `-o <format>` : Output format: `table`, `csv`, or `json` (Default: `table`)
+- `-q` : Quiet mode (output as little as possible)
+- `-v` : Verbose output (shows detailed processing information)
+
+**Arguments:**
+- `<file>` : Input JSON file (alternative to `-f` option)
+
+**Details:**
+- Uses `jq` to extract and format data from Azure Entra ID Sign-in log JSON files
+- Default output format is a formatted table using `column -t` for alignment
+- CSV format outputs sorted comma-separated values
+- JSON format reconstructs the data as a structured JSON array
+- Validates JSON structure before processing
+- Checks for required dependencies and provides helpful error messages
+
+**Examples:**
+```bash
+# Process Sign-in log with default table format
+./azure/show-location-authenticationDetails.sh -f InteractiveSignIns_2023-03-02_2023-03-09.json
+
+# Process with positional argument
+./azure/show-location-authenticationDetails.sh InteractiveSignIns_2023-03-02_2023-03-09.json
+
+# Output as CSV
+./azure/show-location-authenticationDetails.sh -f signins.json -o csv
+
+# Verbose mode with JSON output
+./azure/show-location-authenticationDetails.sh -f signins.json -o json -v
+
+# Quiet mode
+./azure/show-location-authenticationDetails.sh -f signins.json -q
+```
+
+**Dependencies:**
+- `jq` - Required for JSON processing (install with `brew install jq`)
+- `column` - Optional, used for table formatting (typically pre-installed on macOS/Linux)
+
+This script is useful for analyzing Azure Entra ID Sign-in logs to review authentication attempts, locations, and success/failure status. The formatted output makes it easy to identify patterns in sign-in activity.
