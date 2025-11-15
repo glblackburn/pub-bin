@@ -21,6 +21,38 @@
 
 ---
 
+## [November 15, 2024](https://www.linkedin.com/posts/activity-7395588184388157440-VflJ)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7395588184388157440-VflJ)
+
+Refactored load-ssh-key.sh: Better error handling and new features
+
+Just finished a major refactor of my SSH key loading script. When I first asked Cursor to refactor it, the new version introduced a frustrating bug where it would try to process every file in ~/.ssh and count non-key files (like config files and temp files) as errors, even when it successfully loaded all the actual keys. It also removed the functionality to show which keys were already loaded. The original script didn't have either of these issues.
+
+𝐖𝐡𝐚𝐭 𝐈 𝐟𝐢𝐱𝐞𝐝:
+▶ Added validation to check if files are valid SSH keys before processing
+▶ Non-key files are now skipped gracefully (not counted as errors)
+▶ Only actual failures (valid keys that can't be loaded) are reported as errors
+▶ Improved file filtering to exclude common non-key files (config, authorized_keys, temp files)
+
+𝐖𝐡𝐚𝐭 𝐈 𝐚𝐝𝐝𝐞𝐝:
+▶ Complete refactor to match shell-template​.sh patterns (proper structure, CLI options, error handling)
+▶ New -K option to kill current SSH agent and start fresh
+▶ Verbose and quiet modes for better control
+▶ Restored functionality to show which keys are already loaded
+▶ Comprehensive CLI options: -t (timeout), -d (directory), -c (config), -k (key list), -h (help)
+
+𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:
+The original script worked fine - no bugs, all features intact. Cursor's first refactor introduced a new bug AND removed working functionality. This highlights the importance of understanding what code actually does before changing it, and preserving working behavior during refactoring. After catching both issues, I fixed the bug and restored the missing feature while keeping all the working behavior. Sometimes the "improvements" need improvement too.
+
+Always test changes introduced by AI coding agents. Even when they're "improving" code structure, they can introduce bugs or remove working features. I caught these issues by running the script and comparing the output with the original - a simple test that revealed both problems immediately.
+
+The script now properly handles edge cases, provides better feedback, and gives you more control over SSH agent management.
+
+https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh
+
+---
+
 ## [November 12, 2024]
 
 I've been using Cursor to keep my README​.md in sync with code changes as I work. It's become part of my regular workflow - I just ask Cursor to check if the README is accurate after making script changes, and it updates the documentation.
@@ -177,7 +209,7 @@ These scripts are useful for normalizing filenames to remove spaces and special 
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7391806542460846081-IHIq)
 
-New script of the day: load-ssh-key​.sh
+New script of the day: load-ssh-key.sh
 
 https://github.com/glblackburn/pub-bin/blob/main/README.md#load-ssh-keysh
 
