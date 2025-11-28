@@ -4,6 +4,8 @@
 
 This project demonstrates decoding the Arecibo Message from **first principles**—pure binary analysis without historical assumptions. When challenged to prove its work, an AI coding assistant created a complete, verifiable analysis toolkit with step-by-step Python scripts.
 
+![Screen Recording: Complete Analysis](images/2025-11-28_run_analysis_auto.gif)
+
 **[👉 See it in action: Complete Analysis Demo](https://github.com/glblackburn/pub-bin/tree/main/arecibo-message#the-result)** (animated GIF showing the full analysis running automatically)
 
 **Key Features:**
@@ -208,6 +210,14 @@ The visualization scripts (`step2_visualize_patterns.py` and `decode_analysis.py
 **Key Point**: All scripts determine the 73×23 grid dimensions from data factorization (1,679 = 73 × 23), not from assumptions. The analysis is performed purely from the binary data itself.
 
 **Paged Output**: The wrapper script uses paged output by default (pauses at terminal height) to make screen recording easier and prevent content from scrolling past. The script automatically detects your terminal height and pauses output appropriately. Use `--no-page` to disable paging if you prefer continuous output.
+
+## LinkedIn Post
+
+This project was featured in a LinkedIn post discussing AI transparency and first-principles problem-solving:
+
+**[View LinkedIn Post: Decoding the Arecibo Message from First Principles](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)**
+
+See [LinkedIn-posts.md](../LinkedIn-posts.md#november-28-2024) for the full post content and other LinkedIn posts.
 
 ## References
 

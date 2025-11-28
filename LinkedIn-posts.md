@@ -1,5 +1,38 @@
 # LinkedIn Posts
 
+## [November 28, 2024](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)
+
+What happens when you challenge an AI coding assistant to prove it's not "cheating"?
+
+I asked Cursor to decode the Arecibo Message—the famous 1974 interstellar transmission—purely from binary data. No historical knowledge. No assumptions. Just raw analysis.
+
+𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:
+"It still feels like you are cheating. How did you determine these? Save out all the code for the analysis to files that can be run against the message file."
+
+The AI had assumed the 73×23 grid dimensions from historical knowledge. So I pushed it to prove everything from first principles.
+
+𝐖𝐡𝐚𝐭 𝐞𝐦𝐞𝐫𝐠𝐞𝐝:
+▶ Step-by-step Python scripts anyone can run to verify
+▶ Factorization to determine grid dimensions (1,679 = 73 × 23)
+▶ Bit density analysis and pattern recognition
+▶ Colored terminal visualizations
+
+Each script builds on the previous one, showing how the message structure emerges from data. Nothing assumed. Everything calculated.
+
+The result? A complete analysis toolkit demonstrating transparent AI-assisted development, verifiable analysis, and first-principles thinking.
+
+📹 **See it in action**: https://github.com/glblackburn/pub-bin/tree/main/arecibo-message
+
+**🤔 A note of skepticism:** I'm still not fully convinced there isn't some AI "hand waving" leveraging prior knowledge. The Arecibo Message is well-documented. The real test: **How would the AI fare with a completely unknown signal—a new problem it's never seen?** Would it work with different dimensions, a novel binary signal, or a modern "Arecibo 2.0" message? That's the real question about AI transparency and genuine problem-solving.
+
+What's your experience? Do you ask AI assistants to show their work?
+
+#AI #Coding #Python #DataAnalysis #OpenSource #AreciboMessage #FirstPrinciples #Cursor #Programming #Transparency
+
+---
+
 ## Formatting Reference for LinkedIn Posts
 
 **Formatting Style:**
