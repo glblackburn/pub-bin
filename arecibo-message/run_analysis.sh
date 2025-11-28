@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Wrapper script to run Arecibo Message analysis steps in order
-# Pauses between each step for review
+# Supports both interactive and auto modes via command-line flags
 #
 
 set -e  # Exit on error
@@ -12,13 +12,103 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Default settings
+AUTO_MODE=false
+PAUSE_TIME=3
+RUN_COMPLETE=true
+
+# Function to show help
+show_help() {
+    cat << EOF
+Usage: $0 [OPTIONS]
+
+Run Arecibo Message analysis steps in sequence.
+
+OPTIONS:
+    -a, --auto              Auto mode: advance automatically with timed pauses
+    -t, --pause-time SEC    Set pause time in seconds for auto mode (default: 3)
+    --no-complete           Skip the prompt to run complete analysis
+    -h, --help              Show this help message
+
+EXAMPLES:
+    # Interactive mode (default - pauses and waits for Enter)
+    $0
+
+    # Auto mode with default 3-second pauses
+    $0 --auto
+
+    # Auto mode with custom pause time
+    $0 --auto --pause-time 5
+
+    # Short form
+    $0 -a -t 5
+
+    # Skip complete analysis prompt
+    $0 --auto --no-complete
+
+ENVIRONMENT VARIABLES:
+    AUTO_MODE               If set to "1" or "true", enables auto mode
+    PAUSE_TIME              Pause time in seconds for auto mode (default: 3)
+
+EOF
+}
+
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -a|--auto)
+            AUTO_MODE=true
+            shift
+            ;;
+        -t|--pause-time)
+            PAUSE_TIME="$2"
+            if ! [[ "$PAUSE_TIME" =~ ^[0-9]+$ ]]; then
+                echo -e "${YELLOW}Error: Pause time must be a positive integer${NC}"
+                exit 1
+            fi
+            shift 2
+            ;;
+        --no-complete)
+            RUN_COMPLETE=false
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo -e "${YELLOW}Unknown option: $1${NC}"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Check environment variables (command-line flags take precedence)
+if [ -z "$AUTO_MODE" ] || [ "$AUTO_MODE" != "true" ]; then
+    if [ "${AUTO_MODE:-}" = "1" ] || [ "${AUTO_MODE:-}" = "true" ]; then
+        AUTO_MODE=true
+    fi
+fi
+
+if [ -n "${PAUSE_TIME:-}" ] && [[ "$PAUSE_TIME" =~ ^[0-9]+$ ]]; then
+    PAUSE_TIME="${PAUSE_TIME}"
+fi
+
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Display header
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}Arecibo Message Analysis${NC}"
-echo -e "${BLUE}========================================${NC}"
+if [ "$AUTO_MODE" = true ]; then
+    echo -e "${BLUE}Arecibo Message Analysis (Auto Mode)${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${YELLOW}Pause time: ${PAUSE_TIME} seconds${NC}"
+else
+    echo -e "${BLUE}Arecibo Message Analysis${NC}"
+    echo -e "${BLUE}========================================${NC}"
+fi
 echo ""
 
 # Check if arecibo-message.txt exists
@@ -29,10 +119,17 @@ fi
 
 # Function to pause between steps
 pause() {
-    echo ""
-    echo -e "${YELLOW}Press Enter to continue to next step...${NC}"
-    read -r
-    echo ""
+    if [ "$AUTO_MODE" = true ]; then
+        echo ""
+        echo -e "${YELLOW}Waiting ${PAUSE_TIME} seconds before next step...${NC}"
+        sleep "$PAUSE_TIME"
+        echo ""
+    else
+        echo ""
+        echo -e "${YELLOW}Press Enter to continue to next step...${NC}"
+        read -r
+        echo ""
+    fi
 }
 
 # Function to run a step script
@@ -79,18 +176,20 @@ run_step 5 "step5_decode_numbers.py" "Decode Numbers - Attempt Number Decoding"
 pause
 
 run_step 6 "step6_decode_atomic_numbers.py" "Decode Atomic Numbers - Attempt Element Decoding"
-pause
 
-# Optional: Run complete analysis
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}Complete Analysis${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo ""
-echo -e "${YELLOW}Run complete analysis script? (y/n)${NC}"
-read -r response
-if [[ "$response" =~ ^[Yy]$ ]]; then
+# Optional: Run complete analysis (only in interactive mode or if not disabled)
+if [ "$RUN_COMPLETE" = true ] && [ "$AUTO_MODE" != true ]; then
+    pause
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}Complete Analysis${NC}"
+    echo -e "${BLUE}========================================${NC}"
     echo ""
-    run_step "Complete" "decode_analysis.py" "Complete Analysis - All Steps Combined"
+    echo -e "${YELLOW}Run complete analysis script? (y/n)${NC}"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo ""
+        run_step "Complete" "decode_analysis.py" "Complete Analysis - All Steps Combined"
+    fi
 fi
 
 echo ""

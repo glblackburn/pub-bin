@@ -63,21 +63,35 @@ This directory contains Python scripts that decode the message from **first prin
 
 - **[DECODING_ANALYSIS.md](DECODING_ANALYSIS.md)** - Detailed findings from raw binary analysis
 - **[ANALYSIS_PROCESS.md](ANALYSIS_PROCESS.md)** - Step-by-step explanation of the analysis methodology
+- **[COMBINE_ANALYSIS.md](COMBINE_ANALYSIS.md)** - Analysis of combining wrapper scripts into a unified design
 
 ### Running the Analysis
 
-**Easy way - Use wrapper scripts:**
+**Easy way - Use the wrapper script:**
 
 ```bash
-# Interactive mode (pauses between steps for review)
+# Interactive mode (default - pauses and waits for Enter between steps)
 ./run_analysis.sh
 
 # Auto mode (auto-advances with timed pauses)
-./run_analysis_auto.sh
+./run_analysis.sh --auto
 
-# Custom pause time (e.g., 5 seconds)
-PAUSE_TIME=5 ./run_analysis_auto.sh
+# Auto mode with custom pause time (e.g., 5 seconds)
+./run_analysis.sh --auto --pause-time 5
+
+# Short form
+./run_analysis.sh -a -t 5
+
+# Skip complete analysis prompt
+./run_analysis.sh --auto --no-complete
+
+# Show help
+./run_analysis.sh --help
 ```
+
+**Backward Compatibility:** The `run_analysis_auto.sh` script is still available for backward compatibility but now simply calls `run_analysis.sh --auto`. For new usage, prefer the unified `run_analysis.sh` script with flags.
+
+**Historical Note:** Previously, there were two separate wrapper scripts (`run_analysis.sh` and `run_analysis_auto.sh`) with ~95% code duplication. These have been unified into a single script with command-line flag support. See [COMBINE_ANALYSIS.md](COMBINE_ANALYSIS.md) for the detailed design analysis that led to this change.
 
 **Manual way - Run scripts directly:**
 
