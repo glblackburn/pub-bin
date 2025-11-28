@@ -2,6 +2,8 @@
 
 ## Draft Post (Formatted for LinkedIn)
 
+**Thumbnail Image:** Use `images/linkedin_thumbnail.png` (extracted from animated GIF at 35 seconds, showing colored visualization - 349KB, 800x943px)
+
 What happens when you challenge an AI coding assistant to prove it's not "cheating"?
 
 I asked Cursor to decode the Arecibo Message—the famous 1974 interstellar transmission—purely from binary data. No historical knowledge. No assumptions. Just raw analysis.
