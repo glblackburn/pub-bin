@@ -33,9 +33,54 @@ The message serves as:
 - A symbolic attempt at interstellar communication
 - A time capsule representing humanity and our understanding of science
 
+## Project Story: Decoding from First Principles
+
+This project demonstrates what happens when you challenge an AI coding assistant to prove its work—to decode a message purely from binary data without relying on historical knowledge or assumptions.
+
+### The Challenge
+
+![Initial Challenge](images/2025-11-28_are_you_cheating.png)
+
+When first asked to decode the Arecibo Message, the AI assistant assumed the 73×23 grid dimensions from historical knowledge. This raised an important question: **"It still feels like you are cheating. How did you determine these?"**
+
+The challenge was clear: **"Save out all the code for the analysis to files that can be run against the message file."** No assumptions. No shortcuts. Just raw analysis from first principles.
+
+![Demand for Transparency](images/2025-11-28_are_you_still_cheating_show_your_work.png)
+
+### The Work
+
+![Step 1: Structure Analysis](images/2025-11-28_showing_the_work_1.png)
+
+The solution emerged as a series of step-by-step Python scripts that anyone can run to verify the analysis:
+
+1. **Factorization** - Determining grid dimensions from data length (1,679 = 73 × 23)
+2. **Bit density analysis** - Identifying message sections through statistical patterns
+3. **Pattern recognition** - Finding the human figure through visual analysis
+4. **Multiple decoding attempts** - Testing various methods for numbers and atomic elements
+
+![Step 2: Visualization](images/2025-11-28_showing_the_work_2.png)
+
+Each script builds on the previous one, showing exactly how the message structure emerges from the data. Nothing is assumed. Everything is calculated.
+
+![Step 3: Section Identification](images/2025-11-28_showing_the_work_3.png)
+
+### The Result
+
+<!-- TODO: Add screen recording showing the complete analysis toolkit in action -->
+
+The result is a complete analysis toolkit that demonstrates:
+- ✅ **Transparent AI-assisted development** - All code is visible and verifiable
+- ✅ **First-principles thinking** - Everything derived from the data itself
+- ✅ **Educational value** - Learn how binary decoding works through runnable examples
+- ✅ **Professional development practices** - Proper version control and documentation
+
+This project shows what's possible when you treat AI coding assistants as collaborators who must justify their reasoning, not just provide quick answers. When you ask **"how did you determine that?"** and demand proof, you get something much more valuable than a quick solution.
+
+**Key Insight:** Pushing AI assistants to show their work—to prove their assumptions and demonstrate their reasoning—leads to more robust, verifiable, and educational solutions.
+
 ## Git Status
 
-This directory is part of the `pub-bin` repository. The files are currently untracked and have not been committed to version control.
+This directory is part of the `pub-bin` repository. All files are tracked and committed to version control.
 
 ## Usage
 
@@ -111,15 +156,14 @@ This directory contains Python scripts that decode the message from **first prin
 # Run complete analysis
 python3 decode_analysis.py
 
-# Generate color PNG visualization (requires Pillow)
+# Run with colored terminal output
 python3 decode_analysis.py --color
-python3 decode_analysis.py --color --output my-image.png
 
 # Or run individual steps
 python3 step1_analyze_structure.py
-python3 step2_visualize_patterns.py --color  # Generate color visualization
+python3 step2_visualize_patterns.py --color  # Colored terminal output
 python3 step3_identify_sections.py
-python3 step4_find_human_figure.py
+python3 step4_find_human_figure.py --color  # Highlight human figure in red
 python3 step5_decode_numbers.py
 python3 step6_decode_atomic_numbers.py
 ```
@@ -142,3 +186,41 @@ The visualization scripts (`step2_visualize_patterns.py` and `decode_analysis.py
 - [YouTube Video](https://www.youtube.com/watch?v=CrUyjYZsIvY)
 
 **Note:** The Arecibo Observatory website (naic.edu) is no longer actively maintained following the telescope's collapse in 2020, and its SSL certificate has expired. The Wikipedia article provides comprehensive information about the observatory and its history.
+
+## Lessons Learned: AI-Assisted Project Setup
+
+While working on this project with AI coding assistants, an important lesson emerged about project hygiene and version control.
+
+### The Gitignore Discussion
+
+![Git Workflow Discussion](images/2025-11-28_gitignore_chat_1.png)
+
+When setting up a new project with AI assistance, it's easy to overlook what should and shouldn't be committed to version control. AI assistants may suggest committing files that are typically excluded:
+
+![Git Workflow Discussion Continued](images/2025-11-28_gitignore_chat_2.png)
+
+**Common files AI might try to commit:**
+- Python cache files (`__pycache__/`, `*.pyc`)
+- Editor backup files (`*.swp`, `*~`, `.DS_Store`)
+- Temporary helper files (commit messages, summaries)
+- IDE configuration files (`.vscode/`, `.idea/`)
+- Large binary files or screenshots (unless intentionally included)
+
+![Git Workflow Discussion Continued](images/2025-11-28_gitignore_chat_3.png)
+
+### Best Practices
+
+**Always review what AI assistants suggest committing:**
+1. ✅ Check for common patterns that should be ignored
+2. ✅ Verify `.gitignore` is set up before first commit
+3. ✅ Look for duplicate entries in `.gitignore` (we found `.DS_Store` listed twice)
+4. ✅ Consider whether helper files belong in the repository
+5. ✅ Review file sizes—large binary files may need special handling
+
+![Git Workflow Discussion Continued](images/2025-11-28_gitignore_chat_4.png)
+
+**Key Takeaway:** AI coding assistants are powerful tools, but they don't always know your project's conventions or what should be excluded from version control. Always review file lists before committing, especially for new projects.
+
+![Git Workflow Discussion Continued](images/2025-11-28_gitignore_chat_5.png)
+
+This project's `.gitignore` was refined through this process, ensuring only appropriate files are tracked while maintaining a clean repository structure.
