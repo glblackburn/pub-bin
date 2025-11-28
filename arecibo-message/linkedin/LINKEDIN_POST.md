@@ -28,12 +28,25 @@ The result? A complete analysis toolkit that demonstrates:
 ✅ First-principles thinking
 ✅ Educational value (learn how binary decoding works)
 
+📹 **See it in action**: The screen recording (`2025-11-28_run_analysis_auto.mov`) shows the complete analysis running automatically with colored visualizations, demonstrating how each step builds on the previous one to decode the message from pure binary data.
+
 This is a great example of pushing AI assistants to show their work, not just their answers. When you ask "how did you determine that?" and demand proof, you get something much more valuable than a quick answer.
 
 The entire project is open source and shows what's possible when you treat AI coding assistants as collaborators who need to justify their reasoning.
 
 See the complete analysis toolkit and documentation:
 https://github.com/glblackburn/pub-bin/tree/main/arecibo-message
+
+**🤔 A note of skepticism:**
+
+I'm still not fully convinced there isn't some AI "hand waving" leveraging prior knowledge. The Arecibo Message is well-documented, and the AI may have been drawing on that knowledge even while showing its work. The real test would be: **How would the AI fare with a completely unknown signal—a new problem it's never seen?**
+
+It would be fascinating to test this approach with:
+▶ A different image with different dimensions and encoding
+▶ A completely novel binary signal with no historical context
+▶ A modern "Arecibo 2.0" message—using our current computing capabilities to encode far more data than was possible in the 1970s
+
+Would the AI's "first principles" approach hold up, or would it struggle without familiar patterns to recognize? That's the real question about AI transparency and genuine problem-solving.
 
 What's your experience? Do you ask AI assistants to show their work, or do you trust the output?
 

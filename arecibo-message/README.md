@@ -1,5 +1,17 @@
 # Arecibo Message
 
+## TL;DR
+
+This project demonstrates decoding the Arecibo Message from **first principles**—pure binary analysis without historical assumptions. When challenged to prove its work, an AI coding assistant created a complete, verifiable analysis toolkit with step-by-step Python scripts.
+
+**[👉 See it in action: Complete Analysis Demo](https://github.com/glblackburn/pub-bin/tree/main/arecibo-message#the-result)** (animated GIF showing the full analysis running automatically)
+
+**Key Features:**
+- ✅ Transparent, verifiable analysis (all code is runnable)
+- ✅ First-principles thinking (everything derived from data)
+- ✅ Educational value (learn binary decoding through examples)
+- ✅ Professional development practices (proper version control)
+
 ## Overview
 
 This directory contains the binary representation of the **Arecibo Message**, a famous interstellar radio message that was broadcast into space on November 16, 1974, from the Arecibo radio telescope in Puerto Rico.
@@ -66,7 +78,9 @@ Each script builds on the previous one, showing exactly how the message structur
 
 ### The Result
 
-<!-- TODO: Add screen recording showing the complete analysis toolkit in action -->
+The complete analysis toolkit in action:
+
+![Screen Recording: Complete Analysis](images/2025-11-28_run_analysis_auto.gif)
 
 The result is a complete analysis toolkit that demonstrates:
 - ✅ **Transparent AI-assisted development** - All code is visible and verifiable
@@ -77,6 +91,8 @@ The result is a complete analysis toolkit that demonstrates:
 This project shows what's possible when you treat AI coding assistants as collaborators who must justify their reasoning, not just provide quick answers. When you ask **"how did you determine that?"** and demand proof, you get something much more valuable than a quick solution.
 
 **Key Insight:** Pushing AI assistants to show their work—to prove their assumptions and demonstrate their reasoning—leads to more robust, verifiable, and educational solutions.
+
+**A Note of Skepticism:** While this project demonstrates transparent AI-assisted development, I'm still not fully convinced there isn't some "hand waving" leveraging prior knowledge. The Arecibo Message is well-documented, and the AI may have been drawing on that knowledge even while showing its work. The real test would be: **How would the AI fare with a completely unknown signal—a new problem it's never seen?** It would be fascinating to test this approach with a different image (different dimensions and encoding) or a modern "Arecibo 2.0" message using current computing capabilities to encode far more data than was possible in the 1970s. Would the AI's "first principles" approach hold up without familiar patterns to recognize?
 
 ## Git Status
 
