@@ -66,6 +66,21 @@ This directory contains Python scripts that decode the message from **first prin
 
 ### Running the Analysis
 
+**Easy way - Use wrapper scripts:**
+
+```bash
+# Interactive mode (pauses between steps for review)
+./run_analysis.sh
+
+# Auto mode (auto-advances with timed pauses)
+./run_analysis_auto.sh
+
+# Custom pause time (e.g., 5 seconds)
+PAUSE_TIME=5 ./run_analysis_auto.sh
+```
+
+**Manual way - Run scripts directly:**
+
 ```bash
 # Run complete analysis
 python3 decode_analysis.py
@@ -73,7 +88,10 @@ python3 decode_analysis.py
 # Or run individual steps
 python3 step1_analyze_structure.py
 python3 step2_visualize_patterns.py
-# ... etc
+python3 step3_identify_sections.py
+python3 step4_find_human_figure.py
+python3 step5_decode_numbers.py
+python3 step6_decode_atomic_numbers.py
 ```
 
 **Key Point**: All scripts determine the 73×23 grid dimensions from data factorization (1,679 = 73 × 23), not from assumptions. The analysis is performed purely from the binary data itself.
