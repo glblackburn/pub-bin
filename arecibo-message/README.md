@@ -129,6 +129,7 @@ This directory contains Python scripts that decode the message from **first prin
 - **[COMBINE_ANALYSIS.md](COMBINE_ANALYSIS.md)** - Analysis of combining wrapper scripts into a unified design
 - **[PAGED_OUTPUT_DESIGN.md](PAGED_OUTPUT_DESIGN.md)** - Design specification for terminal height detection and paged output feature
 - **[PAGED_OUTPUT_IMPLEMENTATION.md](PAGED_OUTPUT_IMPLEMENTATION.md)** - Implementation plan for paged output functionality
+- **[PAGED_OUTPUT_DEBUGGING.md](PAGED_OUTPUT_DEBUGGING.md)** - Debugging log documenting the terminal height detection and paging implementation process
 
 ### Running the Analysis
 
@@ -172,7 +173,7 @@ This directory contains Python scripts that decode the message from **first prin
 ./run_analysis.sh --help
 ```
 
-**Backward Compatibility:** The `run_analysis_auto.sh` script is still available for backward compatibility but now simply calls `run_analysis.sh --auto`. For new usage, prefer the unified `run_analysis.sh` script with flags.
+**Backward Compatibility:** The `run_analysis_auto.sh` script is still available for backward compatibility but now calls `run_analysis.sh --auto --color --complete` (auto mode with colored output and complete analysis). For new usage, prefer the unified `run_analysis.sh` script with flags.
 
 **Historical Note:** Previously, there were two separate wrapper scripts (`run_analysis.sh` and `run_analysis_auto.sh`) with ~95% code duplication. These have been unified into a single script with command-line flag support. See [COMBINE_ANALYSIS.md](COMBINE_ANALYSIS.md) for the detailed design analysis that led to this change.
 
