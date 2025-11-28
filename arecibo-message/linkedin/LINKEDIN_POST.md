@@ -4,51 +4,28 @@
 
 What happens when you challenge an AI coding assistant to prove it's not "cheating"?
 
-I recently asked Cursor to decode the Arecibo Message—the famous 1974 interstellar radio transmission—purely from binary data. No historical knowledge. No assumptions. Just raw analysis.
+I asked Cursor to decode the Arecibo Message—the famous 1974 interstellar transmission—purely from binary data. No historical knowledge. No assumptions. Just raw analysis.
 
 𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:
 "It still feels like you are cheating. How did you determine these? Save out all the code for the analysis to files that can be run against the message file."
 
-The AI had assumed the 73×23 grid dimensions from historical knowledge. Fair point. So I pushed it to prove everything from first principles.
+The AI had assumed the 73×23 grid dimensions from historical knowledge. So I pushed it to prove everything from first principles.
 
 𝐖𝐡𝐚𝐭 𝐞𝐦𝐞𝐫𝐠𝐞𝐝:
-▶ Step-by-step Python scripts that anyone can run to verify the analysis
+▶ Step-by-step Python scripts anyone can run to verify
 ▶ Factorization to determine grid dimensions (1,679 = 73 × 23)
-▶ Bit density analysis to identify message sections
-▶ Pattern recognition to find the human figure
-▶ Multiple decoding attempts for numbers and atomic elements
-▶ Colored terminal visualizations for better understanding
+▶ Bit density analysis and pattern recognition
+▶ Colored terminal visualizations
 
-𝐓𝐡𝐞 𝐤𝐞𝐲 𝐢𝐧𝐬𝐢𝐠𝐡𝐭:
-Each script builds on the previous one, showing exactly how the message structure emerges from the data. Nothing is assumed. Everything is calculated.
+Each script builds on the previous one, showing how the message structure emerges from data. Nothing assumed. Everything calculated.
 
-The result? A complete analysis toolkit that demonstrates:
-✅ Transparent AI-assisted development
-✅ Verifiable analysis (all code is runnable)
-✅ First-principles thinking
-✅ Educational value (learn how binary decoding works)
+The result? A complete analysis toolkit demonstrating transparent AI-assisted development, verifiable analysis, and first-principles thinking.
 
-📹 **See it in action**: The screen recording (`2025-11-28_run_analysis_auto.mov`) shows the complete analysis running automatically with colored visualizations, demonstrating how each step builds on the previous one to decode the message from pure binary data.
+📹 **See it in action**: https://github.com/glblackburn/pub-bin/tree/main/arecibo-message
 
-This is a great example of pushing AI assistants to show their work, not just their answers. When you ask "how did you determine that?" and demand proof, you get something much more valuable than a quick answer.
+**🤔 A note of skepticism:** I'm still not fully convinced there isn't some AI "hand waving" leveraging prior knowledge. The Arecibo Message is well-documented. The real test: **How would the AI fare with a completely unknown signal—a new problem it's never seen?** Would it work with different dimensions, a novel binary signal, or a modern "Arecibo 2.0" message? That's the real question about AI transparency and genuine problem-solving.
 
-The entire project is open source and shows what's possible when you treat AI coding assistants as collaborators who need to justify their reasoning.
-
-See the complete analysis toolkit and documentation:
-https://github.com/glblackburn/pub-bin/tree/main/arecibo-message
-
-**🤔 A note of skepticism:**
-
-I'm still not fully convinced there isn't some AI "hand waving" leveraging prior knowledge. The Arecibo Message is well-documented, and the AI may have been drawing on that knowledge even while showing its work. The real test would be: **How would the AI fare with a completely unknown signal—a new problem it's never seen?**
-
-It would be fascinating to test this approach with:
-▶ A different image with different dimensions and encoding
-▶ A completely novel binary signal with no historical context
-▶ A modern "Arecibo 2.0" message—using our current computing capabilities to encode far more data than was possible in the 1970s
-
-Would the AI's "first principles" approach hold up, or would it struggle without familiar patterns to recognize? That's the real question about AI transparency and genuine problem-solving.
-
-What's your experience? Do you ask AI assistants to show their work, or do you trust the output?
+What's your experience? Do you ask AI assistants to show their work?
 
 #AI #Coding #Python #DataAnalysis #OpenSource #AreciboMessage #FirstPrinciples #Cursor #Programming #Transparency
 
