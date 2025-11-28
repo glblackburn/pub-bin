@@ -4,6 +4,8 @@
 
 This document tracks the implementation of paged output functionality for `run_analysis.sh` to improve screen recording and user experience by pausing output at terminal height.
 
+**Selected Approach:** Option 3 (Hybrid Approach) - Terminal height detection enabled by default. See [PAGED_OUTPUT_DESIGN.md](PAGED_OUTPUT_DESIGN.md) for complete design specification and rationale.
+
 ## Scripts That Need Changes
 
 ### 1. `run_analysis.sh` (Primary Changes)

@@ -109,6 +109,8 @@ This directory contains Python scripts that decode the message from **first prin
 - **[DECODING_ANALYSIS.md](DECODING_ANALYSIS.md)** - Detailed findings from raw binary analysis
 - **[ANALYSIS_PROCESS.md](ANALYSIS_PROCESS.md)** - Step-by-step explanation of the analysis methodology
 - **[COMBINE_ANALYSIS.md](COMBINE_ANALYSIS.md)** - Analysis of combining wrapper scripts into a unified design
+- **[PAGED_OUTPUT_DESIGN.md](PAGED_OUTPUT_DESIGN.md)** - Design specification for terminal height detection and paged output feature
+- **[PAGED_OUTPUT_IMPLEMENTATION.md](PAGED_OUTPUT_IMPLEMENTATION.md)** - Implementation plan for paged output functionality
 
 ### Running the Analysis
 

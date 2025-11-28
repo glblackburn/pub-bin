@@ -17,7 +17,7 @@ The current `run_analysis.sh` script outputs all content from each step at once,
 
 ## Design Approach
 
-### Option 1: Terminal Height Detection with Line Counting (Recommended)
+### Option 1: Terminal Height Detection with Line Counting
 
 **How it works:**
 - Detect terminal height using `tput lines`
@@ -73,7 +73,11 @@ The current `run_analysis.sh` script outputs all content from each step at once,
 - Need to handle both modes
 - Changes default behavior (may affect existing workflows)
 
-## Recommended Solution: Option 3 (Hybrid Approach) - **UPDATED: Default Enabled**
+## Selected Solution: Option 3 (Hybrid Approach) - **Default Enabled**
+
+**Status:** ✅ **SELECTED AND APPROVED**
+
+This approach has been selected as the implementation approach. Terminal height detection is enabled by default, with `--no-page` flag available for backward compatibility.
 
 ### Implementation Details
 
@@ -228,7 +232,7 @@ For initial implementation, we could:
 - In auto mode, use timed pauses at fixed intervals (every N lines)
 - Simpler but less precise
 
-**Note:** This alternative approach is not recommended since terminal height detection is now the default. The recommended approach provides better user experience and screen recording support.
+**Note:** This alternative approach is not selected since terminal height detection (Option 3) is now the default. The selected approach (Option 3) provides better user experience and screen recording support.
 
 This could be refined later based on user feedback.
 
