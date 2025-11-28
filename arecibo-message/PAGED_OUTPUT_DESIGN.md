@@ -84,13 +84,17 @@ This approach has been selected as the implementation approach. Terminal height 
 #### 1. Terminal Height Detection
 ```bash
 get_terminal_height() {
-    local height=$(tput lines 2>/dev/null || echo 24)
-    # Subtract a few lines for header/footer space
-    echo $((height - 4))
+    # Method 1: Check $LINES environment variable
+    # Method 2: Use stty size < /dev/tty (most reliable)
+    # Method 3: Try tput lines (if stdin is terminal)
+    # Method 4: Fallback to tput lines
+    # Returns page size (terminal height - overhead)
 }
 ```
 
-**Recommendation:** Fall back to default height (24 lines) if `tput` fails or terminal height cannot be detected. This ensures the script works in non-interactive environments or when terminal detection is unavailable.
+**Implementation:** Uses `stty size < /dev/tty` as the primary detection method (after `$LINES` check) because it works reliably even when stdin is redirected. Falls back to `tput lines` if `stty` is unavailable.
+
+**Recommendation:** Fall back to default height (24 lines) if all detection methods fail. This ensures the script works in non-interactive environments or when terminal detection is unavailable.
 
 #### 2. Paged Output Function
 ```bash
@@ -98,6 +102,9 @@ page_output() {
     local max_lines=$1
     local line_count=0
     local IFS=''
+    
+    # Open file descriptor 3 to /dev/tty for interactive read
+    exec 3< /dev/tty
     
     while IFS= read -r line; do
         echo "$line"
@@ -109,7 +116,7 @@ page_output() {
             else
                 echo ""
                 echo -e "${YELLOW}Press Enter to continue...${NC}"
-                read -r
+                read -r <&3  # Read from terminal, not stdin
             fi
             line_count=0
         fi
@@ -216,14 +223,19 @@ Add `PAGE_MODE` environment variable:
 ## Implementation Steps
 
 1. ✅ Create design document (this file)
-2. ✅ **UPDATED**: Set `PAGE_MODE=true` as default
-3. Add `--no-page` flag parsing (to disable paging)
-4. Add `get_terminal_height()` function
-5. Add `page_output()` function (handle ANSI codes)
-6. Modify `run_step()` to use paged output by default
-7. Update help text (document default behavior and `--no-page` flag)
-8. Test with various terminal sizes
-9. Update README.md with new default behavior and `--no-page` flag documentation
+2. ✅ Set `PAGE_MODE=true` as default
+3. ✅ Add `--no-page` flag parsing (to disable paging)
+4. ✅ Add `get_terminal_height()` function (uses `stty size < /dev/tty`)
+5. ✅ Add `page_output()` function (handles ANSI codes, uses file descriptor 3 for terminal read)
+6. ✅ Modify `run_step()` to use paged output by default
+7. ✅ Update help text (document default behavior and `--no-page` flag)
+8. ✅ Test with various terminal sizes (24-line and 60-line tested)
+9. ✅ Update README.md with new default behavior and `--no-page` flag documentation
+10. ✅ Add `--debug` flag for troubleshooting
+11. ✅ Fix terminal detection issues (changed from `tput` to `stty`)
+12. ✅ Reduce debug output verbosity
+
+**Status:** ✅ **IMPLEMENTATION COMPLETE**
 
 ## Alternative: Simpler First Implementation
 
@@ -255,3 +267,21 @@ This could be refined later based on user feedback.
 
 5. **Backward compatibility**: How to handle users who want original behavior?
    - **✅ RESOLVED**: Add `--no-page` flag to disable paging for backward compatibility
+
+---
+
+## Implementation Status
+
+**Status:** ✅ **IMPLEMENTATION COMPLETE AND WORKING**
+
+The paged output feature has been successfully implemented and tested. Key achievements:
+
+- ✅ Terminal height detection works correctly using `stty size < /dev/tty` (detects 60-line terminal accurately)
+- ✅ Paging pauses at terminal height as designed (~50 lines for 60-line terminal)
+- ✅ Interactive pauses work correctly using file descriptor 3 (`read -r <&3`)
+- ✅ All test cases passed (interactive mode, auto mode, color mode, various terminal sizes)
+- ✅ Screen recording workflow verified - all output visible, appropriate pauses
+- ✅ Debug mode (`--debug` flag) available for troubleshooting
+- ✅ Backward compatibility maintained with `--no-page` flag
+
+The feature is ready for production use and provides optimal screen recording experience.

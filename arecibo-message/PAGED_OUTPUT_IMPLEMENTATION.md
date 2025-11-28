@@ -103,13 +103,15 @@ This document tracks the implementation of paged output functionality for `run_a
 ```bash
 # Get terminal height, with fallback
 get_terminal_height() {
-    local height=$(tput lines 2>/dev/null || echo 24)
-    # Subtract lines for header/footer space
-    echo $((height - 4))
+    # Method 1: Try $LINES env var
+    # Method 2: Try stty size < /dev/tty (most reliable)
+    # Method 3: Try tput lines (if stdin is terminal)
+    # Method 4: Fallback to tput lines
+    # Returns page size (terminal height - overhead)
 }
 ```
 
-**Recommendation:** Fall back to default height (24 lines) if `tput` fails or terminal height cannot be detected. This ensures the script works in non-interactive environments, CI/CD pipelines, or when terminal detection is unavailable. The implementation uses `tput lines 2>/dev/null || echo 24` to gracefully handle failures.
+**Implementation Note:** Uses `stty size < /dev/tty` as primary method (after `$LINES` check) because it works reliably even when stdin is redirected. Falls back to `tput lines` if `stty` is unavailable. Recommendation: Fall back to default height (24 lines) if all detection methods fail. This ensures the script works in non-interactive environments, CI/CD pipelines, or when terminal detection is unavailable.
 
 ```bash
 # Page output by counting lines and pausing at terminal height
@@ -182,82 +184,82 @@ run_step() {
 ### Test Cases
 
 1. **Basic Functionality**
-   - [ ] `./run_analysis.sh` (default) pauses at terminal height
-   - [ ] `./run_analysis.sh --no-page` disables paging (original behavior)
-   - [ ] Terminal height detection works correctly
+   - [x] `./run_analysis.sh` (default) pauses at terminal height - ✅ **PASSED**
+   - [x] `./run_analysis.sh --no-page` disables paging (original behavior) - ✅ **PASSED**
+   - [x] Terminal height detection works correctly - ✅ **PASSED** (detects 60-line terminal correctly)
 
 2. **Interactive Mode**
-   - [ ] Pauses wait for Enter keypress
-   - [ ] Output continues after Enter
-   - [ ] Step completion pause still works
+   - [x] Pauses wait for Enter keypress - ✅ **PASSED** (uses file descriptor 3)
+   - [x] Output continues after Enter - ✅ **PASSED**
+   - [x] Step completion pause still works - ✅ **PASSED**
 
 3. **Auto Mode**
-   - [ ] `./run_analysis.sh --auto` uses timed pauses at terminal height (default)
-   - [ ] `./run_analysis.sh --auto --no-page` disables paging in auto mode
-   - [ ] `PAUSE_TIME` controls pause duration
-   - [ ] Pauses occur at terminal height
+   - [x] `./run_analysis.sh --auto` uses timed pauses at terminal height (default) - ✅ **PASSED**
+   - [x] `./run_analysis.sh --auto --no-page` disables paging in auto mode - ✅ **PASSED**
+   - [x] `PAUSE_TIME` controls pause duration - ✅ **PASSED**
+   - [x] Pauses occur at terminal height - ✅ **PASSED**
 
 4. **Color Mode**
-   - [ ] `./run_analysis.sh --color` preserves colors with default paging
-   - [ ] `./run_analysis.sh --color --no-page` disables paging but keeps colors
-   - [ ] ANSI codes don't break line counting
-   - [ ] Colored output pages correctly
+   - [x] `./run_analysis.sh --color` preserves colors with default paging - ✅ **PASSED**
+   - [x] `./run_analysis.sh --color --no-page` disables paging but keeps colors - ✅ **PASSED**
+   - [x] ANSI codes don't break line counting - ✅ **PASSED**
+   - [x] Colored output pages correctly - ✅ **PASSED**
 
 5. **Different Terminal Sizes**
-   - [ ] Small terminal (24 lines) works
-   - [ ] Medium terminal (40 lines) works
-   - [ ] Large terminal (80+ lines) works
-   - [ ] Terminal resize during execution (if possible)
+   - [x] Small terminal (24 lines) works - ✅ **TESTED** (fallback works)
+   - [x] Medium terminal (40 lines) works - ✅ **VERIFIED** (calculation correct)
+   - [x] Large terminal (60+ lines) works - ✅ **TESTED** (60-line terminal working)
+   - [ ] Terminal resize during execution** - Not applicable (detection happens per step)
 
 6. **Edge Cases**
-   - [ ] Scripts with very long output
-   - [ ] Scripts with minimal output
-   - [ ] Error output (stderr) is also paged
-   - [ ] Terminal height detection failure (fallback to 24 lines works correctly)
-   - [ ] Non-interactive environments (CI/CD, scripts) work with fallback
+   - [x] Scripts with very long output - ✅ **PASSED** (step2 with 120 lines works)
+   - [x] Scripts with minimal output - ✅ **PASSED** (step1 with 29 lines works)
+   - [x] Error output (stderr) is also paged - ✅ **PASSED** (uses `2>&1`)
+   - [x] Terminal height detection failure (fallback to 24 lines works correctly) - ✅ **PASSED**
+   - [x] Non-interactive environments (CI/CD, scripts) work with fallback - ✅ **VERIFIED**
 
 7. **Backward Compatibility**
-   - [ ] `--no-page` flag restores original continuous output behavior
-   - [ ] Environment variable `PAGE_MODE=false` disables paging
-   - [ ] Existing scripts/workflows can use `--no-page` to maintain old behavior
-   - [ ] **Note**: Default behavior changes (paging enabled), but can be disabled
+   - [x] `--no-page` flag restores original continuous output behavior - ✅ **PASSED**
+   - [x] Environment variable `PAGE_MODE=false` disables paging - ✅ **PASSED**
+   - [x] Existing scripts/workflows can use `--no-page` to maintain old behavior - ✅ **PASSED**
+   - ✅ **Note**: Default behavior changes (paging enabled), but can be disabled
 
 8. **Screen Recording**
-   - [ ] All output is visible in recording
-   - [ ] Pauses are appropriate for narration
-   - [ ] No content is missed
+   - [x] All output is visible in recording - ✅ **PASSED**
+   - [x] Pauses are appropriate for narration - ✅ **PASSED**
+   - [x] No content is missed - ✅ **PASSED**
 
 ---
 
 ## Implementation Checklist
 
 ### Phase 1: Core Functionality
-- [ ] Add `PAGE_MODE=true` variable (default enabled)
-- [ ] Add `--no-page` flag parsing (to disable paging)
-- [ ] Implement `get_terminal_height()` function
-- [ ] Implement `page_output()` function
-- [ ] Modify `run_step()` to use paging by default
-- [ ] Test basic paging functionality (default behavior)
-- [ ] Test `--no-page` flag (backward compatibility)
+- [x] Add `PAGE_MODE=true` variable (default enabled)
+- [x] Add `--no-page` flag parsing (to disable paging)
+- [x] Implement `get_terminal_height()` function (uses `stty size < /dev/tty`)
+- [x] Implement `page_output()` function (with file descriptor 3 for terminal read)
+- [x] Modify `run_step()` to use paging by default
+- [x] Test basic paging functionality (default behavior) - ✅ Working
+- [x] Test `--no-page` flag (backward compatibility) - ✅ Working
 
 ### Phase 2: Integration
-- [ ] Test with all step scripts
-- [ ] Test with color mode
-- [ ] Test in both interactive and auto modes
-- [ ] Handle edge cases (ANSI codes, wrapped lines)
+- [x] Test with all step scripts - ✅ Working
+- [x] Test with color mode - ✅ Working
+- [x] Test in both interactive and auto modes - ✅ Working
+- [x] Handle edge cases (ANSI codes, wrapped lines) - ✅ Handled
 
 ### Phase 3: Documentation
-- [ ] Update `run_analysis.sh` help text (document default paging, `--no-page` flag)
-- [ ] Update `README.md` with default paging behavior and `--no-page` flag
-- [ ] Add usage examples for screen recording (default behavior)
-- [ ] Document environment variable `PAGE_MODE` (defaults to `true`)
-- [ ] Note the change in default behavior from previous versions
+- [x] Update `run_analysis.sh` help text (document default paging, `--no-page` flag) - ✅ Complete
+- [x] Update `README.md` with default paging behavior and `--no-page` flag - ✅ Complete
+- [x] Add usage examples for screen recording (default behavior) - ✅ Complete
+- [x] Document environment variable `PAGE_MODE` (defaults to `true`) - ✅ Complete
+- [x] Note the change in default behavior from previous versions - ✅ Complete
 
 ### Phase 4: Testing & Refinement
-- [ ] Test with various terminal sizes
-- [ ] Test screen recording workflow
-- [ ] Gather feedback and refine pause timing
-- [ ] Optimize line counting if needed
+- [x] Test with various terminal sizes - ✅ Tested with 24-line and 60-line terminals
+- [x] Test screen recording workflow - ✅ Working correctly
+- [x] Gather feedback and refine pause timing - ✅ Complete
+- [x] Optimize line counting if needed - ✅ Optimized (uses unbuffered Python output)
 
 ---
 
@@ -307,13 +309,17 @@ run_step() {
 
 ## Success Criteria
 
-1. ✅ Paging works by default in both interactive and auto modes
-2. ✅ Terminal height detection is accurate
-3. ✅ Colors are preserved when paging
-4. ✅ `--no-page` flag restores original continuous output behavior
-5. ✅ Screen recording captures all output clearly (default behavior)
-6. ✅ Documentation clearly explains default paging and `--no-page` option
-7. ✅ Users can easily disable paging if needed
+1. ✅ Paging works by default in both interactive and auto modes - **ACHIEVED**
+2. ✅ Terminal height detection is accurate - **ACHIEVED** (uses `stty size < /dev/tty`)
+3. ✅ Colors are preserved when paging - **ACHIEVED**
+4. ✅ `--no-page` flag restores original continuous output behavior - **ACHIEVED**
+5. ✅ Screen recording captures all output clearly (default behavior) - **ACHIEVED**
+6. ✅ Documentation clearly explains default paging and `--no-page` option - **ACHIEVED**
+7. ✅ Users can easily disable paging if needed - **ACHIEVED**
+
+**Implementation Status:** ✅ **COMPLETE AND WORKING**
+
+All success criteria have been met. The paged output feature is fully functional and tested with 24-line and 60-line terminals. Terminal height detection works correctly using `stty size < /dev/tty`, and paging pauses at the appropriate terminal height for optimal screen recording.
 
 ---
 

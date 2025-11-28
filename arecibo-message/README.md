@@ -89,6 +89,8 @@ The binary data in `arecibo-message.txt` can be:
 - Processed by scripts to extract the encoded information
 - Used for educational purposes to understand binary encoding and interstellar communication
 
+**Note:** The analysis scripts use paged output by default (pauses at terminal height) for better screen recording and user experience. Use `--no-page` to disable paging if you prefer continuous output.
+
 ## Decoding Analysis
 
 ### Analysis Scripts
@@ -141,8 +143,14 @@ This directory contains Python scripts that decode the message from **first prin
 # Skip complete analysis prompt and don't run it
 ./run_analysis.sh --auto --no-complete
 
+# Disable paged output (use original continuous output)
+./run_analysis.sh --no-page
+
 # Auto mode with complete analysis
 ./run_analysis.sh --auto --complete
+
+# Enable debug output (shows terminal detection and line counting)
+./run_analysis.sh --debug
 
 # Show help
 ./run_analysis.sh --help
@@ -181,6 +189,8 @@ The visualization scripts (`step2_visualize_patterns.py` and `decode_analysis.py
 **Note:** Color output uses ANSI terminal codes and works in most modern terminals. No additional libraries required.
 
 **Key Point**: All scripts determine the 73×23 grid dimensions from data factorization (1,679 = 73 × 23), not from assumptions. The analysis is performed purely from the binary data itself.
+
+**Paged Output**: The wrapper script uses paged output by default (pauses at terminal height) to make screen recording easier and prevent content from scrolling past. The script automatically detects your terminal height and pauses output appropriately. Use `--no-page` to disable paging if you prefer continuous output.
 
 ## References
 
