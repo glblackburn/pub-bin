@@ -79,11 +79,23 @@ This directory contains Python scripts that decode the message from **first prin
 # Auto mode with custom pause time (e.g., 5 seconds)
 ./run_analysis.sh --auto --pause-time 5
 
-# Short form
-./run_analysis.sh -a -t 5
+# Enable colored terminal output
+./run_analysis.sh --color
 
-# Skip complete analysis prompt
+# Auto mode with colored output
+./run_analysis.sh --auto --color
+
+# Short form
+./run_analysis.sh -a -t 5 -c
+
+# Always run complete analysis (skip prompt)
+./run_analysis.sh --complete
+
+# Skip complete analysis prompt and don't run it
 ./run_analysis.sh --auto --no-complete
+
+# Auto mode with complete analysis
+./run_analysis.sh --auto --complete
 
 # Show help
 ./run_analysis.sh --help
@@ -99,14 +111,28 @@ This directory contains Python scripts that decode the message from **first prin
 # Run complete analysis
 python3 decode_analysis.py
 
+# Generate color PNG visualization (requires Pillow)
+python3 decode_analysis.py --color
+python3 decode_analysis.py --color --output my-image.png
+
 # Or run individual steps
 python3 step1_analyze_structure.py
-python3 step2_visualize_patterns.py
+python3 step2_visualize_patterns.py --color  # Generate color visualization
 python3 step3_identify_sections.py
 python3 step4_find_human_figure.py
 python3 step5_decode_numbers.py
 python3 step6_decode_atomic_numbers.py
 ```
+
+**Color Visualization:**
+The visualization scripts (`step2_visualize_patterns.py` and `decode_analysis.py`) support colored terminal output using ANSI color codes, similar to the [Wikipedia visualization](https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Arecibo_message.svg/250px-Arecibo_message.svg.png). Use the `--color` or `-c` flag to enable colored output. Different sections are color-coded:
+- Cyan: Numbers (rows 0-9)
+- Green: Atomic numbers (rows 10-12, 15-22)
+- Yellow: DNA structure (rows 13-14, 23-24)
+- Red: Human figure (rows 40-54)
+- Blue: Bottom section (rows 55-72)
+
+**Note:** Color output uses ANSI terminal codes and works in most modern terminals. No additional libraries required.
 
 **Key Point**: All scripts determine the 73×23 grid dimensions from data factorization (1,679 = 73 × 23), not from assumptions. The analysis is performed purely from the binary data itself.
 

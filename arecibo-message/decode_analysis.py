@@ -3,9 +3,41 @@
 Complete decoding analysis script
 Determines grid dimensions from data and performs full analysis.
 Run this script to analyze the Arecibo message from first principles.
+
+Optional: Use --color or -c flag to enable colored terminal output
 """
 
+import sys
 from get_dimensions import get_dimensions
+
+# ANSI color codes
+RESET = '\033[0m'
+CYAN = '\033[96m'      # Numbers (rows 0-9)
+GREEN = '\033[92m'     # Atomic numbers (rows 10-12, 15-22)
+YELLOW = '\033[93m'    # DNA structure (rows 13-14, 23-24)
+RED = '\033[91m'       # Human figure (rows 40-54)
+BLUE = '\033[94m'      # Bottom section (rows 55-72)
+WHITE = '\033[97m'     # Other data
+
+# Check for color output flag
+color_output = '--color' in sys.argv or '-c' in sys.argv
+
+def get_color_code(row_idx):
+    """Return ANSI color code based on which section the row belongs to."""
+    if not color_output:
+        return ''
+    if 0 <= row_idx <= 9:
+        return CYAN
+    elif 10 <= row_idx <= 12 or 15 <= row_idx <= 22:
+        return GREEN
+    elif row_idx in [13, 14, 23, 24]:
+        return YELLOW
+    elif 40 <= row_idx <= 54:
+        return RED
+    elif 55 <= row_idx <= 72:
+        return BLUE
+    else:
+        return WHITE
 
 data = open('arecibo-message.txt').read().strip()
 
@@ -47,12 +79,16 @@ print(f"\n✓ Determined from factorization: {rows} rows × {cols} columns")
 print("\n" + "=" * 70)
 print("STEP 2: VISUALIZATION")
 print("=" * 70)
+if color_output:
+    print("Color mode: Enabled (using ANSI terminal colors)")
 print(f"\nVisualizing as {rows}×{cols} bitmap:")
 print("-" * 70)
 for i in range(rows):
     row = data[i*cols:(i+1)*cols]
+    color_code = get_color_code(i)
+    reset_code = RESET if color_output else ''
     visual = ''.join('█' if bit == '1' else ' ' for bit in row)
-    print(f"{i:2d}: {visual}")
+    print(f"{i:2d}: {color_code}{visual}{reset_code}")
 
 # STEP 3: Identify sections
 print("\n" + "=" * 70)
@@ -108,6 +144,13 @@ for col in range(5):
 print("\n" + "=" * 70)
 print("ANALYSIS COMPLETE")
 print("=" * 70)
+if color_output:
+    print("\nColor legend:")
+    print(f"  {CYAN}Cyan{RESET}: Numbers (rows 0-9)")
+    print(f"  {GREEN}Green{RESET}: Atomic numbers (rows 10-12, 15-22)")
+    print(f"  {YELLOW}Yellow{RESET}: DNA structure (rows 13-14, 23-24)")
+    print(f"  {RED}Red{RESET}: Human figure (rows 40-54)")
+    print(f"  {BLUE}Blue{RESET}: Bottom section (rows 55-72)")
 print(f"""
 Key Findings:
 - Grid structure: {rows}×{cols} bitmap (determined from factorization)
