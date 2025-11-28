@@ -128,6 +128,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [monitor-ai-agent-progress.sh](#monitor-ai-agent-progresssh)
 - [clean-screenshots.sh](#clean-screenshotssh)
 - [azure/show-location-authenticationDetails.sh](#azureshow-location-authenticationdetailssh)
+- [greynoise/greynoise-lookup.sh](#greynoisegreynoise-lookupsh)
 
 ### what-is-left.sh
 
@@ -582,3 +583,53 @@ A utility script to process Azure Entra ID user Sign-in log JSON downloads and e
 - `column` - Optional, used for table formatting (typically pre-installed on macOS/Linux)
 
 This script is useful for analyzing Azure Entra ID Sign-in logs to review authentication attempts, locations, and success/failure status. The formatted output makes it easy to identify patterns in sign-in activity.
+
+### greynoise/greynoise-lookup.sh
+
+A utility script to query the GreyNoise Community API for IP address threat intelligence information.
+
+**What it does:**
+- Queries GreyNoise Community API for IP address information
+- Provides threat intelligence data including classification, noise status, and metadata
+- Validates IP address format and octet ranges
+- Handles HTTP status codes appropriately (200, 404, 429, 4xx, 5xx)
+- Provides clear error messages for different failure scenarios
+
+**Usage:**
+```bash
+./greynoise/greynoise-lookup.sh [-hqv] <ip_address>
+```
+
+**Options:**
+- `-h` : Display help message
+- `-q` : Quiet mode (output as little as possible)
+- `-v` : Verbose output (shows detailed request information)
+
+**Arguments:**
+- `<ip_address>` : IP address to query (required)
+
+**Details:**
+- Uses GreyNoise Community API (no API key required)
+- Validates IP address format (IPv4 dotted decimal notation)
+- Validates each octet is in range 0-255
+- Handles rate limiting (HTTP 429) with appropriate error messages
+- Handles not found (HTTP 404) gracefully
+- Provides verbose output showing API URL and request details
+- Follows shell-template.sh patterns: proper error handling, CLI options, functions, and structure
+
+**Examples:**
+```bash
+# Query Google DNS IP
+./greynoise/greynoise-lookup.sh 8.8.8.8
+
+# Verbose mode
+./greynoise/greynoise-lookup.sh -v 192.168.1.1
+
+# Quiet mode
+./greynoise/greynoise-lookup.sh -q 1.1.1.1
+```
+
+**Dependencies:**
+- `curl` - Required for API requests (typically pre-installed on macOS/Linux)
+
+This script is useful for quickly checking IP addresses against GreyNoise's threat intelligence database to determine if an IP is associated with malicious activity, scanning, or other security concerns.
