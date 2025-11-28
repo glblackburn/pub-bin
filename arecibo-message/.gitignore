@@ -1,0 +1,30 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Python virtual environments
+venv/
+env/
+ENV/
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary/helper files
+COMMIT_MESSAGE.txt
+FILES_SUMMARY.txt
+
+# Backup files
+*.bak
+*.backup
+*.txt~
+
+# OS files
+.DS_Store
+Thumbs.db
