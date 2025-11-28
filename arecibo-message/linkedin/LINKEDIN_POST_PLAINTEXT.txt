@@ -1,0 +1,36 @@
+What happens when you challenge an AI coding assistant to prove it's not "cheating"?
+
+I recently asked Cursor to decode the Arecibo Message—the famous 1974 interstellar radio transmission—purely from binary data. No historical knowledge. No assumptions. Just raw analysis.
+
+𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:
+"It still feels like you are cheating. How did you determine these? Save out all the code for the analysis to files that can be run against the message file."
+
+The AI had assumed the 73×23 grid dimensions from historical knowledge. Fair point. So I pushed it to prove everything from first principles.
+
+𝐖𝐡𝐚𝐭 𝐞𝐦𝐞𝐫𝐠𝐞𝐝:
+▶ Step-by-step Python scripts that anyone can run to verify the analysis
+▶ Factorization to determine grid dimensions (1,679 = 73 × 23)
+▶ Bit density analysis to identify message sections
+▶ Pattern recognition to find the human figure
+▶ Multiple decoding attempts for numbers and atomic elements
+▶ Colored terminal visualizations for better understanding
+
+𝐓𝐡𝐞 𝐤𝐞𝐲 𝐢𝐧𝐬𝐢𝐠𝐡𝐭:
+Each script builds on the previous one, showing exactly how the message structure emerges from the data. Nothing is assumed. Everything is calculated.
+
+The result? A complete analysis toolkit that demonstrates:
+✅ Transparent AI-assisted development
+✅ Verifiable analysis (all code is runnable)
+✅ First-principles thinking
+✅ Educational value (learn how binary decoding works)
+
+This is a great example of pushing AI assistants to show their work, not just their answers. When you ask "how did you determine that?" and demand proof, you get something much more valuable than a quick answer.
+
+The entire project is open source and shows what's possible when you treat AI coding assistants as collaborators who need to justify their reasoning.
+
+See the complete analysis toolkit and documentation:
+https://github.com/glblackburn/pub-bin/tree/main/arecibo-message
+
+What's your experience? Do you ask AI assistants to show their work, or do you trust the output?
+
+#AI #Coding #Python #DataAnalysis #OpenSource #AreciboMessage #FirstPrinciples #Cursor #Programming #Transparency
