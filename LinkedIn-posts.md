@@ -1,5 +1,26 @@
 # LinkedIn Posts
 
+## Formatting Reference for LinkedIn Posts
+
+**Formatting Style:**
+- **Section Headers**: Use Unicode bold characters (𝐖𝐡𝐚𝐭, 𝐓𝐡𝐞, etc.) instead of markdown `**bold**`
+- **Bullet Points**: Use ▶ (black right-pointing triangle) instead of • or *
+- **URLs**: Include zero-width space (​) in URLs to prevent LinkedIn auto-linking
+- **Text File**: Generate posts as plain text files (no markdown code blocks) to avoid line numbers when copying
+
+**Unicode Characters Used:**
+- Bold text: Mathematical Bold Unicode (𝐀-𝐙, 𝐚-𝐳, 𝟎-𝟗)
+- Bullets: ▶ (U+25B6 - Black Right-Pointing Triangle)
+
+**Process:**
+1. Write post content in markdown format
+2. Convert `**text**` to Unicode bold characters
+3. Replace bullet points with ▶
+4. Add zero-width spaces to URLs
+5. Save as plain text file for clean copy-paste
+
+---
+
 ## [December 2, 2024](https://www.linkedin.com/posts/activity-7401642896057192448-nzPe)
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7401642896057192448-nzPe)
@@ -70,27 +91,6 @@ The result? A complete analysis toolkit demonstrating transparent AI-assisted de
 What's your experience? Do you ask AI assistants to show their work?
 
 #AI #Coding #Python #DataAnalysis #OpenSource #AreciboMessage #FirstPrinciples #Cursor #Programming #Transparency
-
----
-
-## Formatting Reference for LinkedIn Posts
-
-**Formatting Style:**
-- **Section Headers**: Use Unicode bold characters (𝐖𝐡𝐚𝐭, 𝐓𝐡𝐞, etc.) instead of markdown `**bold**`
-- **Bullet Points**: Use ▶ (black right-pointing triangle) instead of • or *
-- **URLs**: Include zero-width space (​) in URLs to prevent LinkedIn auto-linking
-- **Text File**: Generate posts as plain text files (no markdown code blocks) to avoid line numbers when copying
-
-**Unicode Characters Used:**
-- Bold text: Mathematical Bold Unicode (𝐀-𝐙, 𝐚-𝐳, 𝟎-𝟗)
-- Bullets: ▶ (U+25B6 - Black Right-Pointing Triangle)
-
-**Process:**
-1. Write post content in markdown format
-2. Convert `**text**` to Unicode bold characters
-3. Replace bullet points with ▶
-4. Add zero-width spaces to URLs
-5. Save as plain text file for clean copy-paste
 
 ---
 
