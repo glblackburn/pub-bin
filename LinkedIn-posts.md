@@ -1,5 +1,45 @@
 # LinkedIn Posts
 
+## [December 2, 2024](https://www.linkedin.com/posts/activity-7401642896057192448-nzPe)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7401642896057192448-nzPe)
+
+Is Ruby Dead?
+
+Just finished converting AutoSkipInbox from Ruby to Python. Both implementations exist, but the question got me thinking: is Ruby still relevant in 2025?
+
+AutoSkipInbox is a Gmail automation tool I've used since 2019. It archives emails, creates filters, and generates reports. It's been running on Ruby for years, but I hit a wall when I couldn't get Ruby working on my newer systems.
+
+𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝:  
+▶ Converted all 8 Ruby scripts to Python  
+▶ Reorganized into python/ and ruby/ directories  
+▶ Moved credentials to ~/.secure/AutoSkipInbox/  
+▶ Added Python Makefile with pyenv support  
+▶ Both implementations coexist
+
+𝐖𝐡𝐲 𝐭𝐡𝐞 𝐜𝐨𝐧𝐯𝐞𝐫𝐬𝐢𝐨𝐧?  
+The Ruby version was way out of date (3.0.1p64 from 2021). The default macOS Ruby is even older (2.6.10p210 from 2022). I couldn't get Ruby updated on the old Mac mini, and the newer laptop wouldn't compile the old Ruby version.
+
+I needed to run the email analysis tools locally on my laptop. I use Python more anyway, so I used Cursor to convert the whole thing to Python.
+
+𝐓𝐡𝐞 𝐑𝐞𝐚𝐥𝐢𝐭𝐲:  
+Ruby isn't dead - it's just not the default choice for new projects anymore. The real reason for this conversion wasn't about language superiority. It was about practical constraints: outdated Ruby versions, compilation issues, and needing to run the tools on different systems.
+
+I kept both implementations because I still need to run the old Ruby version on the Mac mini where it's hands-off and automated. I needed a Python version for ad-hoc reports and cleanup on my laptop.
+
+It's time to replace the old Mac mini. I'm looking to get a Linux system or VM host. The hardware is still good enough for automated tasks.
+
+𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
+Sometimes language choice isn't about what's "better" - it's about what actually works in your environment. Ruby served this project well for years, but when I couldn't get it running on my newer systems, Python became the practical choice. Practical constraints matter more than theoretical preferences.
+
+The real work was maintaining feature parity and ensuring both implementations work independently. Cursor made the conversion much faster than doing it manually.
+
+AutoSkipInbox: Gmail automation that archives emails, creates filters, and generates reports. Available in both Ruby and Python.
+
+https://github.com/glblackburn/AutoSkipInbox
+
+---
+
 ## [November 28, 2024](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)
