@@ -12,12 +12,63 @@
 - Bold text: Mathematical Bold Unicode (𝐀-𝐙, 𝐚-𝐳, 𝟎-𝟗)
 - Bullets: ▶ (U+25B6 - Black Right-Pointing Triangle)
 
-**Process:**
-1. Write post content in markdown format
-2. Convert `**text**` to Unicode bold characters
-3. Replace bullet points with ▶
-4. Add zero-width spaces to URLs
-5. Save as plain text file for clean copy-paste
+**Markdown Line Breaks:**
+- **Section Headings**: Must end with two trailing spaces (`  `) after the colon/question mark to force line breaks in markdown rendering
+  - Example: `𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝:  ` (note the two spaces)
+- **Bullet Points**: Must end with two trailing spaces (`  `) after each bullet line to ensure proper rendering
+  - Example: `▶ Item text  ` (note the two spaces)
+- This ensures each item renders on its own line, matching LinkedIn's format
+
+**Post Structure:**
+- **Date Heading Format**: `## [Month Day, Year](LinkedIn-URL)`
+- **LinkedIn Link**: `[LinkedIn](LinkedIn-URL)` on the line immediately after the date heading
+- **Separator**: Use `---` between posts
+- **Paragraph Spacing**: 
+  - Blank line after section headings
+  - Blank line between major sections
+  - No blank lines between consecutive bullet points (they use trailing spaces instead)
+
+**Section Heading Format:**
+- Use Unicode bold characters
+- End with `:` or `?`
+- Add two trailing spaces after the colon/question mark
+- Example: `𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝:  ` or `𝐖𝐡𝐲 𝐭𝐡𝐞 𝐜𝐨𝐧𝐯𝐞𝐫𝐬𝐢𝐨𝐧?  `
+
+**Bullet Point Format:**
+- Use `▶` character
+- Add two trailing spaces after each bullet line
+- Example: `▶ Converted all 8 Ruby scripts to Python  `
+
+**URL Handling:**
+- **In Markdown File**: GitHub URLs should NOT have zero-width spaces (for clean, clickable links)
+- **In LinkedIn Post Text**: URLs should include zero-width spaces to prevent LinkedIn auto-linking
+- Note: When copying from markdown to LinkedIn, add zero-width spaces to URLs in the post text
+
+**Workflow:**
+1. **Draft Post**: Write post content in markdown format
+2. **Format for LinkedIn**: 
+   - Convert `**text**` to Unicode bold characters
+   - Replace bullet points with ▶
+   - Add two trailing spaces to all section headings and bullet points
+   - Add zero-width spaces to URLs in the post text
+3. **Save Temporary File**: Save as plain text file (e.g., `linkedin-post-topic.txt`) for clean copy-paste into LinkedIn
+4. **Post to LinkedIn**: Copy-paste from the temporary .txt file and publish on LinkedIn
+5. **Get LinkedIn URL**: After posting, copy the direct LinkedIn post URL
+6. **Convert to Markdown**: 
+   - Add the post to `LinkedIn-posts.md` with proper markdown formatting
+   - Use date heading format: `## [Month Day, Year](LinkedIn-URL)`
+   - Add `[LinkedIn](LinkedIn-URL)` link below the heading
+   - Remove zero-width spaces from GitHub URLs (keep markdown file URLs clean)
+   - Ensure all section headings and bullet points have trailing spaces for proper markdown rendering
+7. **Clean Up**: Delete the temporary .txt file after the post is added to `LinkedIn-posts.md`
+
+**Verification Checklist:**
+- ✅ All section headings have trailing spaces
+- ✅ All bullet points have trailing spaces
+- ✅ Rendered markdown matches LinkedIn format (each item on its own line)
+- ✅ URLs are clean in markdown (no zero-width spaces)
+- ✅ Date format is consistent: `[Month Day, Year]`
+- ✅ LinkedIn link appears immediately after date heading
 
 ---
 
