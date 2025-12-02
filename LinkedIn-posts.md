@@ -70,6 +70,81 @@
 - ✅ Date format is consistent: `[Month Day, Year]`
 - ✅ LinkedIn link appears immediately after date heading
 
+**Tone and Writing Style Rules:**
+
+- **Overall Tone:**
+  - **Conversational and Direct**: Write as if talking to a colleague, not giving a formal presentation
+  - **First-Person Perspective**: Use "I" and "my" - these are personal experiences and workflows
+  - **Honest and Transparent**: Share both successes and failures, including AI coding assistant mistakes
+  - **Practical and Pragmatic**: Focus on real-world constraints and what actually works
+  - **Not Overly Promotional**: Avoid marketing speak; let the work speak for itself
+  - **Technical but Accessible**: Use technical terms when appropriate, but explain context
+
+- **Opening Styles:**
+  - **Question Hooks**: Start with engaging questions (e.g., "Is Ruby Dead?", "What happens when you challenge...")
+  - **Direct Statements**: Lead with what you just did or discovered (e.g., "Just finished...", "I've been using...")
+  - **Personal Narrative**: Share the story or context (e.g., "So I've started a thing...", "So I did a different thing this morning...")
+  - **Avoid**: Generic openings, overly formal introductions, or "I'm excited to share..."
+
+- **Language Patterns:**
+  - **Use Contractions**: "I've", "it's", "don't", "can't" - makes it conversational
+  - **Casual Phrases When Appropriate**: "come on", "way longer than it should have", "ticked all the boxes"
+  - **Direct Statements**: "The real reason...", "The reality is...", "Sometimes..."
+  - **Avoid**: Corporate jargon, buzzwords, excessive enthusiasm, or overly formal language
+
+- **Content Structure:**
+  - **Provide Context**: Include specific details (dates, versions, project names, file paths)
+  - **Share the Journey**: Explain what you tried, what worked, what didn't, and why
+  - **Include Lessons**: Extract practical takeaways from experiences
+  - **Be Honest About AI**: Discuss both benefits and limitations of AI coding assistants
+  - **Link to Actual Work**: Always provide links to code, repos, or documentation
+
+- **Section Organization:**
+  - **Use Structured Sections**: Unicode bold headers (𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝, 𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧, etc.)
+  - **Bullet Points for Lists**: Break up dense information into scannable bullets
+  - **Paragraph Length**: Keep paragraphs concise (2-4 sentences typically)
+  - **Flow**: Hook → Context → Details → Lesson/Insight → Link
+
+- **Ending Styles:**
+  - **Practical Takeaways**: Summarize what others can learn or apply
+  - **Engaging Questions**: Ask for audience experience or thoughts
+  - **Brief Project Description**: One-line summary of what the project/tool does
+  - **Links**: Always include relevant GitHub links or resources
+  - **Avoid**: Call-to-actions that feel salesy, overly long conclusions
+
+- **Specific Patterns:**
+  - **AI Coding Assistant Posts**: 
+    - Acknowledge both benefits and limitations
+    - Share specific examples of issues encountered
+    - Emphasize the importance of testing and verification
+    - Be honest about what AI got wrong
+  - **Technical Posts**:
+    - Explain the "why" behind technical decisions
+    - Share constraints and practical considerations
+    - Avoid language wars or superiority claims
+    - Focus on what works in your specific environment
+  - **Workflow Posts**:
+    - Describe the actual process, not just the outcome
+    - Share what you learned along the way
+    - Explain how it fits into your daily work
+    - Be specific about tools and methods
+
+- **What to Avoid:**
+  - ❌ Overly enthusiastic language ("I'm thrilled!", "Amazing results!")
+  - ❌ Generic advice without personal context
+  - ❌ Hiding mistakes or failures
+  - ❌ Overly technical jargon without explanation
+  - ❌ Long, dense paragraphs without breaks
+  - ❌ Promotional or sales-focused language
+  - ❌ Making absolute claims about tools or methods
+  - ❌ Ignoring or glossing over AI limitations
+
+- **Length Guidelines:**
+  - **Medium Length**: Enough to provide context and value, but not so long it's overwhelming
+  - **Paragraphs**: 2-4 sentences typically
+  - **Bullet Lists**: 3-7 items work well
+  - **Overall**: Aim for scannable content that provides value without requiring deep focus
+
 ---
 
 ## [December 2, 2024](https://www.linkedin.com/posts/activity-7401642896057192448-nzPe)
