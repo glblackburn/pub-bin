@@ -48,15 +48,15 @@ What happens when you challenge an AI coding assistant to prove it's not "cheati
 
 I asked Cursor to decode the Arecibo Message—the famous 1974 interstellar transmission—purely from binary data. No historical knowledge. No assumptions. Just raw analysis.
 
-𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:
+𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:  
 "It still feels like you are cheating. How did you determine these? Save out all the code for the analysis to files that can be run against the message file."
 
 The AI had assumed the 73×23 grid dimensions from historical knowledge. So I pushed it to prove everything from first principles.
 
-𝐖𝐡𝐚𝐭 𝐞𝐦𝐞𝐫𝐠𝐞𝐝:
-▶ Step-by-step Python scripts anyone can run to verify
-▶ Factorization to determine grid dimensions (1,679 = 73 × 23)
-▶ Bit density analysis and pattern recognition
+𝐖𝐡𝐚𝐭 𝐞𝐦𝐞𝐫𝐠𝐞𝐝:  
+▶ Step-by-step Python scripts anyone can run to verify  
+▶ Factorization to determine grid dimensions (1,679 = 73 × 23)  
+▶ Bit density analysis and pattern recognition  
 ▶ Colored terminal visualizations
 
 Each script builds on the previous one, showing how the message structure emerges from data. Nothing assumed. Everything calculated.
@@ -102,20 +102,20 @@ Refactored load-ssh-key.sh: Better error handling and new features
 
 Just finished a major refactor of my SSH key loading script. When I first asked Cursor to refactor it, the new version introduced a frustrating bug where it would try to process every file in ~/.ssh and count non-key files (like config files and temp files) as errors, even when it successfully loaded all the actual keys. It also removed the functionality to show which keys were already loaded. The original script didn't have either of these issues.
 
-𝐖𝐡𝐚𝐭 𝐈 𝐟𝐢𝐱𝐞𝐝:
-▶ Added validation to check if files are valid SSH keys before processing
-▶ Non-key files are now skipped gracefully (not counted as errors)
-▶ Only actual failures (valid keys that can't be loaded) are reported as errors
+𝐖𝐡𝐚𝐭 𝐈 𝐟𝐢𝐱𝐞𝐝:  
+▶ Added validation to check if files are valid SSH keys before processing  
+▶ Non-key files are now skipped gracefully (not counted as errors)  
+▶ Only actual failures (valid keys that can't be loaded) are reported as errors  
 ▶ Improved file filtering to exclude common non-key files (config, authorized_keys, temp files)
 
-𝐖𝐡𝐚𝐭 𝐈 𝐚𝐝𝐝𝐞𝐝:
-▶ Complete refactor to match shell-template​.sh patterns (proper structure, CLI options, error handling)
-▶ New -K option to kill current SSH agent and start fresh
-▶ Verbose and quiet modes for better control
-▶ Restored functionality to show which keys are already loaded
+𝐖𝐡𝐚𝐭 𝐈 𝐚𝐝𝐝𝐞𝐝:  
+▶ Complete refactor to match shell-template​.sh patterns (proper structure, CLI options, error handling)  
+▶ New -K option to kill current SSH agent and start fresh  
+▶ Verbose and quiet modes for better control  
+▶ Restored functionality to show which keys are already loaded  
 ▶ Comprehensive CLI options: -t (timeout), -d (directory), -c (config), -k (key list), -h (help)
 
-𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:
+𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
 The original script worked fine - no bugs, all features intact. Cursor's first refactor introduced a new bug AND removed working functionality. This highlights the importance of understanding what code actually does before changing it, and preserving working behavior during refactoring. After catching both issues, I fixed the bug and restored the missing feature while keeping all the working behavior. Sometimes the "improvements" need improvement too.
 
 Always test changes introduced by AI coding agents. Even when they're "improving" code structure, they can introduce bugs or remove working features. I caught these issues by running the script and comparing the output with the original - a simple test that revealed both problems immediately.
@@ -132,17 +132,17 @@ I've been using Cursor to keep my README​.md in sync with code changes as I wo
 
 Today I asked it to do a full audit of all scripts to make sure everything was in sync. It systematically went through each script, compared the actual options and features with what was documented, and found a few things that needed updating - including a change from earlier that had been missed:
 
-▶ Added documentation for the new git status metric in monitor-ai-agent-progress​.sh
-▶ Updated quiet mode description (now disables audio feedback, not just "output as little as possible")
-▶ Fixed clean-screenshots​.sh docs to remove options that were removed during dead code cleanup
+▶ Added documentation for the new git status metric in monitor-ai-agent-progress​.sh  
+▶ Updated quiet mode description (now disables audio feedback, not just "output as little as possible")  
+▶ Fixed clean-screenshots​.sh docs to remove options that were removed during dead code cleanup  
 ▶ Verified all script options match their actual implementations
 
 The process was straightforward - I just asked Cursor to check if the README was in sync with the scripts, and it did the work. It read both the scripts and the README simultaneously, understood the context of recent changes, and updated everything accurately. It even caught that missed change from earlier, which is exactly the kind of thing that can slip through.
 
-What I love about this workflow:
-▶ Cursor can read both the scripts and the README simultaneously
-▶ It understands the context of recent changes
-▶ It maintains consistency in documentation style
+What I love about this workflow:  
+▶ Cursor can read both the scripts and the README simultaneously  
+▶ It understands the context of recent changes  
+▶ It maintains consistency in documentation style  
 ▶ It catches things I might miss (like removed CLI options or previous changes that were overlooked)
 
 Documentation drift doesn't have to be a chore. With AI assistance, keeping README files accurate has become part of my regular workflow.
