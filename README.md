@@ -37,6 +37,31 @@ A collection of useful tips and tricks for common development tasks.
 
 Refer to [tips-and-tricks.md](tips-and-tricks.md) for detailed instructions on each topic.
 
+### [LinkedIn-posts.md](LinkedIn-posts.md)
+
+Archive of LinkedIn posts documenting project updates, lessons learned, and technical insights.
+
+**Contents:**
+- Posts about script refactoring and improvements
+- AI coding assistant experiences and lessons
+- Technical project updates and conversions
+- Workflow improvements and tooling decisions
+
+See [LinkedIn-posts.md](LinkedIn-posts.md) for the complete post archive.
+
+### [LinkedIn-style-guide.md](LinkedIn-style-guide.md)
+
+Style guide and formatting rules for creating LinkedIn posts.
+
+**Contents:**
+- Formatting rules (Unicode bold, bullets, trailing spaces)
+- URL and file name handling (zero-width spaces)
+- Post structure and workflow
+- Tone and writing style guidelines
+- Verification checklist
+
+Refer to [LinkedIn-style-guide.md](LinkedIn-style-guide.md) for complete formatting and style guidelines.
+
 ## Installation
 
 ### Installing cursor-agent

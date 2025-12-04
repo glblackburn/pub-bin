@@ -1,149 +1,44 @@
 # LinkedIn Posts
 
-## Formatting Reference for LinkedIn Posts
+**Style Guide:** See [LinkedIn Style Guide](LinkedIn-style-guide.md) for formatting rules, workflow, and writing guidelines.
 
-**Formatting Style:**
-- **Section Headers**: Use Unicode bold characters (𝐖𝐡𝐚𝐭, 𝐓𝐡𝐞, etc.) instead of markdown `**bold**`
-- **Bullet Points**: Use ▶ (black right-pointing triangle) instead of • or *
-- **URLs**: Include zero-width space (​) in URLs to prevent LinkedIn auto-linking
-- **Text File**: Generate posts as plain text files (no markdown code blocks) to avoid line numbers when copying
+---
 
-**Unicode Characters Used:**
-- Bold text: Mathematical Bold Unicode (𝐀-𝐙, 𝐚-𝐳, 𝟎-𝟗)
-- Bullets: ▶ (U+25B6 - Black Right-Pointing Triangle)
+## [December 3, 2024](https://www.linkedin.com/posts/activity-7402190676903305216-zTC2)
 
-**Markdown Line Breaks:**
-- **Section Headings**: Must end with two trailing spaces (`  `) after the colon/question mark to force line breaks in markdown rendering
-  - Example: `𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝:  ` (note the two spaces)
-- **Bullet Points**: Must end with two trailing spaces (`  `) after each bullet line to ensure proper rendering
-  - Example: `▶ Item text  ` (note the two spaces)
-- This ensures each item renders on its own line, matching LinkedIn's format
+[LinkedIn](https://www.linkedin.com/posts/activity-7402190676903305216-zTC2)
 
-**Post Structure:**
-- **Date Heading Format**: `## [Month Day, Year](LinkedIn-URL)`
-- **LinkedIn Link**: `[LinkedIn](LinkedIn-URL)` on the line immediately after the date heading
-- **Separator**: Use `---` between posts
-- **Paragraph Spacing**: 
-  - Blank line after section headings
-  - Blank line between major sections
-  - No blank lines between consecutive bullet points (they use trailing spaces instead)
+load-ssh-key​.sh: From bug fixes to comprehensive testing  
 
-**Section Heading Format:**
-- Use Unicode bold characters
-- End with `:` or `?`
-- Add two trailing spaces after the colon/question mark
-- Example: `𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝:  ` or `𝐖𝐡𝐲 𝐭𝐡𝐞 𝐜𝐨𝐧𝐯𝐞𝐫𝐬𝐢𝐨𝐧?  `
+Just finished adding a complete BATS test suite for load-ssh-key​.sh. After fixing the bugs from the first refactor, I realized I needed proper tests to catch issues before they make it into production.  
 
-**Bullet Point Format:**
-- Use `▶` character
-- Add two trailing spaces after each bullet line
-- Example: `▶ Converted all 8 Ruby scripts to Python  `
+𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
+▶ Complete BATS test framework with 16 unit tests (100% pass rate)  
+▶ Test helpers for SSH agent management and key creation  
+▶ Custom assertions for SSH key operations  
+▶ Test runner script with filtering and verbose options  
+▶ Secure configuration system for test keys (using ~/.secure/ pattern)  
 
-**URL Handling:**
-- **In Markdown File**: GitHub URLs should NOT have zero-width spaces (for clean, clickable links)
-- **In LinkedIn Post Text**: URLs should include zero-width spaces to prevent LinkedIn auto-linking
-- Note: When copying from markdown to LinkedIn, add zero-width spaces to URLs in the post text
+𝐖𝐡𝐚𝐭 𝐭𝐡𝐞 𝐭𝐞𝐬𝐭𝐬 𝐜𝐨𝐯𝐞𝐫:  
+▶ -k option: Single key loading, multiple keys, passphrase handling, relative paths  
+▶ -K option: Killing existing agents, starting new ones, process cleanup  
+▶ -l option: Listing keys when sourced or executed directly, dead agent detection  
+▶ Error handling: Non-existent keys, invalid files, edge cases  
 
-**Workflow:**
-1. **Draft Post**: Write post content in markdown format
-2. **Format for LinkedIn**: 
-   - Convert `**text**` to Unicode bold characters
-   - Replace bullet points with ▶
-   - Add two trailing spaces to all section headings and bullet points
-   - Add zero-width spaces to URLs in the post text
-3. **Save Temporary File**: Save as plain text file (e.g., `linkedin-post-topic.txt`) for clean copy-paste into LinkedIn
-4. **Post to LinkedIn**: Copy-paste from the temporary .txt file and publish on LinkedIn
-5. **Get LinkedIn URL**: After posting, copy the direct LinkedIn post URL
-6. **Convert to Markdown**: 
-   - Add the post to `LinkedIn-posts.md` with proper markdown formatting
-   - Use date heading format: `## [Month Day, Year](LinkedIn-URL)`
-   - Add `[LinkedIn](LinkedIn-URL)` link below the heading
-   - Remove zero-width spaces from GitHub URLs (keep markdown file URLs clean)
-   - Ensure all section headings and bullet points have trailing spaces for proper markdown rendering
-7. **Clean Up**: Delete the temporary .txt file after the post is added to `LinkedIn-posts.md`
+𝐓𝐡𝐞 𝐩𝐫𝐨𝐜𝐞𝐬𝐬:  
+Started with ad-hoc shell scripts for testing, but they were hard to maintain and had issues with timeouts and cleanup. Converted everything to BATS following patterns from another project - much cleaner and more reliable.  
 
-**Verification Checklist:**
-- ✅ All section headings have trailing spaces
-- ✅ All bullet points have trailing spaces
-- ✅ Rendered markdown matches LinkedIn format (each item on its own line)
-- ✅ URLs are clean in markdown (no zero-width spaces)
-- ✅ Date format is consistent: `[Month Day, Year]`
-- ✅ LinkedIn link appears immediately after date heading
+The test framework creates temporary SSH keys for each test, so no real keys needed. Tests are isolated, fast, and can run in CI/CD if needed.  
 
-**Tone and Writing Style Rules:**
+𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
+Testing is even more important with AI coding agents because AI code changes can introduce unexpected defects that aren't found until a lot of code has changed. Unit tests help both AI agents and developers catch issues earlier without manual testing that may miss an issue.  
 
-- **Overall Tone:**
-  - **Conversational and Direct**: Write as if talking to a colleague, not giving a formal presentation
-  - **First-Person Perspective**: Use "I" and "my" - these are personal experiences and workflows
-  - **Honest and Transparent**: Share both successes and failures, including AI coding assistant mistakes
-  - **Practical and Pragmatic**: Focus on real-world constraints and what actually works
-  - **Not Overly Promotional**: Avoid marketing speak; let the work speak for itself
-  - **Technical but Accessible**: Use technical terms when appropriate, but explain context
+The BATS framework makes it easy to write maintainable tests for bash scripts. Having comprehensive tests gives confidence when refactoring - I can verify everything still works after changes. When Cursor suggests changes, the tests catch problems immediately instead of discovering them later during manual testing.  
 
-- **Opening Styles:**
-  - **Question Hooks**: Start with engaging questions (e.g., "Is Ruby Dead?", "What happens when you challenge...")
-  - **Direct Statements**: Lead with what you just did or discovered (e.g., "Just finished...", "I've been using...")
-  - **Personal Narrative**: Share the story or context (e.g., "So I've started a thing...", "So I did a different thing this morning...")
-  - **Avoid**: Generic openings, overly formal introductions, or "I'm excited to share..."
+Also cleaned up all hardcoded key names from documentation and git history. Security matters even in test files.  
 
-- **Language Patterns:**
-  - **Use Contractions**: "I've", "it's", "don't", "can't" - makes it conversational
-  - **Casual Phrases When Appropriate**: "come on", "way longer than it should have", "ticked all the boxes"
-  - **Direct Statements**: "The real reason...", "The reality is...", "Sometimes..."
-  - **Avoid**: Corporate jargon, buzzwords, excessive enthusiasm, or overly formal language
-
-- **Content Structure:**
-  - **Provide Context**: Include specific details (dates, versions, project names, file paths)
-  - **Share the Journey**: Explain what you tried, what worked, what didn't, and why
-  - **Include Lessons**: Extract practical takeaways from experiences
-  - **Be Honest About AI**: Discuss both benefits and limitations of AI coding assistants
-  - **Link to Actual Work**: Always provide links to code, repos, or documentation
-
-- **Section Organization:**
-  - **Use Structured Sections**: Unicode bold headers (𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝, 𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧, etc.)
-  - **Bullet Points for Lists**: Break up dense information into scannable bullets
-  - **Paragraph Length**: Keep paragraphs concise (2-4 sentences typically)
-  - **Flow**: Hook → Context → Details → Lesson/Insight → Link
-
-- **Ending Styles:**
-  - **Practical Takeaways**: Summarize what others can learn or apply
-  - **Engaging Questions**: Ask for audience experience or thoughts
-  - **Brief Project Description**: One-line summary of what the project/tool does
-  - **Links**: Always include relevant GitHub links or resources
-  - **Avoid**: Call-to-actions that feel salesy, overly long conclusions
-
-- **Specific Patterns:**
-  - **AI Coding Assistant Posts**: 
-    - Acknowledge both benefits and limitations
-    - Share specific examples of issues encountered
-    - Emphasize the importance of testing and verification
-    - Be honest about what AI got wrong
-  - **Technical Posts**:
-    - Explain the "why" behind technical decisions
-    - Share constraints and practical considerations
-    - Avoid language wars or superiority claims
-    - Focus on what works in your specific environment
-  - **Workflow Posts**:
-    - Describe the actual process, not just the outcome
-    - Share what you learned along the way
-    - Explain how it fits into your daily work
-    - Be specific about tools and methods
-
-- **What to Avoid:**
-  - ❌ Overly enthusiastic language ("I'm thrilled!", "Amazing results!")
-  - ❌ Generic advice without personal context
-  - ❌ Hiding mistakes or failures
-  - ❌ Overly technical jargon without explanation
-  - ❌ Long, dense paragraphs without breaks
-  - ❌ Promotional or sales-focused language
-  - ❌ Making absolute claims about tools or methods
-  - ❌ Ignoring or glossing over AI limitations
-
-- **Length Guidelines:**
-  - **Medium Length**: Enough to provide context and value, but not so long it's overwhelming
-  - **Paragraphs**: 2-4 sentences typically
-  - **Bullet Lists**: 3-7 items work well
-  - **Overall**: Aim for scannable content that provides value without requiring deep focus
+load-ssh-key​.sh: SSH key management with comprehensive testing  
+https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh
 
 ---
 
