@@ -154,6 +154,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [clean-screenshots.sh](#clean-screenshotssh)
 - [azure/show-location-authenticationDetails.sh](#azureshow-location-authenticationdetailssh)
 - [greynoise/greynoise-lookup.sh](#greynoisegreynoise-lookupsh)
+- [trufflehog/trufflehog-local-git-repos.sh](#trufflehogtrufflehog-local-git-repossh)
 
 ### what-is-left.sh
 
@@ -696,3 +697,10 @@ A utility script to query the GreyNoise Community API for IP address threat inte
 - `curl` - Required for API requests (typically pre-installed on macOS/Linux)
 
 This script is useful for quickly checking IP addresses against GreyNoise's threat intelligence database to determine if an IP is associated with malicious activity, scanning, or other security concerns.
+
+### trufflehog/trufflehog-local-git-repos.sh
+
+A utility script to recursively find and scan git repositories for secrets using Trufflehog.
+
+See [trufflehog/README.md](trufflehog/README.md) for full documentation.
+
