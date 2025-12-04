@@ -42,5 +42,28 @@ A utility script to recursively find and scan git repositories for secrets using
 - `trufflehog` - Required for scanning (must be in PATH)
 - `git` - Required for repository operations
 
+**Installation:**
+
+The script requires `trufflehog` to be installed. You can install it using the provided Makefile:
+
+```bash
+# Check if trufflehog is installed
+make check
+
+# Install trufflehog automatically (detects OS and architecture)
+make install
+
+# Or install to a custom directory
+INSTALL_DIR=~/bin make install
+```
+
+The Makefile will:
+- Detect your OS (Linux, macOS, Windows) and architecture (amd64, arm64)
+- Download the latest trufflehog release from GitHub
+- Install it to `~/bin` (or `/usr/local/bin` if `~/bin` doesn't exist)
+- Ensure it's executable and in your PATH
+
+If trufflehog is not installed, the script will display a clear error message with installation instructions.
+
 ---
 Created using Google Antigravity.

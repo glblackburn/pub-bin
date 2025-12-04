@@ -113,6 +113,15 @@ if [ ${QUIET} != true ] ; then
     echo "Output directory: ${output_dir}"
 fi
 
+# Check if trufflehog is installed
+if ! command -v trufflehog &> /dev/null; then
+    echo "ERROR: trufflehog command not found" >&2
+    echo "Please install trufflehog first. You can:" >&2
+    echo "  1. Run 'make install' in this directory to install it automatically" >&2
+    echo "  2. Install manually: https://github.com/trufflesecurity/trufflehog#installation" >&2
+    exit 1
+fi
+
 # Find git repos and run trufflehog
 find "${target_dir}" -type d -name ".git" | while read -r git_dir; do
     repo_dir=$(dirname "${git_dir}")
@@ -137,8 +146,13 @@ EOF
     # Using || true to continue even if trufflehog finds issues (exit code 1)
     if ! trufflehog git "file://${repo_dir}" --results=verified,unknown >> "${output_file}" 2>&1; then
          # Check if it failed due to finding secrets (which returns 1) or actual error
-         # For now we just capture everything.
-         :
+         # If the error is "command not found", we should have caught it earlier, but check anyway
+         if grep -q "command not found" "${output_file}" 2>/dev/null; then
+             echo "ERROR: trufflehog command not found when scanning ${repo_dir}" >&2
+             echo "Please install trufflehog first. Run 'make install' in this directory." >&2
+             exit 1
+         fi
+         # Otherwise, it's likely just secrets found (exit code 1), which is expected
     fi
 done
 
