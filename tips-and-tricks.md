@@ -13,7 +13,8 @@ Configure the users in ~/.ssh/config
 Host glblackburn
     HostName github.com
     User git
-    IdentityFile ~/.ssh/id_ed25519_yoda
+    IdentityFile ~/.ssh/id_ed25519
+    # Or: IdentityFile ~/.ssh/your-ssh-key
 ```
 
 Instead of having the default origin as
