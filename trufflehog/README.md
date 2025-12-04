@@ -13,12 +13,13 @@ A utility script to recursively find and scan git repositories for secrets using
 
 **Usage:**
 ```bash
-./trufflehog-local-git-repos.sh [-hqv] -d <directory>
+./trufflehog-local-git-repos.sh [-hqv] -d <directory> [-o <output_directory>]
 ```
 
 **Options:**
 - `-h` : Display help message
 - `-d <directory>` : Target directory to scan (Required)
+- `-o <directory>` : Output directory for reports (Default: target directory)
 - `-q` : Quiet mode (output as little as possible)
 - `-v` : Verbose output
 

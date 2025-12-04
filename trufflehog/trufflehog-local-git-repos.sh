@@ -12,6 +12,7 @@ script_dir=$(dirname $0)
 QUIET=false
 VERBOSE=false
 target_dir=""
+output_dir=""
 
 ################################################################################
 # default values
@@ -28,29 +29,34 @@ function usage {
 	echo "Message: ${message}"
     fi
     cat<<EOF
-Usage: ${script_name} [-hqv] -d <directory>
+Usage: ${script_name} [-hqv] -d <directory> [-o <output_directory>]
 
 Find all .git directories in the given directory tree and run trufflehog on each
-parent directory. Output is saved to a file in the target directory.
+parent directory. Output is saved to a file in the target directory or specified output directory.
 
 Options
   -h               : Display this help message.
   -d <directory>   : Target directory to scan (Required).
+  -o <directory>   : Output directory for reports (Default: target directory).
   -q               : Quiet mode. Output as little as possible.
   -v               : Verbose output.
 
 Example:
 $ ${script_name} -d /path/to/repos
+$ ${script_name} -d /path/to/repos -o /tmp/logs
 EOF
 }
 
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":d:hqv" opt; do
+while getopts ":d:o:hqv" opt; do
     case ${opt} in
 	d )
             target_dir=$OPTARG
+            ;;
+	o )
+            output_dir=$OPTARG
             ;;
 	q )
             QUIET=true
@@ -88,15 +94,30 @@ fi
 # Convert to absolute path
 target_dir=$(cd "${target_dir}" && pwd)
 
+# Handle output directory
+if [ -z "${output_dir}" ]; then
+    output_dir="${target_dir}"
+else
+    # Create output directory if it doesn't exist
+    if [ ! -d "${output_dir}" ]; then
+        mkdir -p "${output_dir}" || {
+            echo "ERROR: Could not create output directory: ${output_dir}" >&2
+            exit 1
+        }
+    fi
+    output_dir=$(cd "${output_dir}" && pwd)
+fi
+
 if [ ${QUIET} != true ] ; then
     echo "Scanning directory: ${target_dir}"
+    echo "Output directory: ${output_dir}"
 fi
 
 # Find git repos and run trufflehog
 find "${target_dir}" -type d -name ".git" | while read -r git_dir; do
     repo_dir=$(dirname "${git_dir}")
     repo_name=$(basename "${repo_dir}")
-    output_file="${target_dir}/trufflehog-${repo_name}-${ts}.txt"
+    output_file="${output_dir}/trufflehog-${repo_name}-${ts}.txt"
     
     if [ ${QUIET} != true ] ; then
         echo "Scanning repository: ${repo_dir}"
@@ -122,5 +143,5 @@ EOF
 done
 
 if [ ${QUIET} != true ] ; then
-    echo "Scan complete. Results saved to ${target_dir}"
+    echo "Scan complete. Results saved to ${output_dir}"
 fi
