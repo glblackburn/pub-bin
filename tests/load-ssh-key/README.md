@@ -47,27 +47,53 @@ bats --version
 
 ## Running Tests
 
-### Run All Unit Tests
+### Using run-tests.sh (Recommended)
+
+The `run-tests.sh` script provides a convenient interface to run tests with options for filtering, verbose output, and test type selection.
 
 ```bash
+# Run all unit tests (default)
+./tests/load-ssh-key/run-tests.sh
+
+# Run with verbose output
+./tests/load-ssh-key/run-tests.sh -v
+
+# Run integration tests
+./tests/load-ssh-key/run-tests.sh -i
+
+# Run all tests (unit + integration)
+./tests/load-ssh-key/run-tests.sh -a
+
+# Filter tests by pattern
+./tests/load-ssh-key/run-tests.sh -f "loads only"
+
+# Show help
+./tests/load-ssh-key/run-tests.sh -h
+```
+
+**Options:**
+- `-h, --help` : Show help message
+- `-v, --verbose` : Run tests with verbose output
+- `-f, --filter PATTERN` : Run only tests matching PATTERN
+- `-u, --unit` : Run unit tests (default)
+- `-i, --integration` : Run integration tests
+- `-a, --all` : Run all tests (unit + integration)
+
+### Using BATS Directly
+
+You can also run BATS directly if you prefer:
+
+```bash
+# Run all unit tests
 bats tests/load-ssh-key/unit/
-```
 
-### Run Specific Test File
-
-```bash
+# Run specific test file
 bats tests/load-ssh-key/unit/test_k_option.bats
-```
 
-### Run with Verbose Output
-
-```bash
+# Run with verbose output
 bats -v tests/load-ssh-key/unit/
-```
 
-### Run Specific Test
-
-```bash
+# Run specific test
 bats -f "loads only the specified single key" tests/load-ssh-key/unit/test_k_option.bats
 ```
 

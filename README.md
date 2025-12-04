@@ -259,49 +259,87 @@ This script is useful for organizing email files chronologically by their sent/r
 A utility script to automatically load SSH keys from `~/.ssh` into the SSH agent.
 
 **What it does:**
-- Finds all SSH private keys in `~/.ssh` directory (excludes `.pub`, `known_hosts*`, and `ssh-agent.config`)
+- Finds all SSH private keys in `~/.ssh` directory (excludes `.pub`, `known_hosts*`, `ssh-agent.config`, `config`, `config~`, `authorized_keys`, and `ssh-copy-id.*` directories)
 - Starts or loads an existing SSH agent configuration
-- Checks if each key is already loaded in the agent
-- Adds keys to the SSH agent with a timeout (default: 8 hours)
-- Verifies keys exist before attempting to load them
+- Checks if each key is already loaded in the agent by comparing fingerprints
+- Adds keys to the SSH agent with a configurable timeout (default: 8 hours)
+- Validates keys before attempting to load them (skips non-key files gracefully)
+- Supports loading specific keys or auto-detecting all keys
+- Can kill existing agent and start a new one
+- Can list currently loaded keys
 - Reports errors if any keys are missing or cannot be loaded
 
 **Usage:**
 ```bash
-. ./load-ssh-key.sh
+. ./load-ssh-key.sh [options]
 ```
 or
 ```bash
-source ./load-ssh-key.sh
+source ./load-ssh-key.sh [options]
 ```
 
-**Important:** This script must be sourced (using `.` or `source`) to load the SSH agent environment variables into your current shell session.
+**Important:** This script must be sourced (using `.` or `source`) to load the SSH agent environment variables into your current shell session. The `-l` option can be used when executed directly (without sourcing).
+
+**Options:**
+- `-h` : Display help message
+- `-t <timeout>` : Key timeout in seconds (Default: 28800)
+- `-d <dir>` : SSH directory to search for keys (Default: `~/.ssh`)
+- `-c <config>` : SSH agent config file path (Default: `~/.ssh/ssh-agent.config`)
+- `-k <key_list>` : Comma-separated list of specific keys to load (Default: auto-detect all)
+- `-K` : Kill current SSH agent and start a new one
+- `-l` : List currently loaded SSH keys and exit (works when sourced or executed directly)
+- `-q` : Quiet mode. Output as little as possible.
+- `-v` : Verbose output. Show detailed information.
+
+**Examples:**
+```bash
+# Load all keys with default timeout
+. ./load-ssh-key.sh
+
+# Load all keys with custom timeout (1 hour)
+. ./load-ssh-key.sh -t 3600
+
+# Load only specific keys
+. ./load-ssh-key.sh -k ~/.ssh/id_ed25519,~/.ssh/id_rsa
+
+# Kill current agent and reload all keys
+. ./load-ssh-key.sh -K
+
+# List currently loaded keys (can be executed directly)
+./load-ssh-key.sh -l
+
+# Verbose mode to see detailed processing
+. ./load-ssh-key.sh -v
+```
 
 **Details:**
 - **KEY_TIMEOUT**: Default is 28800 seconds (8 hours). Keys are added with this timeout.
 - **CONFIG**: SSH agent configuration is stored in `~/.ssh/ssh-agent.config`
-- The script automatically finds all private keys in `~/.ssh` directory
-- It checks if keys are already loaded before adding them to avoid duplicates
+- The script automatically finds all private keys in `~/.ssh` directory when `-k` is not specified
+- It validates keys using `ssh-keygen -l` before attempting to load them
+- It checks if keys are already loaded by comparing fingerprints to avoid duplicates
 - Returns error code 1 if any keys fail to load
+- The `-K` option kills all existing ssh-agent processes and starts a new one
+- The `-l` option works when sourced or executed directly, detecting dead agents gracefully
 
 **Behavior:**
-1. Checks if SSH agent config exists, loads it if present
-2. Starts new SSH agent if config doesn't exist or agent is not running
-3. Finds all private keys in `~/.ssh` (excluding public keys and known_hosts)
-4. For each key, checks if it's already loaded by comparing fingerprints
-5. Adds keys that aren't already loaded to the agent with timeout
-6. Reports any errors encountered during the process
+1. Parses CLI options (timeout, directory, config, key list, kill agent, list keys, quiet, verbose)
+2. If `-l` option: Lists currently loaded keys and exits
+3. If `-K` option: Kills all existing ssh-agent processes, then continues
+4. Checks if SSH agent config exists, loads it if present
+5. Starts new SSH agent if config doesn't exist or agent is not running
+6. If `-k` specified: Loads only the specified keys (comma-separated list)
+7. If `-k` not specified: Finds all private keys in `~/.ssh` (excluding public keys, known_hosts, config files)
+8. For each key, validates it's a real SSH key file
+9. For each valid key, checks if it's already loaded by comparing fingerprints
+10. Adds keys that aren't already loaded to the agent with timeout
+11. Reports any errors encountered during the process
 
-This script is useful for automatically loading all SSH keys into your SSH agent session without manually adding each key.
+This script is useful for automatically loading SSH keys into your SSH agent session without manually adding each key, with support for selective key loading and agent management.
 
 **Related resources:**
 - See [SSH Key Usage Pitfalls](tips-and-tricks.md#ssh-key-usage-pitfalls) in [tips-and-tricks.md](tips-and-tricks.md) for information about common SSH key and agent pitfalls.
-
-**TODO - Needed fixes:**
-- Add CLI options and usage function
-- Add KEY_TIMEOUT CLI option
-- Add KEY_LIST CLI option
-- Add CONFIG CLI option
+- See [tests/load-ssh-key/README.md](tests/load-ssh-key/README.md) for testing framework documentation.
 
 ### fix-spaces-in-filename.sh
 
