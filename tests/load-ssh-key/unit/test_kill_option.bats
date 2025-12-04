@@ -41,26 +41,44 @@ load '../test_helper.bash'
 }
 
 @test "load-ssh-key.sh -K: kills all ssh-agent processes" {
-    # Start an agent
+    # Start an agent and capture its PID
     kill_all_ssh_agents
     eval "$(ssh-agent -s)" >/dev/null 2>&1
+    local original_pid="${SSH_AGENT_PID}"
     
-    # Give it a moment to start
-    sleep 0.1
+    # Verify agent is running
+    ps -p "${original_pid}" >/dev/null 2>&1 || {
+        skip "Could not start test ssh-agent"
+    }
     
-    # Kill all
+    # Kill all (this will kill the original and start a new one)
     run_load_ssh_key -K -q
     
     assert_success
     
-    # Give it a moment to kill
-    sleep 0.2
+    # Give it a moment to kill and start new agent
+    sleep 0.5
     
-    # Verify no ssh-agents are running (allow for system agents like Chrome Remote Desktop)
-    local agent_count=$(ps -fe | grep -E "[s]sh-agent" | grep -v "ChromeRemoteDesktopHost\|chromoting" | wc -l | tr -d ' ')
-    [ "$agent_count" -eq 0 ] || {
-        echo "ERROR: Found $agent_count ssh-agent process(es) still running" >&2
-        ps -fe | grep -E "[s]sh-agent" | grep -v "ChromeRemoteDesktopHost\|chromoting" >&2
+    # Verify the original agent is gone
+    if ps -p "${original_pid}" >/dev/null 2>&1; then
+        echo "ERROR: Original agent (PID ${original_pid}) is still running" >&2
+        return 1
+    fi
+    
+    # Verify a new agent is running (K option starts a new agent after killing)
+    [ -n "${SSH_AGENT_PID:-}" ] || {
+        echo "ERROR: New agent PID not set" >&2
+        return 1
+    }
+    
+    ps -p "${SSH_AGENT_PID}" >/dev/null 2>&1 || {
+        echo "ERROR: New agent (PID ${SSH_AGENT_PID}) is not running" >&2
+        return 1
+    }
+    
+    # Verify the new agent is different from the original
+    [ "${SSH_AGENT_PID}" != "${original_pid}" ] || {
+        echo "ERROR: New agent has same PID as original" >&2
         return 1
     }
 }
