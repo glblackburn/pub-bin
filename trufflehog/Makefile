@@ -33,9 +33,12 @@ else
 	ARCH := amd64
 endif
 
-# Installation directory (defaults to ~/bin, falls back to /usr/local/bin)
-INSTALL_DIR := $(shell if [ -d "$$HOME/bin" ]; then echo "$$HOME/bin"; else echo "/usr/local/bin"; fi)
-TRUFFLEHOG_VERSION := $(shell curl -s https://api.github.com/repos/trufflesecurity/trufflehog/releases/latest 2>/dev/null | grep '"tag_name"' | sed 's/.*"tag_name": "\([^"]*\)".*/\1/' || echo "v3.91.2")
+# Installation directory (defaults to ~/bin, creates it if needed)
+# On Linux, always use user's home directory to avoid requiring sudo
+HOME_DIR := $(shell echo $$HOME)
+INSTALL_DIR := $(HOME_DIR)/bin
+# Default version (will fetch latest during install if curl/jq available)
+TRUFFLEHOG_VERSION := v3.91.2
 
 help:
 	@echo "Trufflehog Local Git Repos - Makefile"
@@ -63,32 +66,51 @@ check:
 	fi
 
 install: check-install-dir
-	@echo "Installing trufflehog $(TRUFFLEHOG_VERSION) for $(OS)/$(ARCH)..."
-	@echo "Install directory: $(INSTALL_DIR)"
-	@if command -v trufflehog >/dev/null 2>&1; then \
+	@VERSION="$(TRUFFLEHOG_VERSION)"; \
+	if command -v jq >/dev/null 2>&1; then \
+		LATEST=$$(curl -s https://api.github.com/repos/trufflesecurity/trufflehog/releases/latest 2>/dev/null | jq -r '.tag_name' 2>/dev/null); \
+		if [ -n "$$LATEST" ] && [ "$$LATEST" != "null" ]; then \
+			VERSION="$$LATEST"; \
+		fi; \
+	fi; \
+	echo "Installing trufflehog $$VERSION for $(OS)/$(ARCH)..."; \
+	echo "Install directory: $(INSTALL_DIR)"; \
+	if command -v trufflehog >/dev/null 2>&1; then \
 		echo "trufflehog is already installed: $$(which trufflehog)"; \
 		exit 0; \
-	fi
-	@mkdir -p /tmp/trufflehog-install
-	@cd /tmp/trufflehog-install && \
-		curl -L -o trufflehog.tar.gz "https://github.com/trufflesecurity/trufflehog/releases/download/$(TRUFFLEHOG_VERSION)/trufflehog_$(TRUFFLEHOG_VERSION:v%=%)_$(OS)_$(ARCH).tar.gz" && \
+	fi; \
+	mkdir -p "$(INSTALL_DIR)" || { \
+		echo "ERROR: Cannot create directory $(INSTALL_DIR)"; \
+		exit 1; \
+	}; \
+	mkdir -p /tmp/trufflehog-install; \
+	cd /tmp/trufflehog-install && \
+		curl -L -o trufflehog.tar.gz "https://github.com/trufflesecurity/trufflehog/releases/download/$$VERSION/trufflehog_$${VERSION#v}_$(OS)_$(ARCH).tar.gz" && \
 		tar -xzf trufflehog.tar.gz && \
 		chmod +x trufflehog && \
 		mv trufflehog "$(INSTALL_DIR)/trufflehog" && \
-		echo "✓ Installed trufflehog to $(INSTALL_DIR)/trufflehog"
-	@rm -rf /tmp/trufflehog-install
-	@if [ "$(INSTALL_DIR)" != "/usr/local/bin" ]; then \
-		echo ""; \
-		echo "Note: Make sure $(INSTALL_DIR) is in your PATH"; \
-		echo "Add this to your ~/.bashrc or ~/.zshrc:"; \
-		echo "  export PATH=\"$$HOME/bin:\$$PATH\""; \
-	fi
+		echo "✓ Installed trufflehog to $(INSTALL_DIR)/trufflehog"; \
+	rm -rf /tmp/trufflehog-install; \
+	echo ""; \
+	echo "Note: Make sure $(INSTALL_DIR) is in your PATH"; \
+	echo "Add this to your ~/.bashrc or ~/.zshrc:"; \
+	echo "  export PATH=\"$$HOME/bin:\$$PATH\""
 
 check-install-dir:
+	@# Create install directory if it doesn't exist
+	@if [ ! -d "$(INSTALL_DIR)" ]; then \
+		mkdir -p "$(INSTALL_DIR)" 2>/dev/null || { \
+			echo "ERROR: Cannot create directory $(INSTALL_DIR)"; \
+			echo "Please check permissions or choose a different install directory:"; \
+			echo "  INSTALL_DIR=/path/to/dir make install"; \
+			exit 1; \
+		}; \
+	fi
+	@# Check if we can write to the directory
 	@if [ ! -w "$(INSTALL_DIR)" ]; then \
 		echo "ERROR: Cannot write to $(INSTALL_DIR)"; \
-		echo "Please run with sudo or choose a different install directory:"; \
-		echo "  INSTALL_DIR=$$HOME/bin make install"; \
+		echo "Please check permissions or choose a different install directory:"; \
+		echo "  INSTALL_DIR=/path/to/dir make install"; \
 		exit 1; \
 	fi
 
