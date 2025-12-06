@@ -82,7 +82,8 @@ install-trufflehog: check-install-dir ## install trufflehog binary
 		echo "  Run 'make update' to update to the latest version"; \
 		exit 0; \
 	fi; \
-	$(MAKE) do-install VERSION="$$VERSION"
+	export INSTALL_VERSION="$$VERSION"; \
+	$(MAKE) do-install VERSION="$$INSTALL_VERSION"
 
 update: check-install-dir ## update trufflehog to latest version
 	@if ! command -v trufflehog >/dev/null 2>&1; then \
@@ -105,7 +106,8 @@ update: check-install-dir ## update trufflehog to latest version
 		echo "  Install jq and curl, or use: TRUFFLEHOG_VERSION=vX.X.X make install-trufflehog"; \
 		exit 1; \
 	fi; \
-	$(MAKE) do-install VERSION="$$VERSION" FORCE=1
+	UPDATE_VERSION="$$VERSION"; \
+	$(MAKE) do-install VERSION="$$UPDATE_VERSION" FORCE=1
 
 check: ## check if trufflehog is installed
 	@echo "Checking for trufflehog..."
