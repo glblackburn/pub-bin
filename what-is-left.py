@@ -11,6 +11,7 @@ Shows a color-coded comparison of files:
 
 # Standard library imports
 import argparse
+import json
 import re
 import subprocess
 import sys
@@ -43,6 +44,8 @@ except ImportError:
 ################################################################################
 # Configuration
 ################################################################################
+
+TRACKING_FILE_NAME = '.migration-tracking.json'
 
 EXCLUDE_PATTERNS = [
     r'__pycache__',
@@ -127,6 +130,7 @@ class FileComparator:
         self.verbose = verbose
         self.console = Console() if RICH_AVAILABLE else None
         self.moved_files: Dict[Path, Tuple[Path, datetime]] = {}
+        self.tracking_file = self.old_bin_path / TRACKING_FILE_NAME
         
     def should_exclude(self, file_path: Path) -> bool:
         """Check if file should be excluded from comparison"""
@@ -163,63 +167,354 @@ class FileComparator:
         
         return files
     
-    def analyze_git_history(self) -> Dict[Path, Tuple[Path, datetime]]:
-        """Analyze git history to find moved files"""
+    def load_tracking_file(self) -> Dict[str, Dict[str, str]]:
+        """Load migration tracking file from old bin directory"""
+        if not self.tracking_file.exists():
+            return {}
+        
+        try:
+            with open(self.tracking_file, 'r') as f:
+                data = json.load(f)
+                return data.get('migrations', {})
+        except (json.JSONDecodeError, IOError) as e:
+            if self.verbose:
+                print(f"Error loading tracking file: {e}", file=sys.stderr)
+            return {}
+    
+    def save_tracking_file(self, migrations: Dict[str, Dict[str, str]]):
+        """Save migration tracking file to old bin directory"""
+        try:
+            data = {
+                'last_updated': datetime.now().isoformat(),
+                'migrations': migrations
+            }
+            with open(self.tracking_file, 'w') as f:
+                json.dump(data, f, indent=2)
+        except IOError as e:
+            if self.verbose:
+                print(f"Error saving tracking file: {e}", file=sys.stderr)
+    
+    def get_last_migration_date(self, tracking_data: Dict[str, Dict[str, str]]) -> Optional[datetime]:
+        """Get the most recent migration date from tracking file"""
+        if not tracking_data:
+            return None
+        
+        dates = []
+        for migration in tracking_data.values():
+            if 'date' in migration:
+                try:
+                    dates.append(datetime.fromisoformat(migration['date']))
+                except (ValueError, TypeError):
+                    continue
+        
+        return max(dates) if dates else None
+    
+    def analyze_git_history_pub_bin(self, since_date: Optional[datetime] = None) -> Dict[Path, Tuple[Path, datetime]]:
+        """Analyze git history in pub-bin repository"""
         moved_files = {}
         
         if not self.pub_bin_path.joinpath('.git').exists():
             return moved_files
         
         try:
-            if GITPYTHON_AVAILABLE:
-                repo = Repo(str(self.pub_bin_path))
-                # Look for renames in git history
-                for commit in repo.iter_commits():
-                    for item in commit.stats.files:
-                        # Check if this looks like a move from old bin
-                        if '../bin' in item or 'bin/' in item:
-                            # Try to find the actual rename
-                            for diff in commit.diff(commit.parents[0] if commit.parents else None):
-                                if diff.renamed:
-                                    old_path = Path(diff.rename_from)
-                                    new_path = Path(diff.rename_to)
-                                    moved_files[new_path] = (old_path, commit.committed_datetime)
-            else:
-                # Use subprocess to call git
-                try:
-                    result = subprocess.run(
-                        ['git', 'log', '--follow', '--name-status', '--format=%H|%ai|%s', '--diff-filter=R'],
-                        cwd=str(self.pub_bin_path),
-                        capture_output=True,
-                        text=True,
-                        timeout=30
-                    )
-                    if result.returncode == 0:
-                        # Parse git log output
-                        current_commit = None
-                        current_date = None
-                        for line in result.stdout.split('\n'):
-                            if '|' in line:
-                                parts = line.split('|')
-                                if len(parts) >= 3:
-                                    current_commit = parts[0]
-                                    current_date = datetime.fromisoformat(parts[1].replace(' ', 'T', 1))
-                            elif line.startswith('R'):
-                                # Rename detected: R100 old_path new_path
-                                parts = line.split('\t')
-                                if len(parts) >= 3:
-                                    old_path = Path(parts[1])
-                                    new_path = Path(parts[2])
-                                    if current_date:
-                                        moved_files[new_path] = (old_path, current_date)
-                except (subprocess.TimeoutExpired, subprocess.SubprocessError):
-                    pass
-        except Exception as e:
+            # Build git log command with date filter if provided
+            cmd = ['git', 'log', '--name-status', '--format=%H|%ai|%s', '--diff-filter=R']
+            if since_date:
+                cmd.extend(['--since', since_date.isoformat()])
+            
+            result = subprocess.run(
+                cmd,
+                cwd=str(self.pub_bin_path),
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode == 0:
+                current_date = None
+                for line in result.stdout.split('\n'):
+                    if '|' in line:
+                        parts = line.split('|')
+                        if len(parts) >= 3:
+                            try:
+                                current_date = datetime.fromisoformat(parts[1].replace(' ', 'T', 1))
+                            except ValueError:
+                                continue
+                    elif line.startswith('R'):
+                        # Rename detected: R100 old_path new_path
+                        parts = line.split('\t')
+                        if len(parts) >= 3 and current_date:
+                            old_path = Path(parts[1])
+                            new_path = Path(parts[2])
+                            moved_files[new_path] = (old_path, current_date)
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
             if self.verbose:
-                print(f"Error analyzing git history: {e}", file=sys.stderr)
+                print(f"Error analyzing pub-bin git history: {e}", file=sys.stderr)
+        
+        return moved_files
+    
+    def analyze_git_history_old_bin(self, since_date: Optional[datetime] = None) -> Dict[str, datetime]:
+        """Analyze git history in old bin repository to find when files were added/modified"""
+        file_dates = {}
+        
+        if not self.old_bin_path.joinpath('.git').exists():
+            return file_dates
+        
+        try:
+            # Get file modification dates from git log
+            # Use --all to get all branches, --reverse to get chronological order
+            cmd = ['git', 'log', '--all', '--format=%ai|%H', '--name-only', '--reverse', '--diff-filter=A']
+            if since_date:
+                cmd.extend(['--since', since_date.isoformat()])
+            
+            result = subprocess.run(
+                cmd,
+                cwd=str(self.old_bin_path),
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode == 0:
+                current_date = None
+                for line in result.stdout.split('\n'):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    # Check if it's a date line (format: YYYY-MM-DD HH:MM:SS +TZ|hash)
+                    if '|' in line:
+                        try:
+                            date_part = line.split('|')[0]
+                            current_date = datetime.fromisoformat(date_part.replace(' ', 'T', 1))
+                        except (ValueError, IndexError):
+                            continue
+                    else:
+                        # It's a filename
+                        if current_date and line and not line.startswith('commit'):
+                            # Only record the first (earliest) date for each file
+                            if line not in file_dates:
+                                file_dates[line] = current_date
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
+            if self.verbose:
+                print(f"Error analyzing old-bin git history: {e}", file=sys.stderr)
+        
+        return file_dates
+    
+    def find_name_based_matches(self, old_files: Set[Path], pub_files: Set[Path], 
+                                old_bin_file_dates: Dict[str, datetime],
+                                pub_bin_file_dates: Dict[Path, datetime]) -> Dict[Path, Tuple[Path, datetime]]:
+        """Use name-based heuristic to find migrated files"""
+        matches = {}
+        
+        # Create filename to path mapping for old files
+        # Handle multiple files with same name by using relative path
+        old_file_map = {}
+        for old_path in old_files:
+            filename = old_path.name
+            # Use relative path as key to handle same-named files in different dirs
+            rel_path_str = str(old_path).replace('\\', '/')
+            if filename not in old_file_map:
+                old_file_map[filename] = []
+            old_file_map[filename].append((old_path, rel_path_str))
+        
+        # Check each pub file against old files by name
+        for pub_path in pub_files:
+            filename = pub_path.name
+            pub_rel_path_str = str(pub_path).replace('\\', '/')
+            
+            if filename in old_file_map:
+                # Found files with the same name - try to match by relative path first
+                best_match = None
+                best_match_path = None
+                
+                for old_path, old_rel_path_str in old_file_map[filename]:
+                    # Prefer exact path match
+                    if pub_rel_path_str == old_rel_path_str:
+                        best_match = old_path
+                        best_match_path = old_rel_path_str
+                        break
+                    # Otherwise use first match
+                    elif best_match is None:
+                        best_match = old_path
+                        best_match_path = old_rel_path_str
+                
+                if best_match:
+                    # Try to determine migration date
+                    migration_date = None
+                    
+                    # Check pub-bin git history for when this file appeared
+                    if pub_path in pub_bin_file_dates:
+                        migration_date = pub_bin_file_dates[pub_path]
+                    else:
+                        # Use old bin file date as fallback
+                        if best_match_path in old_bin_file_dates:
+                            migration_date = old_bin_file_dates[best_match_path]
+                        else:
+                            # Use current date as last resort
+                            migration_date = datetime.now()
+                    
+                    matches[pub_path] = (best_match, migration_date)
+        
+        return matches
+    
+    def analyze_git_history(self) -> Dict[Path, Tuple[Path, datetime]]:
+        """Analyze git history from both repositories to find moved files"""
+        # Load existing tracking data
+        tracking_data = self.load_tracking_file()
+        last_migration_date = self.get_last_migration_date(tracking_data)
+        
+        if self.verbose and last_migration_date:
+            print(f"Last migration date in tracking file: {last_migration_date.isoformat()}", file=sys.stderr)
+        
+        moved_files = {}
+        
+        # Analyze pub-bin git history (for explicit renames)
+        pub_bin_moves = self.analyze_git_history_pub_bin(since_date=last_migration_date)
+        moved_files.update(pub_bin_moves)
+        
+        # Get file dates from both repositories for name-based matching
+        old_bin_file_dates = {}
+        pub_bin_file_dates = {}
+        
+        if self.old_bin_path.joinpath('.git').exists():
+            old_bin_file_dates = self.analyze_git_history_old_bin(since_date=last_migration_date)
+        
+        if self.pub_bin_path.joinpath('.git').exists():
+            # Get file addition dates from pub-bin
+            try:
+                result = subprocess.run(
+                    ['git', 'log', '--format=%ai', '--name-only', '--reverse', '--diff-filter=A'],
+                    cwd=str(self.pub_bin_path),
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+                if result.returncode == 0:
+                    current_date = None
+                    for line in result.stdout.split('\n'):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            current_date = datetime.fromisoformat(line.replace(' ', 'T', 1))
+                        except ValueError:
+                            if current_date and line:
+                                pub_bin_file_dates[Path(line)] = current_date
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError):
+                pass
+        
+        # Use name-based heuristic for files not found via git renames
+        # This will be called after we have the file lists
+        self.old_bin_file_dates = old_bin_file_dates
+        self.pub_bin_file_dates = pub_bin_file_dates
         
         self.moved_files = moved_files
         return moved_files
+    
+    def retro_calculate_migrations(self) -> Dict[str, Dict[str, str]]:
+        """Retroactively calculate all migrations from git history of both repos"""
+        if self.verbose:
+            print("Retroactively calculating migrations from git history...", file=sys.stderr)
+        
+        migrations = {}
+        
+        # Get all files that ever existed in pub-bin git history
+        pub_bin_all_files = {}
+        if self.pub_bin_path.joinpath('.git').exists():
+            try:
+                result = subprocess.run(
+                    ['git', 'log', '--all', '--full-history', '--format=%ai|%H', '--name-only', '--reverse', '--diff-filter=A'],
+                    cwd=str(self.pub_bin_path),
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                if result.returncode == 0:
+                    current_date = None
+                    for line in result.stdout.split('\n'):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if '|' in line:
+                            try:
+                                date_part = line.split('|')[0]
+                                current_date = datetime.fromisoformat(date_part.replace(' ', 'T', 1))
+                            except (ValueError, IndexError):
+                                continue
+                        else:
+                            # It's a filename - filter out non-script files
+                            if current_date and line and not self.should_exclude(Path(line)):
+                                file_path = Path(line)
+                                # Only record the first (earliest) date for each file
+                                if file_path not in pub_bin_all_files:
+                                    pub_bin_all_files[file_path] = current_date
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
+                if self.verbose:
+                    print(f"Error getting pub-bin file dates: {e}", file=sys.stderr)
+        
+        # Get all files that ever existed in old bin git history
+        old_bin_all_files = {}
+        if self.old_bin_path.joinpath('.git').exists():
+            try:
+                result = subprocess.run(
+                    ['git', 'log', '--all', '--full-history', '--format=%ai|%H', '--name-only', '--reverse', '--diff-filter=A'],
+                    cwd=str(self.old_bin_path),
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                if result.returncode == 0:
+                    current_date = None
+                    for line in result.stdout.split('\n'):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if '|' in line:
+                            try:
+                                date_part = line.split('|')[0]
+                                current_date = datetime.fromisoformat(date_part.replace(' ', 'T', 1))
+                            except (ValueError, IndexError):
+                                continue
+                        else:
+                            # It's a filename - filter out non-script files
+                            if current_date and line and not self.should_exclude(Path(line)):
+                                # Store by filename for matching
+                                file_path = Path(line)
+                                filename = file_path.name
+                                # Store earliest date for each filename
+                                if filename not in old_bin_all_files:
+                                    old_bin_all_files[filename] = {
+                                        'path': str(file_path).replace('\\', '/'),
+                                        'date': current_date
+                                    }
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
+                if self.verbose:
+                    print(f"Error getting old-bin file dates: {e}", file=sys.stderr)
+        
+        # Match files by filename
+        for pub_path, pub_date in pub_bin_all_files.items():
+            filename = pub_path.name
+            if filename in old_bin_all_files:
+                old_info = old_bin_all_files[filename]
+                old_date = old_info['date']
+                old_path = old_info['path']
+                
+                # If file was added to pub-bin after it existed in old bin, it's a migration
+                if pub_date > old_date:
+                    pub_path_str = str(pub_path).replace('\\', '/')
+                    migrations[pub_path_str] = {
+                        'old_path': old_path,
+                        'new_path': pub_path_str,
+                        'date': pub_date.isoformat(),
+                        'old_date': old_date.isoformat(),
+                        'detected_date': datetime.now().isoformat(),
+                        'method': 'retro_calculation'
+                    }
+        
+        if self.verbose:
+            print(f"Found {len(migrations)} potential migrations from git history", file=sys.stderr)
+        
+        return migrations
     
     def compare_files(self) -> Dict[str, List[Tuple[Path, Optional[str]]]]:
         """Compare files and categorize by state"""
@@ -227,8 +522,42 @@ class FileComparator:
         old_files = self.discover_files(self.old_bin_path)
         pub_files = self.discover_files(self.pub_bin_path)
         
-        # Analyze git history for moved files
-        moved_files = self.analyze_git_history()
+        # Load tracking data first (includes retro-calculated migrations)
+        tracking_data = self.load_tracking_file()
+        
+        # Build moved_files from tracking data
+        moved_files = {}
+        for new_path_str, migration_info in tracking_data.items():
+            new_path = Path(new_path_str)
+            if 'date' in migration_info:
+                try:
+                    move_date = datetime.fromisoformat(migration_info['date'])
+                    old_path = Path(migration_info.get('old_path', ''))
+                    moved_files[new_path] = (old_path, move_date)
+                except (ValueError, KeyError):
+                    continue
+        
+        # Analyze git history for additional moved files (not in tracking)
+        git_moved_files = self.analyze_git_history()
+        
+        # Merge git history matches (only if not already tracked)
+        for pub_path, (old_path, move_date) in git_moved_files.items():
+            pub_path_str = str(pub_path).replace('\\', '/')
+            if pub_path_str not in tracking_data:
+                moved_files[pub_path] = (old_path, move_date)
+        
+        # Apply name-based heuristic for files not found via git renames or tracking
+        name_based_matches = self.find_name_based_matches(
+            old_files, pub_files,
+            getattr(self, 'old_bin_file_dates', {}),
+            getattr(self, 'pub_bin_file_dates', {})
+        )
+        
+        # Merge name-based matches (only if not already in moved_files or tracking)
+        for pub_path, (old_path, move_date) in name_based_matches.items():
+            pub_path_str = str(pub_path).replace('\\', '/')
+            if pub_path not in moved_files and pub_path_str not in tracking_data:
+                moved_files[pub_path] = (old_path, move_date)
         
         # Categorize files
         results = {
@@ -244,7 +573,7 @@ class FileComparator:
         
         # Find files to migrate (only in old bin)
         for file_path in old_files - pub_files:
-            # Check if this file was moved
+            # Check if this file was moved (by git rename or name match)
             if file_path in moved_files:
                 old_path, move_date = moved_files[file_path]
                 results['moved'].append((file_path, move_date.strftime('%Y-%m-%d')))
@@ -252,13 +581,32 @@ class FileComparator:
                 results['to_migrate'].append((file_path, None))
         
         # Find new files (only in pub-bin)
+        new_migrations = {}
         for file_path in pub_files - old_files:
-            # Check if this was a moved file
+            # Check if this was a moved file (by git rename or name match)
+            file_str = str(file_path).replace('\\', '/')
             if file_path in moved_files:
                 old_path, move_date = moved_files[file_path]
-                results['moved'].append((file_path, move_date.strftime('%Y-%m-%d')))
+                date_str = move_date.strftime('%Y-%m-%d')
+                results['moved'].append((file_path, date_str))
+                
+                # Record new migration for tracking file (if not already tracked)
+                if file_str not in tracking_data:
+                    new_migrations[file_str] = {
+                        'old_path': str(old_path).replace('\\', '/'),
+                        'new_path': file_str,
+                        'date': move_date.isoformat(),
+                        'detected_date': datetime.now().isoformat()
+                    }
             else:
                 results['new'].append((file_path, None))
+        
+        # Update tracking file with new migrations
+        if new_migrations:
+            tracking_data.update(new_migrations)
+            self.save_tracking_file(tracking_data)
+            if self.verbose:
+                print(f"Updated tracking file with {len(new_migrations)} new migrations", file=sys.stderr)
         
         return results
     
@@ -440,6 +788,8 @@ Color coding:
                        help='Show summary statistics only')
     parser.add_argument('--no-new', action='store_true', 
                        help='Hide new files in pub-bin section')
+    parser.add_argument('--retro-calculate', action='store_true',
+                       help='Retroactively calculate all migrations from git history and update tracking file')
     parser.add_argument('--old-bin', type=str, default='../bin',
                        help='Path to old bin directory (default: ../bin)')
     parser.add_argument('--pub-bin', type=str, default='.',
@@ -461,6 +811,15 @@ Color coding:
     
     # Create comparator and run
     comparator = FileComparator(old_bin, pub_bin, verbose=args.verbose)
+    
+    # Retroactively calculate migrations if requested
+    if args.retro_calculate:
+        migrations = comparator.retro_calculate_migrations()
+        comparator.save_tracking_file(migrations)
+        if not args.quiet:
+            print(f"\nRetroactively calculated {len(migrations)} migrations from git history")
+            print(f"Tracking file updated: {comparator.tracking_file}")
+    
     results = comparator.compare_files()
     comparator.print_summary(results, show_new=not args.no_new, quiet=args.quiet)
 
