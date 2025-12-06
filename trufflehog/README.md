@@ -53,15 +53,35 @@ make check
 # Install trufflehog automatically (detects OS and architecture)
 make install
 
-# Or install to a custom directory
-INSTALL_DIR=~/bin make install
+# Force reinstall (overwrites existing installation)
+make install-force
+
+# Update to latest version
+make update
+
+# Uninstall trufflehog
+make uninstall
+
+# Install to a custom directory
+INSTALL_DIR=/usr/local/bin make install
 ```
 
 The Makefile will:
 - Detect your OS (Linux, macOS, Windows) and architecture (amd64, arm64)
-- Download the latest trufflehog release from GitHub
-- Install it to `~/bin` (or `/usr/local/bin` if `~/bin` doesn't exist)
-- Ensure it's executable and in your PATH
+- Automatically fetch the latest version from GitHub (if `curl` and `jq` are available)
+- Download and install trufflehog to `~/bin` by default
+- Verify the installation works correctly
+- Check if the install directory is in your PATH
+- Provide clear error messages if installation fails
+
+**Makefile Targets:**
+- `make check` - Check if trufflehog is installed and show version
+- `make install` - Install trufflehog (skips if already installed)
+- `make install-force` - Force reinstall (overwrites existing)
+- `make update` - Update to the latest version
+- `make uninstall` - Remove trufflehog binary
+- `make clean` - Clean up temporary installation files
+- `make test` - Test the script syntax and help output
 
 If trufflehog is not installed, the script will display a clear error message with installation instructions.
 
