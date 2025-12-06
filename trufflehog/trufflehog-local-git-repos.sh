@@ -115,11 +115,32 @@ fi
 
 # Check if trufflehog is installed
 if ! command -v trufflehog &> /dev/null; then
-    echo "ERROR: trufflehog command not found" >&2
-    echo "Please install trufflehog first. You can:" >&2
-    echo "  1. Run 'make install' in this directory to install it automatically" >&2
-    echo "  2. Install manually: https://github.com/trufflesecurity/trufflehog#installation" >&2
-    exit 1
+    echo "trufflehog command not found" >&2
+    # Try to install using Makefile if it exists
+    if [ -f "${script_dir}/Makefile" ]; then
+        echo "Attempting to install trufflehog using Makefile..." >&2
+        if (cd "${script_dir}" && make install-trufflehog); then
+            echo "✓ trufflehog installed successfully" >&2
+            # Re-check if trufflehog is now in PATH
+            if ! command -v trufflehog &> /dev/null; then
+                echo "WARNING: trufflehog was installed but is not in PATH" >&2
+                echo "You may need to add the install directory to your PATH" >&2
+                echo "Run 'make check' in ${script_dir} for details" >&2
+                exit 1
+            fi
+        else
+            echo "ERROR: Failed to install trufflehog using Makefile" >&2
+            echo "Please install trufflehog manually:" >&2
+            echo "  1. Run 'make install-trufflehog' in ${script_dir}" >&2
+            echo "  2. Install manually: https://github.com/trufflesecurity/trufflehog#installation" >&2
+            exit 1
+        fi
+    else
+        echo "ERROR: trufflehog command not found and no Makefile available" >&2
+        echo "Please install trufflehog manually:" >&2
+        echo "  https://github.com/trufflesecurity/trufflehog#installation" >&2
+        exit 1
+    fi
 fi
 
 # Find git repos and run trufflehog
@@ -149,7 +170,7 @@ EOF
          # If the error is "command not found", we should have caught it earlier, but check anyway
          if grep -q "command not found" "${output_file}" 2>/dev/null; then
              echo "ERROR: trufflehog command not found when scanning ${repo_dir}" >&2
-             echo "Please install trufflehog first. Run 'make install' in this directory." >&2
+             echo "Please install trufflehog first. Run 'make install-trufflehog' in ${script_dir}." >&2
              exit 1
          fi
          # Otherwise, it's likely just secrets found (exit code 1), which is expected
