@@ -4,13 +4,52 @@
 
 ---
 
+## [December 5, 2024](https://www.linkedin.com/posts/activity-7402886096256126976-GM-s)
+
+[LinkedIn](https://www.linkedin.com/posts/activity-7402886096256126976-GM-s)
+
+aws-bin: Auto-detecting AWS SSO login for remote systems  
+
+Just finished adding auto-detection to `aws-login.sh` in my aws-bin project. This is a collection of AWS utility scripts I've been building for SSO login, profile management, and configuration.  
+
+AWS SSO login requires opening a browser to authenticate. On your local machine, that's easy. But when SSH'd into a remote server, there's no browser - you need to open the login URL on your client system instead.  
+
+The latest feature automatically detects when you're SSH'd into a remote system and prompts for your SSH username to open the AWS SSO login URL on your local machine. No more remembering the `-r` flag.  
+
+𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
+▶ Auto-detection for remote systems (checks SSH_CLIENT env var and browser availability)  
+▶ Automatic SSH username prompt when on remote system without `-r` flag  
+▶ Device-code login mode for remote systems  
+▶ URL opening via SSH back to client system  
+▶ Backward compatible - explicit `-r` flag still works  
+
+𝐇𝐨𝐰 𝐢𝐭 𝐰𝐨𝐫𝐤𝐬:  
+The script checks if we're in an SSH session (SSH_CLIENT env var) and if a browser is available. If SSH'd in with no browser, it needs your SSH username to open the URL on your client system.  
+
+The script can detect the SSH client IP automatically, but not the username. That's why the `-r` flag exists - provide it explicitly, or the script prompts for it. On your local machine, it works as before. On remote systems, it just works.  
+
+𝐓𝐡𝐞 𝐣𝐨𝐮𝐫𝐧𝐞𝐲:  
+I built multiple monitoring scripts to capture the AWS SSO login URL and send browser requests, then unified everything into a single script. The auto-detection feature came later, building on an earlier discovery.  
+
+Back in October, I struggled to get SSH remote support working. I tried the `who am i` command, but it was unreliable. After multiple debugging attempts, I discovered the `SSH_CLIENT` environment variable - always set in SSH sessions and much more reliable.  
+
+Fast forward to December: the script already knows it's on a remote system (SSH_CLIENT), so why require the `-r` flag? While we can't auto-detect the username, we can prompt for it when needed. That earlier discovery became the foundation for auto-detection.  
+
+𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
+Sometimes the best UX improvement is removing friction where you can. The script can detect it's on a remote system automatically (SSH_CLIENT env var), but it can't know the username. Instead of requiring the `-r` flag every time, the script now prompts for it when needed. Auto-detection based on environment context makes tools more intuitive, even when you can't detect everything automatically.  
+
+aws-bin: AWS utility scripts for SSO login, profile management, and configuration  
+https://github.com/glblackburn/aws-bin
+
+---
+
 ## [December 3, 2024](https://www.linkedin.com/posts/activity-7402190676903305216-zTC2)
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7402190676903305216-zTC2)
 
-load-ssh-key​.sh: From bug fixes to comprehensive testing  
+load-ssh-key.sh: From bug fixes to comprehensive testing  
 
-Just finished adding a complete BATS test suite for load-ssh-key​.sh. After fixing the bugs from the first refactor, I realized I needed proper tests to catch issues before they make it into production.  
+Just finished adding a complete BATS test suite for load-ssh-key.sh. After fixing the bugs from the first refactor, I realized I needed proper tests to catch issues before they make it into production.  
 
 𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
 ▶ Complete BATS test framework with 16 unit tests (100% pass rate)  
@@ -37,7 +76,7 @@ The BATS framework makes it easy to write maintainable tests for bash scripts. H
 
 Also cleaned up all hardcoded key names from documentation and git history. Security matters even in test files.  
 
-load-ssh-key​.sh: SSH key management with comprehensive testing  
+load-ssh-key.sh: SSH key management with comprehensive testing  
 https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh
 
 ---
@@ -130,7 +169,7 @@ Just finished a major refactor of my SSH key loading script. When I first asked 
 ▶ Improved file filtering to exclude common non-key files (config, authorized_keys, temp files)
 
 𝐖𝐡𝐚𝐭 𝐈 𝐚𝐝𝐝𝐞𝐝:  
-▶ Complete refactor to match shell-template​.sh patterns (proper structure, CLI options, error handling)  
+▶ Complete refactor to match shell-template.sh patterns (proper structure, CLI options, error handling)  
 ▶ New -K option to kill current SSH agent and start fresh  
 ▶ Verbose and quiet modes for better control  
 ▶ Restored functionality to show which keys are already loaded  
@@ -149,13 +188,13 @@ https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh
 
 ## [November 12, 2024]
 
-I've been using Cursor to keep my README​.md in sync with code changes as I work. It's become part of my regular workflow - I just ask Cursor to check if the README is accurate after making script changes, and it updates the documentation.
+I've been using Cursor to keep my README.md in sync with code changes as I work. It's become part of my regular workflow - I just ask Cursor to check if the README is accurate after making script changes, and it updates the documentation.
 
 Today I asked it to do a full audit of all scripts to make sure everything was in sync. It systematically went through each script, compared the actual options and features with what was documented, and found a few things that needed updating - including a change from earlier that had been missed:
 
-▶ Added documentation for the new git status metric in monitor-ai-agent-progress​.sh  
+▶ Added documentation for the new git status metric in monitor-ai-agent-progress.sh  
 ▶ Updated quiet mode description (now disables audio feedback, not just "output as little as possible")  
-▶ Fixed clean-screenshots​.sh docs to remove options that were removed during dead code cleanup  
+▶ Fixed clean-screenshots.sh docs to remove options that were removed during dead code cleanup  
 ▶ Verified all script options match their actual implementations
 
 The process was straightforward - I just asked Cursor to check if the README was in sync with the scripts, and it did the work. It read both the scripts and the README simultaneously, understood the context of recent changes, and updated everything accurately. It even caught that missed change from earlier, which is exactly the kind of thing that can slip through.
@@ -174,23 +213,23 @@ https://github.com/glblackburn/pub-bin/blob/main/README.md
 
 ## [November 11, 2024]
 
-New scripts: clean-screenshots​.sh and config/config​.sh
+New scripts: clean-screenshots.sh and config/config.sh
 
 https://github.com/glblackburn/pub-bin/blob/main/README.md#clean-screenshotssh
 https://github.com/glblackburn/pub-bin/blob/main/README.md#configconfigsh
 
-I migrated clean-screenshots​.sh from my old private repo and built a new modular configuration system (config/config​.sh) to support it. The script organizes screenshots from your Desktop into timestamped archive directories.
+I migrated clean-screenshots.sh from my old private repo and built a new modular configuration system (config/config.sh) to support it. The script organizes screenshots from your Desktop into timestamped archive directories.
 
 This is one of my daily-use scripts - I take frequent screenshots throughout the day, and this keeps my Desktop clean by automatically organizing them into timestamped archives.
 
-**What clean-screenshots​.sh does:**
+**What clean-screenshots.sh does:**
 * Finds screenshots matching a pattern (default: `Screen*`) in the source directory
 * Moves them to timestamped archive directories (e.g., `screenshot_dir/2025-11-11_123456/`)
 * Provides detailed output showing what was found and moved
 * Supports dry run mode
 * Handles configuration interactively if not set up
 
-**What config/config​.sh provides:**
+**What config/config.sh provides:**
 * Generic configuration library for pub-bin scripts
 * Interactive setup functions that any script can use
 * Config value saving that preserves existing values
@@ -207,7 +246,7 @@ The lesson? When migrating existing code, explicitly tell the AI to migrate firs
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7393701785632260097-w13H)
 
-New script of the day: monitor-ai-agent-progress​.sh
+New script of the day: monitor-ai-agent-progress.sh
 
 https://github.com/glblackburn/pub-bin/blob/main/README.md#monitor-ai-agent-progresssh
 
@@ -233,12 +272,12 @@ This is especially useful when working with AI coding assistants on long-running
 
 I've been developing with AI coding assistants across multiple projects, and I noticed something interesting: each project evolved to have its own set of rules scattered in README files. Some rules were duplicated, some were project-specific, and it was getting hard to maintain consistency.
 
-So I decided to consolidate them. I analyzed AI coding standards across 6 projects and created a standardized reference document (README-AI-CODING-STANDARDS​.md) that all projects now reference.
+So I decided to consolidate them. I analyzed AI coding standards across 6 projects and created a standardized reference document (README-AI-CODING-STANDARDS.md) that all projects now reference.
 
 **The Pattern:**
-* Each project has a standardized README-AI-CODING-STANDARDS​.md file with common rules
-* Each project's README​.md links to the standardized file
-* Project-specific rules stay in each project's README​.md
+* Each project has a standardized README-AI-CODING-STANDARDS.md file with common rules
+* Each project's README.md links to the standardized file
+* Project-specific rules stay in each project's README.md
 
 **What got consolidated:**
 * Core Standards (Code Quality, Git Operations, File Creation, Verification)
@@ -256,7 +295,7 @@ This pattern works really well for maintaining standards across multiple reposit
 
 The standardized document is available in the pub-bin repo:
 
-https://github.com/glblackburn/pub-bin/blob/main/README-AI-CODING-STANDARDS​.md
+https://github.com/glblackburn/pub-bin/blob/main/README-AI-CODING-STANDARDS.md
 
 ---
 
@@ -280,20 +319,20 @@ https://www.linkedin.com/posts/pxquirk_cybersecurity-networksecurity-infosec-act
 
 [LinkedIn](https://www.linkedin.com/posts/activity-7392278705642876928-8NDc)
 
-New scripts of the day: fix-spaces-in-filename​.sh and fix-spaces-in-filenames​.sh
+New scripts of the day: fix-spaces-in-filename.sh and fix-spaces-in-filenames.sh
 
 https://github.com/glblackburn/pub-bin/blob/main/README.md#fix-spaces-in-filenamesh
 https://github.com/glblackburn/pub-bin/blob/main/README.md#fix-spaces-in-filenamessh
 
 Two utility scripts to normalize filenames by removing spaces and special characters.
 
-**fix-spaces-in-filename​.sh** - Renames a single file by replacing non-alphanumeric characters (except dots, slashes, and hyphens) with underscores.
+**fix-spaces-in-filename.sh** - Renames a single file by replacing non-alphanumeric characters (except dots, slashes, and hyphens) with underscores.
 
-**fix-spaces-in-filenames​.sh** - Batch processes multiple files by calling fix-spaces-in-filename​.sh for each file. Can process from a directory or read file paths from stdin.
+**fix-spaces-in-filenames.sh** - Batch processes multiple files by calling fix-spaces-in-filename.sh for each file. Can process from a directory or read file paths from stdin.
 
 What they do:
-* fix-spaces-in-filename​.sh: Takes a single file path, validates it exists, replaces non-alphanumeric characters with underscores, and renames the file only if the new name differs
-* fix-spaces-in-filenames​.sh: Processes multiple files either from a directory argument or from stdin, finds files with spaces, and calls fix-spaces-in-filename​.sh for each
+* fix-spaces-in-filename.sh: Takes a single file path, validates it exists, replaces non-alphanumeric characters with underscores, and renames the file only if the new name differs
+* fix-spaces-in-filenames.sh: Processes multiple files either from a directory argument or from stdin, finds files with spaces, and calls fix-spaces-in-filename.sh for each
 
 These scripts are useful for normalizing filenames to remove spaces and special characters, making them more compatible across different systems and easier to work with in scripts.
 
