@@ -1,402 +1,62 @@
-# LinkedIn Posts
+# LinkedIn Posts Archive
 
-**Style Guide:** See [LinkedIn Style Guide](LinkedIn-style-guide.md) for formatting rules, workflow, and writing guidelines.
+**Style Guide:** See [LinkedIn Style Guide](LinkedIn-posts/LinkedIn-style-guide.md) for formatting rules, workflow, and writing guidelines.
 
----
+## Table of Contents
 
-## [December 6, 2024](https://www.linkedin.com/posts/activity-7403072405528809472-r_51)
+### December 2025
 
-[LinkedIn](https://www.linkedin.com/posts/activity-7403072405528809472-r_51)
+- ✅ [December 6, 2025](LinkedIn-posts/2025/12/2025-12-06.md) - Just finished building a bash script to automate Trufflehog security scans acros
+- ✅ [December 5, 2025](LinkedIn-posts/2025/12/2025-12-05.md) - `aws-bin`: Auto-detecting AWS SSO login for remote systems
+- ✅ [December 3, 2025](LinkedIn-posts/2025/12/2025-12-03.md) - `load-ssh-key.sh`: From bug fixes to comprehensive testing
+- ✅ [December 2, 2025](LinkedIn-posts/2025/12/2025-12-02.md) - Is Ruby Dead?
 
-Just finished building a bash script to automate Trufflehog security scans across local git repositories. What started as a manual chore became an interesting lesson in AI coding assistant limitations.  
+### November 2025
 
-𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:  
-Manually scanning multiple repositories for exposed secrets is time-consuming and error-prone. I needed a way to recursively scan entire directory trees of git repos automatically.  
+- ✅ [November 28, 2025](LinkedIn-posts/2025/11/2025-11-28.md) - What happens when you challenge an AI coding assistant to prove it's not "cheati
+- ✅ [November 15, 2025](LinkedIn-posts/2025/11/2025-11-15.md) - Refactored `load-ssh-key.sh`: Better error handling and new features
+- ✅ [November 12, 2025](LinkedIn-posts/2025/11/2025-11-12.md) - I've been using Cursor to keep my `README.md` in sync with code changes as I work.
+- ✅ [November 11, 2025](LinkedIn-posts/2025/11/2025-11-11.md) - New scripts: `clean-screenshots.sh` and `config/config.sh`
+- ✅ [November 10, 2025](LinkedIn-posts/2025/11/2025-11-10.md) - New script of the day: `monitor-ai-agent-progress.sh`
+- ✅ [November 9, 2025](LinkedIn-posts/2025/11/2025-11-09.md) - I've been developing with AI coding assistants across multiple projects, and I n
+- ✅ [November 7, 2025](LinkedIn-posts/2025/11/2025-11-07.md) - So I did a different thing this morning. I have been thinking about how coding a
+- ✅ [November 6, 2025](LinkedIn-posts/2025/11/2025-11-06.md) - New scripts of the day: `fix-spaces-in-filename.sh` and `fix-spaces-in-filenames.sh`
+- ✅ [November 5, 2025](LinkedIn-posts/2025/11/2025-11-05.md) - New script of the day: `load-ssh-key.sh`
+- ✅ [November 4, 2025](LinkedIn-posts/2025/11/2025-11-04.md) - So I've started a thing.  For years, I have had what I call a junk drawer of uti
 
-𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
-▶ Recursively finds all `.git` directories in a target path  
-▶ Runs Trufflehog scans on each repository automatically  
-▶ Generates timestamped reports for each repo  
-▶ Supports custom output directories and quiet/verbose modes  
-▶ Follows shell scripting best practices with proper error handling  
+## Quick Index
 
-The script `trufflehog-local-git-repos.sh` uses `trufflehog git file://...` format for local scanning, filters to show only verified and unknown secrets, and creates organized output files with proper error handling.  
-
-𝐓𝐡𝐞 𝐣𝐨𝐮𝐫𝐧𝐞𝐲:  
-Started with Google Antigravity to generate the initial implementation. It created a good foundation, but the script wasn't complete - it was missing the output directory option and needed refinement. I finished the job with Cursor, adding the `-o` option and polishing the user experience.  
-
-This is a good reminder that AI coding assistants are tools, not replacements. They can generate solid starting points, but you still need to verify, test, and complete the work. The commit message even notes: "This commit is brought to you by Cursor, because Google Antigravity could not finish the job."  
-
-𝐖𝐡𝐲 𝐭𝐡𝐢𝐬 𝐦𝐚𝐭𝐭𝐞𝐫𝐬:  
-Security scanning shouldn't be a manual chore. Automation like this makes it easy to regularly audit codebases for exposed credentials, API keys, and other secrets - catching issues before they become problems.  
-
-The script is part of my open-source utilities collection, following consistent patterns for maintainability and reliability. It's ready to use for anyone who needs to scan multiple git repositories for secrets.  
-
-`trufflehog-local-git-repos.sh`: Recursively scan local git repositories for secrets using Trufflehog  
-https://github.com/glblackburn/pub-bin/blob/main/trufflehog/trufflehog-local-git-repos.sh
-
----
-
-## [December 5, 2024](https://www.linkedin.com/posts/activity-7402886096256126976-GM-s)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7402886096256126976-GM-s)
-
-aws-bin: Auto-detecting AWS SSO login for remote systems  
-
-Just finished adding auto-detection to `aws-login.sh` in my aws-bin project. This is a collection of AWS utility scripts I've been building for SSO login, profile management, and configuration.  
-
-AWS SSO login requires opening a browser to authenticate. On your local machine, that's easy. But when SSH'd into a remote server, there's no browser - you need to open the login URL on your client system instead.  
-
-The latest feature automatically detects when you're SSH'd into a remote system and prompts for your SSH username to open the AWS SSO login URL on your local machine. No more remembering the `-r` flag.  
-
-𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
-▶ Auto-detection for remote systems (checks SSH_CLIENT env var and browser availability)  
-▶ Automatic SSH username prompt when on remote system without `-r` flag  
-▶ Device-code login mode for remote systems  
-▶ URL opening via SSH back to client system  
-▶ Backward compatible - explicit `-r` flag still works  
-
-𝐇𝐨𝐰 𝐢𝐭 𝐰𝐨𝐫𝐤𝐬:  
-The script checks if we're in an SSH session (SSH_CLIENT env var) and if a browser is available. If SSH'd in with no browser, it needs your SSH username to open the URL on your client system.  
-
-The script can detect the SSH client IP automatically, but not the username. That's why the `-r` flag exists - provide it explicitly, or the script prompts for it. On your local machine, it works as before. On remote systems, it just works.  
-
-𝐓𝐡𝐞 𝐣𝐨𝐮𝐫𝐧𝐞𝐲:  
-I built multiple monitoring scripts to capture the AWS SSO login URL and send browser requests, then unified everything into a single script. The auto-detection feature came later, building on an earlier discovery.  
-
-Back in October, I struggled to get SSH remote support working. I tried the `who am i` command, but it was unreliable. After multiple debugging attempts, I discovered the `SSH_CLIENT` environment variable - always set in SSH sessions and much more reliable.  
-
-Fast forward to December: the script already knows it's on a remote system (SSH_CLIENT), so why require the `-r` flag? While we can't auto-detect the username, we can prompt for it when needed. That earlier discovery became the foundation for auto-detection.  
-
-𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
-Sometimes the best UX improvement is removing friction where you can. The script can detect it's on a remote system automatically (SSH_CLIENT env var), but it can't know the username. Instead of requiring the `-r` flag every time, the script now prompts for it when needed. Auto-detection based on environment context makes tools more intuitive, even when you can't detect everything automatically.  
-
-aws-bin: AWS utility scripts for SSO login, profile management, and configuration  
-https://github.com/glblackburn/aws-bin
+| Date | Title | Status |
+|------|-------|--------|
+| [December 6, 2025](LinkedIn-posts/2025/12/2025-12-06.md) | Just finished building a bash script to automate Trufflehog ... | ✅ Published |
+| [December 5, 2025](LinkedIn-posts/2025/12/2025-12-05.md) | `aws-bin`: Auto-detecting AWS SSO login for remote systems | ✅ Published |
+| [December 3, 2025](LinkedIn-posts/2025/12/2025-12-03.md) | `load-ssh-key.sh`: From bug fixes to comprehensive testing | ✅ Published |
+| [December 2, 2025](LinkedIn-posts/2025/12/2025-12-02.md) | Is Ruby Dead? | ✅ Published |
+| [November 28, 2025](LinkedIn-posts/2025/11/2025-11-28.md) | What happens when you challenge an AI coding assistant to pr... | ✅ Published |
+| [November 15, 2025](LinkedIn-posts/2025/11/2025-11-15.md) | Refactored `load-ssh-key.sh`: Better error handling and new fe... | ✅ Published |
+| [November 12, 2025](LinkedIn-posts/2025/11/2025-11-12.md) | I've been using Cursor to keep my `README.md` in sync with cod... | ✅ Published |
+| [November 11, 2025](LinkedIn-posts/2025/11/2025-11-11.md) | New scripts: `clean-screenshots.sh` and `config/config.sh` | ✅ Published |
+| [November 10, 2025](LinkedIn-posts/2025/11/2025-11-10.md) | New script of the day: `monitor-ai-agent-progress.sh` | ✅ Published |
+| [November 9, 2025](LinkedIn-posts/2025/11/2025-11-09.md) | I've been developing with AI coding assistants across multip... | ✅ Published |
+| [November 7, 2025](LinkedIn-posts/2025/11/2025-11-07.md) | So I did a different thing this morning. I have been thinkin... | ✅ Published |
+| [November 6, 2025](LinkedIn-posts/2025/11/2025-11-06.md) | New scripts of the day: `fix-spaces-in-filename.sh` and `fix-sp...` | ✅ Published |
+| [November 5, 2025](LinkedIn-posts/2025/11/2025-11-05.md) | New script of the day: `load-ssh-key.sh` | ✅ Published |
+| [November 4, 2025](LinkedIn-posts/2025/11/2025-11-04.md) | So I've started a thing.  For years, I have had what I call ... | ✅ Published |
 
 ---
 
-## [December 3, 2024](https://www.linkedin.com/posts/activity-7402190676903305216-zTC2)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7402190676903305216-zTC2)
-
-load-ssh-key.sh: From bug fixes to comprehensive testing  
-
-Just finished adding a complete BATS test suite for load-ssh-key.sh. After fixing the bugs from the first refactor, I realized I needed proper tests to catch issues before they make it into production.  
-
-𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
-▶ Complete BATS test framework with 16 unit tests (100% pass rate)  
-▶ Test helpers for SSH agent management and key creation  
-▶ Custom assertions for SSH key operations  
-▶ Test runner script with filtering and verbose options  
-▶ Secure configuration system for test keys (using ~/.secure/ pattern)  
-
-𝐖𝐡𝐚𝐭 𝐭𝐡𝐞 𝐭𝐞𝐬𝐭𝐬 𝐜𝐨𝐯𝐞𝐫:  
-▶ -k option: Single key loading, multiple keys, passphrase handling, relative paths  
-▶ -K option: Killing existing agents, starting new ones, process cleanup  
-▶ -l option: Listing keys when sourced or executed directly, dead agent detection  
-▶ Error handling: Non-existent keys, invalid files, edge cases  
-
-𝐓𝐡𝐞 𝐩𝐫𝐨𝐜𝐞𝐬𝐬:  
-Started with ad-hoc shell scripts for testing, but they were hard to maintain and had issues with timeouts and cleanup. Converted everything to BATS following patterns from another project - much cleaner and more reliable.  
-
-The test framework creates temporary SSH keys for each test, so no real keys needed. Tests are isolated, fast, and can run in CI/CD if needed.  
-
-𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
-Testing is even more important with AI coding agents because AI code changes can introduce unexpected defects that aren't found until a lot of code has changed. Unit tests help both AI agents and developers catch issues earlier without manual testing that may miss an issue.  
-
-The BATS framework makes it easy to write maintainable tests for bash scripts. Having comprehensive tests gives confidence when refactoring - I can verify everything still works after changes. When Cursor suggests changes, the tests catch problems immediately instead of discovering them later during manual testing.  
-
-Also cleaned up all hardcoded key names from documentation and git history. Security matters even in test files.  
-
-load-ssh-key.sh: SSH key management with comprehensive testing  
-https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh
-
----
-
-## [December 2, 2024](https://www.linkedin.com/posts/activity-7401642896057192448-nzPe)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7401642896057192448-nzPe)
-
-Is Ruby Dead?
-
-Just finished converting AutoSkipInbox from Ruby to Python. Both implementations exist, but the question got me thinking: is Ruby still relevant in 2025?
-
-AutoSkipInbox is a Gmail automation tool I've used since 2019. It archives emails, creates filters, and generates reports. It's been running on Ruby for years, but I hit a wall when I couldn't get Ruby working on my newer systems.
-
-𝐖𝐡𝐚𝐭 𝐈 𝐝𝐢𝐝:  
-▶ Converted all 8 Ruby scripts to Python  
-▶ Reorganized into python/ and ruby/ directories  
-▶ Moved credentials to ~/.secure/AutoSkipInbox/  
-▶ Added Python Makefile with pyenv support  
-▶ Both implementations coexist
-
-𝐖𝐡𝐲 𝐭𝐡𝐞 𝐜𝐨𝐧𝐯𝐞𝐫𝐬𝐢𝐨𝐧?  
-The Ruby version was way out of date (3.0.1p64 from 2021). The default macOS Ruby is even older (2.6.10p210 from 2022). I couldn't get Ruby updated on the old Mac mini, and the newer laptop wouldn't compile the old Ruby version.
-
-I needed to run the email analysis tools locally on my laptop. I use Python more anyway, so I used Cursor to convert the whole thing to Python.
-
-𝐓𝐡𝐞 𝐑𝐞𝐚𝐥𝐢𝐭𝐲:  
-Ruby isn't dead - it's just not the default choice for new projects anymore. The real reason for this conversion wasn't about language superiority. It was about practical constraints: outdated Ruby versions, compilation issues, and needing to run the tools on different systems.
-
-I kept both implementations because I still need to run the old Ruby version on the Mac mini where it's hands-off and automated. I needed a Python version for ad-hoc reports and cleanup on my laptop.
-
-It's time to replace the old Mac mini. I'm looking to get a Linux system or VM host. The hardware is still good enough for automated tasks.
-
-𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
-Sometimes language choice isn't about what's "better" - it's about what actually works in your environment. Ruby served this project well for years, but when I couldn't get it running on my newer systems, Python became the practical choice. Practical constraints matter more than theoretical preferences.
-
-The real work was maintaining feature parity and ensuring both implementations work independently. Cursor made the conversion much faster than doing it manually.
-
-AutoSkipInbox: Gmail automation that archives emails, creates filters, and generates reports. Available in both Ruby and Python.
-
-https://github.com/glblackburn/AutoSkipInbox
-
----
-
-## [November 28, 2024](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)
-
-What happens when you challenge an AI coding assistant to prove it's not "cheating"?
-
-I asked Cursor to decode the Arecibo Message—the famous 1974 interstellar transmission—purely from binary data. No historical knowledge. No assumptions. Just raw analysis.
-
-𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:  
-"It still feels like you are cheating. How did you determine these? Save out all the code for the analysis to files that can be run against the message file."
-
-The AI had assumed the 73×23 grid dimensions from historical knowledge. So I pushed it to prove everything from first principles.
-
-𝐖𝐡𝐚𝐭 𝐞𝐦𝐞𝐫𝐠𝐞𝐝:  
-▶ Step-by-step Python scripts anyone can run to verify  
-▶ Factorization to determine grid dimensions (1,679 = 73 × 23)  
-▶ Bit density analysis and pattern recognition  
-▶ Colored terminal visualizations
-
-Each script builds on the previous one, showing how the message structure emerges from data. Nothing assumed. Everything calculated.
-
-The result? A complete analysis toolkit demonstrating transparent AI-assisted development, verifiable analysis, and first-principles thinking.
-
-📹 **See it in action**: https://github.com/glblackburn/pub-bin/tree/main/arecibo-message
-
-**🤔 A note of skepticism:** I'm still not fully convinced there isn't some AI "hand waving" leveraging prior knowledge. The Arecibo Message is well-documented. The real test: **How would the AI fare with a completely unknown signal—a new problem it's never seen?** Would it work with different dimensions, a novel binary signal, or a modern "Arecibo 2.0" message? That's the real question about AI transparency and genuine problem-solving.
-
-What's your experience? Do you ask AI assistants to show their work?
-
-#AI #Coding #Python #DataAnalysis #OpenSource #AreciboMessage #FirstPrinciples #Cursor #Programming #Transparency
-
----
-
-## [November 15, 2024](https://www.linkedin.com/posts/activity-7395588184388157440-VflJ)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7395588184388157440-VflJ)
-
-Refactored load-ssh-key.sh: Better error handling and new features
-
-Just finished a major refactor of my SSH key loading script. When I first asked Cursor to refactor it, the new version introduced a frustrating bug where it would try to process every file in ~/.ssh and count non-key files (like config files and temp files) as errors, even when it successfully loaded all the actual keys. It also removed the functionality to show which keys were already loaded. The original script didn't have either of these issues.
-
-𝐖𝐡𝐚𝐭 𝐈 𝐟𝐢𝐱𝐞𝐝:  
-▶ Added validation to check if files are valid SSH keys before processing  
-▶ Non-key files are now skipped gracefully (not counted as errors)  
-▶ Only actual failures (valid keys that can't be loaded) are reported as errors  
-▶ Improved file filtering to exclude common non-key files (config, authorized_keys, temp files)
-
-𝐖𝐡𝐚𝐭 𝐈 𝐚𝐝𝐝𝐞𝐝:  
-▶ Complete refactor to match shell-template.sh patterns (proper structure, CLI options, error handling)  
-▶ New -K option to kill current SSH agent and start fresh  
-▶ Verbose and quiet modes for better control  
-▶ Restored functionality to show which keys are already loaded  
-▶ Comprehensive CLI options: -t (timeout), -d (directory), -c (config), -k (key list), -h (help)
-
-𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
-The original script worked fine - no bugs, all features intact. Cursor's first refactor introduced a new bug AND removed working functionality. This highlights the importance of understanding what code actually does before changing it, and preserving working behavior during refactoring. After catching both issues, I fixed the bug and restored the missing feature while keeping all the working behavior. Sometimes the "improvements" need improvement too.
-
-Always test changes introduced by AI coding agents. Even when they're "improving" code structure, they can introduce bugs or remove working features. I caught these issues by running the script and comparing the output with the original - a simple test that revealed both problems immediately.
-
-The script now properly handles edge cases, provides better feedback, and gives you more control over SSH agent management.
-
-https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh
-
----
-
-## [November 12, 2024]
-
-I've been using Cursor to keep my README.md in sync with code changes as I work. It's become part of my regular workflow - I just ask Cursor to check if the README is accurate after making script changes, and it updates the documentation.
-
-Today I asked it to do a full audit of all scripts to make sure everything was in sync. It systematically went through each script, compared the actual options and features with what was documented, and found a few things that needed updating - including a change from earlier that had been missed:
-
-▶ Added documentation for the new git status metric in monitor-ai-agent-progress.sh  
-▶ Updated quiet mode description (now disables audio feedback, not just "output as little as possible")  
-▶ Fixed clean-screenshots.sh docs to remove options that were removed during dead code cleanup  
-▶ Verified all script options match their actual implementations
-
-The process was straightforward - I just asked Cursor to check if the README was in sync with the scripts, and it did the work. It read both the scripts and the README simultaneously, understood the context of recent changes, and updated everything accurately. It even caught that missed change from earlier, which is exactly the kind of thing that can slip through.
-
-What I love about this workflow:  
-▶ Cursor can read both the scripts and the README simultaneously  
-▶ It understands the context of recent changes  
-▶ It maintains consistency in documentation style  
-▶ It catches things I might miss (like removed CLI options or previous changes that were overlooked)
-
-Documentation drift doesn't have to be a chore. With AI assistance, keeping README files accurate has become part of my regular workflow.
-
-https://github.com/glblackburn/pub-bin/blob/main/README.md
-
----
-
-## [November 11, 2024]
-
-New scripts: clean-screenshots.sh and config/config.sh
-
-https://github.com/glblackburn/pub-bin/blob/main/README.md#clean-screenshotssh
-https://github.com/glblackburn/pub-bin/blob/main/README.md#configconfigsh
-
-I migrated clean-screenshots.sh from my old private repo and built a new modular configuration system (config/config.sh) to support it. The script organizes screenshots from your Desktop into timestamped archive directories.
-
-This is one of my daily-use scripts - I take frequent screenshots throughout the day, and this keeps my Desktop clean by automatically organizing them into timestamped archives.
-
-**What clean-screenshots.sh does:**
-* Finds screenshots matching a pattern (default: `Screen*`) in the source directory
-* Moves them to timestamped archive directories (e.g., `screenshot_dir/2025-11-11_123456/`)
-* Provides detailed output showing what was found and moved
-* Supports dry run mode
-* Handles configuration interactively if not set up
-
-**What config/config.sh provides:**
-* Generic configuration library for pub-bin scripts
-* Interactive setup functions that any script can use
-* Config value saving that preserves existing values
-* Support for both public and secure config files
-
-**The migration lesson:**
-This took way longer than it should have. Cursor decided to rewrite the code from scratch instead of migrating the existing script as-is. I had to provide side-by-side output comparisons from the old and new scripts multiple times to get Cursor to restore functionality that was working fine in the original.
-
-The lesson? When migrating existing code, explicitly tell the AI to migrate first, then refactor. Don't let it "improve" things that already work. Sometimes the best code is the code that's already running in production.
-
----
-
-## [November 10, 2024](https://www.linkedin.com/posts/activity-7393701785632260097-w13H)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7393701785632260097-w13H)
-
-New script of the day: monitor-ai-agent-progress.sh
-
-https://github.com/glblackburn/pub-bin/blob/main/README.md#monitor-ai-agent-progresssh
-
-A monitoring script to track AI agent activity by watching temp files and git changes with audio feedback.
-
-What it does:
-* Runs in an infinite loop
-* Monitors temp files: counts files in `/tmp/` directory and speaks the count
-* Monitors git changes: counts lines in `git diff` and speaks the count with repository name
-* Displays the current date
-* Configurable update interval (default: 60 seconds)
-* Supports quiet and verbose modes
-
-The whole point of this script is to provide audio feedback so you don't have to watch the terminal. It speaks the temp file count and git diff line count (with repository name) so you can track AI agent activity while working on other things.
-
-This is especially useful when working with AI coding assistants on long-running tasks - you can hear when the agent is making changes without constantly checking the terminal.
-
----
-
-## [November 9, 2024](https://www.linkedin.com/posts/activity-7393305569874407424-DIt6)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7393305569874407424-DIt6)
-
-I've been developing with AI coding assistants across multiple projects, and I noticed something interesting: each project evolved to have its own set of rules scattered in README files. Some rules were duplicated, some were project-specific, and it was getting hard to maintain consistency.
-
-So I decided to consolidate them. I analyzed AI coding standards across 6 projects and created a standardized reference document (README-AI-CODING-STANDARDS.md) that all projects now reference.
-
-**The Pattern:**
-* Each project has a standardized README-AI-CODING-STANDARDS.md file with common rules
-* Each project's README.md links to the standardized file
-* Project-specific rules stay in each project's README.md
-
-**What got consolidated:**
-* Core Standards (Code Quality, Git Operations, File Creation, Verification)
-* General Principles (Readability, Error Handling, DRY, Defensive Programming)
-* Bash-Specific Standards (Function Organization, Variable Usage, Error Handling, Code Structure, Best Practices, Script Patterns)
-* Common Patterns (Function, Error Handling, Validation)
-
-**The benefits:**
-* Consistency across all projects
-* Single source of truth for common rules
-* Easier to maintain and update
-* Projects can still have their own specific rules (like history analysis rules in the bin/history project)
-
-This pattern works really well for maintaining standards across multiple repositories. If you're working with AI coding assistants across multiple projects, consider consolidating your rules into a standardized reference document.
-
-The standardized document is available in the pub-bin repo:
-
-https://github.com/glblackburn/pub-bin/blob/main/README-AI-CODING-STANDARDS.md
-
----
-
-## [November 7, 2024](https://www.linkedin.com/posts/activity-7392575729818968065-idu1)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7392575729818968065-idu1)
-
-So I did a different thing this morning. I have been thinking about how coding agents can help with security. One of the things I wanted to try was doing a full security review using Cursor. Well the post below ticked all the boxes I wanted to try. First, the project looked cool, it gave visibility into something interesting, the project was not too big and it ran with full color in the terminal, which come on just supports the first point.
-
-I forked the GitHub repos and did a security review with Cursor to see what would pop out. Below is a link to the report that Cursor produced with a little coaching.
-
-https://github.com/glblackburn/DEATH_STAR/blob/security-analysis/SECURITY_ANALYSIS.md
-
-I did a screen recording of the process, so stay tuned for that release down the road.
-
-https://www.linkedin.com/posts/pxquirk_cybersecurity-networksecurity-infosec-activity-7391912200308731904-s0vS
-
----
-
-## [November 6, 2024](https://www.linkedin.com/posts/activity-7392278705642876928-8NDc)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7392278705642876928-8NDc)
-
-New scripts of the day: fix-spaces-in-filename.sh and fix-spaces-in-filenames.sh
-
-https://github.com/glblackburn/pub-bin/blob/main/README.md#fix-spaces-in-filenamesh
-https://github.com/glblackburn/pub-bin/blob/main/README.md#fix-spaces-in-filenamessh
-
-Two utility scripts to normalize filenames by removing spaces and special characters.
-
-**fix-spaces-in-filename.sh** - Renames a single file by replacing non-alphanumeric characters (except dots, slashes, and hyphens) with underscores.
-
-**fix-spaces-in-filenames.sh** - Batch processes multiple files by calling fix-spaces-in-filename.sh for each file. Can process from a directory or read file paths from stdin.
-
-What they do:
-* fix-spaces-in-filename.sh: Takes a single file path, validates it exists, replaces non-alphanumeric characters with underscores, and renames the file only if the new name differs
-* fix-spaces-in-filenames.sh: Processes multiple files either from a directory argument or from stdin, finds files with spaces, and calls fix-spaces-in-filename.sh for each
-
-These scripts are useful for normalizing filenames to remove spaces and special characters, making them more compatible across different systems and easier to work with in scripts.
-
----
-
-## [November 5, 2024](https://www.linkedin.com/posts/activity-7391806542460846081-IHIq)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7391806542460846081-IHIq)
-
-New script of the day: load-ssh-key.sh
-
-https://github.com/glblackburn/pub-bin/blob/main/README.md#load-ssh-keysh
-
-A utility script to automatically load SSH keys from ~/.ssh into the SSH agent.
-
-What it does:
-* Finds all SSH private keys in ~/.ssh directory (excludes .pub, known_hosts*, and ssh-agent.config)
-* Starts or loads an existing SSH agent configuration
-* Checks if each key is already loaded in the agent
-* Adds keys to the SSH agent with a timeout (default: 8 hours)
-* Verifies keys exist before attempting to load them
-* Reports errors if any keys are missing or cannot be loaded
-
----
-
-## [November 4, 2024](https://www.linkedin.com/posts/activity-7391198472772943873-31zN)
-
-[LinkedIn](https://www.linkedin.com/posts/activity-7391198472772943873-31zN)
-
-So I've started a thing.  For years, I have had what I call a junk drawer of utility scripts.  The git repo contains 135 scripts of which probably about 5 to 10 I used on a daily basis.  The main repo has always been private on GitHub.  Some other repos have only been local to my systems.  I decided a while back that I wanted to start pushing these out for others to see and take away what they can from them.  Over the weekend, I began curating the first of these scripts to migrate to the public GitHub repo.  In my journey to work with AI coding assistance, I am using Cursor to document the repository and manage the README file.  
-
-The repo url is below.  Feel free to take a look, copy what you find useful, and provide feedback if you feel so inclined.
-
-https://github.com/glblackburn/pub-bin
+## Structure
+
+Posts are organized by year and month in the `LinkedIn-posts/` directory:
+
+```
+LinkedIn-posts/
+  ├── LinkedIn-style-guide.md
+  ├── LinkedIn-posts-reorganization-plan.md
+  ├── 2025/
+  │   ├── 11/  (November posts)
+  │   └── 12/  (December posts)
+  └── ...
+```
+
+Each post is stored as a separate markdown file named `YYYY-MM-DD.md` in the appropriate year/month directory.

@@ -51,6 +51,11 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
   - **URLs**: URLs should NOT have zero-width spaces - they should remain clean and clickable (e.g., `https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh`)
   - **Rationale**: LinkedIn auto-links file names with extensions like `.sh`, `.py`, `.md`, etc. Zero-width spaces prevent this auto-linking for file name references in text, but URLs should remain clean to function as clickable links
 
+**Markdown Archive Index Formatting:**
+- **File Names in Index**: Use backticks around file names with extensions (e.g., `` `load-ssh-key.sh` ``, `` `README.md` ``) in the archive index (`LinkedIn-posts.md`) to prevent markdown renderers from auto-linking them
+- **Applies To**: Script filenames (`.sh`), documentation filenames (`.md`), and other file references in the Table of Contents and Quick Index table
+- **Rationale**: Markdown renderers may auto-link file names with common extensions. Using backticks formats them as inline code and prevents unwanted auto-linking while maintaining readability
+
 **Workflow:**
 1. **Draft Post**: Write post content in markdown format
 2. **Format for LinkedIn**: 
@@ -74,7 +79,8 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
 - ✅ All section headings have trailing spaces
 - ✅ All bullet points have trailing spaces
 - ✅ Rendered markdown matches LinkedIn format (each item on its own line)
-- ✅ File names in text have zero-width spaces (e.g., `script​.sh`) to prevent auto-linking
+- ✅ File names in LinkedIn post text have zero-width spaces (e.g., `script​.sh`) to prevent auto-linking
+- ✅ File names in markdown archive index use backticks (e.g., `` `script.sh` ``, `` `README.md` ``) to prevent auto-linking
 - ✅ URLs are clean (no zero-width spaces) and remain clickable
 - ✅ Date format is consistent: `[Month Day, Year]`
 - ✅ LinkedIn link appears immediately after date heading

@@ -47,9 +47,9 @@ Archive of LinkedIn posts documenting project updates, lessons learned, and tech
 - Technical project updates and conversions
 - Workflow improvements and tooling decisions
 
-See [LinkedIn-posts.md](LinkedIn-posts.md) for the complete post archive.
+Posts are organized by year and month in the `LinkedIn-posts/` directory. See [LinkedIn-posts.md](LinkedIn-posts.md) for the complete post archive with table of contents and quick index.
 
-### [LinkedIn-style-guide.md](LinkedIn-style-guide.md)
+### [LinkedIn-posts/LinkedIn-style-guide.md](LinkedIn-posts/LinkedIn-style-guide.md)
 
 Style guide and formatting rules for creating LinkedIn posts.
 
@@ -60,7 +60,7 @@ Style guide and formatting rules for creating LinkedIn posts.
 - Tone and writing style guidelines
 - Verification checklist
 
-Refer to [LinkedIn-style-guide.md](LinkedIn-style-guide.md) for complete formatting and style guidelines.
+Refer to [LinkedIn-posts/LinkedIn-style-guide.md](LinkedIn-posts/LinkedIn-style-guide.md) for complete formatting and style guidelines.
 
 ## Installation
 
