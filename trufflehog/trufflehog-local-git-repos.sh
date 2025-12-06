@@ -114,6 +114,7 @@ if [ ${QUIET} != true ] ; then
 fi
 
 # Check if trufflehog is installed
+TRUFFLEHOG_CMD=""
 if ! command -v trufflehog &> /dev/null; then
     echo "trufflehog command not found" >&2
     # Try to install using Makefile if it exists
@@ -123,10 +124,17 @@ if ! command -v trufflehog &> /dev/null; then
             echo "✓ trufflehog installed successfully" >&2
             # Re-check if trufflehog is now in PATH
             if ! command -v trufflehog &> /dev/null; then
-                echo "WARNING: trufflehog was installed but is not in PATH" >&2
-                echo "You may need to add the install directory to your PATH" >&2
-                echo "Run 'make check' in ${script_dir} for details" >&2
-                exit 1
+                # Try to find it in the default install location
+                INSTALL_DIR="${HOME}/bin"
+                if [ -f "${INSTALL_DIR}/trufflehog" ] && [ -x "${INSTALL_DIR}/trufflehog" ]; then
+                    TRUFFLEHOG_CMD="${INSTALL_DIR}/trufflehog"
+                    echo "Using trufflehog from ${INSTALL_DIR} (not in PATH)" >&2
+                else
+                    echo "WARNING: trufflehog was installed but is not in PATH" >&2
+                    echo "You may need to add the install directory to your PATH" >&2
+                    echo "Run 'make check' in ${script_dir} for details" >&2
+                    exit 1
+                fi
             fi
         else
             echo "ERROR: Failed to install trufflehog using Makefile" >&2
@@ -141,6 +149,11 @@ if ! command -v trufflehog &> /dev/null; then
         echo "  https://github.com/trufflesecurity/trufflehog#installation" >&2
         exit 1
     fi
+fi
+
+# Set TRUFFLEHOG_CMD if not already set (trufflehog is in PATH)
+if [ -z "${TRUFFLEHOG_CMD}" ]; then
+    TRUFFLEHOG_CMD="trufflehog"
 fi
 
 # Find git repos and run trufflehog
@@ -165,7 +178,7 @@ EOF
 
     # Run trufflehog
     # Using || true to continue even if trufflehog finds issues (exit code 1)
-    if ! trufflehog git "file://${repo_dir}" --results=verified,unknown >> "${output_file}" 2>&1; then
+    if ! "${TRUFFLEHOG_CMD}" git "file://${repo_dir}" --results=verified,unknown >> "${output_file}" 2>&1; then
          # Check if it failed due to finding secrets (which returns 1) or actual error
          # If the error is "command not found", we should have caught it earlier, but check anyway
          if grep -q "command not found" "${output_file}" 2>/dev/null; then
