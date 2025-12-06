@@ -179,6 +179,7 @@ do-install:
 		echo "ERROR: VERSION not set"; \
 		exit 1; \
 	fi; \
+	VERSION_VAL="$(VERSION)"; \
 	mkdir -p "$(INSTALL_DIR)" || { \
 		echo "ERROR: Cannot create directory $(INSTALL_DIR)"; \
 		exit 1; \
@@ -188,8 +189,10 @@ do-install:
 		exit 1; \
 	}; \
 	trap "rm -rf $$TMP_DIR" EXIT; \
-	echo "Downloading trufflehog $$(VERSION)..."; \
-	DOWNLOAD_URL="https://github.com/trufflesecurity/trufflehog/releases/download/$$(VERSION)/trufflehog_$${VERSION#v}_$(OS)_$(ARCH).tar.gz"; \
+	echo "Downloading trufflehog $$VERSION_VAL..."; \
+	VERSION_NO_V=$${VERSION_VAL#v}; \
+	FILENAME="trufflehog_$${VERSION_NO_V}_$(OS)_$(ARCH).tar.gz"; \
+	DOWNLOAD_URL="https://github.com/trufflesecurity/trufflehog/releases/download/$$VERSION_VAL/$$FILENAME"; \
 	if ! curl -f -L -o "$$TMP_DIR/trufflehog.tar.gz" "$$DOWNLOAD_URL" 2>/dev/null; then \
 		echo "ERROR: Failed to download trufflehog from: $$DOWNLOAD_URL"; \
 		echo "  Check that the version exists and your OS/arch is supported"; \
