@@ -141,7 +141,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 
 ## Scripts
 
-- [what-is-left.sh](#what-is-leftsh)
+- [what-is-left.py](#what-is-leftpy)
 - [shell-template.sh](#shell-templatesh)
 - [clean-emacs-files.sh](#clean-emacs-filessh)
 - [start-cursor-agent.sh](#start-cursor-agentsh)
@@ -156,21 +156,48 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [greynoise/greynoise-lookup.sh](#greynoisegreynoise-lookupsh)
 - [trufflehog/trufflehog-local-git-repos.sh](#trufflehogtrufflehog-local-git-repossh)
 
-### what-is-left.sh
+### what-is-left.py
 
-A utility script that helps identify which scripts from the old private repository (`../bin`) have not yet been migrated to this public repository (`pub-bin`).
+A Python utility script that provides a color-coded comparison of files between the old private repository (`../bin`) and the current public repository (`pub-bin`). It helps track migration progress and identifies files that need attention.
 
 **What it does:**
-- Lists all files in the current `pub-bin` directory (excluding `.git` files)
-- Lists all files in the old repository (`../bin`) (excluding `.git` files)
-- Performs a diff comparison to show what files exist in the old repository but not in the current one
+- Discovers files in both `pub-bin` and `../bin` directories (with smart filtering)
+- Analyzes git history to detect moved files
+- Categorizes files into four states with color coding:
+  - 🔴 **RED**: Files in both places (need fixing/removal from old repo)
+  - 🟡 **YELLOW**: Files to migrate (exist only in old bin)
+  - 🟢 **GREEN**: Successfully migrated (detected via git history)
+  - 🔵 **BLUE**: New files in pub-bin (not in old repo)
+- Filters out non-essential files (cache, images, docs, etc.)
+- Provides summary statistics and progress tracking
+- Categorizes files by type (scripts, executables, makefiles, configs, other)
+
+**Requirements:**
+- Python 3.8+
+- `rich` library: `pip install rich`
+- Optional: `GitPython` for better git history analysis: `pip install GitPython`
 
 **Usage:**
 ```bash
-./what-is-left.sh
+./what-is-left.py
 ```
 
-This script is useful during the migration process to track progress and ensure no scripts are missed when migrating from the old repository.
+**Options:**
+- `--verbose`: Show verbose output including errors
+- `--quiet`: Show summary statistics only
+- `--no-new`: Hide new files in pub-bin section
+- `--old-bin PATH`: Path to old bin directory (default: `../bin`)
+- `--pub-bin PATH`: Path to pub-bin directory (default: `.`)
+
+**Example output:**
+The script displays a beautiful color-coded summary with:
+- Migration status summary with statistics
+- Files in both places (RED) - need fixing
+- Files to migrate (YELLOW) - categorized by type
+- Successfully migrated files (GREEN) - with move dates
+- New files in pub-bin (BLUE)
+
+This script is essential during the migration process to track progress, identify duplicates, and ensure no scripts are missed when migrating from the old repository.
 
 ### shell-template.sh
 
