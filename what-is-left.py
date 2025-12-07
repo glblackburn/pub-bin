@@ -203,8 +203,18 @@ class FileComparator:
         for migration in tracking_data.values():
             if 'date' in migration:
                 try:
-                    dates.append(datetime.fromisoformat(migration['date']))
-                except (ValueError, TypeError):
+                    date_str = migration['date']
+                    # Handle both offset-aware and offset-naive datetimes
+                    if date_str.endswith('Z'):
+                        date_str = date_str[:-1] + '+00:00'
+                    dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                    # Normalize to offset-aware for comparison
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
+                    dates.append(dt)
+                except (ValueError, TypeError) as e:
+                    if self.verbose:
+                        print(f"Error parsing date {migration.get('date')}: {e}", file=sys.stderr)
                     continue
         
         return max(dates) if dates else None
