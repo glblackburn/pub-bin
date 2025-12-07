@@ -68,3 +68,24 @@ The script validates IP addresses:
 - Provides clear error messages for invalid IPs
 
 This script is useful for quickly checking IP addresses against GreyNoise's threat intelligence database to determine if an IP is associated with malicious activity, scanning, or other security concerns.
+
+## google-example-lookup.sh
+
+A simple example script demonstrating a basic GreyNoise API query.
+
+**What it does:**
+- Makes a simple curl request to GreyNoise Community API
+- Queries IP address `8.8.8.8` (Google DNS) as an example
+- Shows HTTP headers and response body
+
+**Usage:**
+```bash
+./greynoise/google-example-lookup.sh
+```
+
+**Details:**
+- This is a minimal example showing the basic API call format
+- Uses `curl -i -s` to show headers and suppress progress
+- For production use, see [greynoise-lookup.sh](#greynoise-lookupsh) which includes proper error handling, validation, and CLI options
+
+**Note:** This script is primarily for reference/educational purposes. Use `greynoise-lookup.sh` for actual IP lookups with proper error handling and validation.

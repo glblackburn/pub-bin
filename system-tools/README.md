@@ -5,7 +5,14 @@ System-level monitoring and event logging tools.
 ## Scripts
 
 - `record-uptime.sh` - System uptime and load average
+  - Records system uptime information using `uptime`
+  - Output: `record-uptime_YYYY-MM-DD_HHMMSS.txt`
+  - Options: `-h` for help
 - `record-log-show.sh` - macOS login/logout events
+  - Records macOS login/logout events from system logs using `log show`
+  - Output: `~/log/log-show_YYYY-MM-DD_HHMMSS.log`
+  - Options: `-h` for help
+  - Note: macOS-specific (requires `log` command)
 
 ## Usage
 

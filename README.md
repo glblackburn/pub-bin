@@ -25,6 +25,23 @@ create a script, I will specificly note that.
 
 ## Resources
 
+### Documentation
+
+- **[tips-and-tricks.md](tips-and-tricks.md)** - Collection of useful tips and tricks for common development tasks
+- **[LinkedIn-posts.md](LinkedIn-posts.md)** - Archive of LinkedIn posts documenting project updates and insights
+- **[LinkedIn-posts/LinkedIn-style-guide.md](LinkedIn-posts/LinkedIn-style-guide.md)** - Style guide and formatting rules for LinkedIn posts
+- **[README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md)** - AI coding standards and guidelines
+
+### Category Documentation
+
+- **[network-tools/README.md](network-tools/README.md)** - Network diagnostic, scanning, intelligence, and capture tools
+- **[system-tools/README.md](system-tools/README.md)** - System-level monitoring and event logging tools
+- **[greynoise/README.md](greynoise/README.md)** - GreyNoise API lookup utilities
+- **[trufflehog/README.md](trufflehog/README.md)** - Trufflehog secret scanning scripts
+- **[arecibo-message/README.md](arecibo-message/README.md)** - Arecibo Message decoding project
+- **[tests/load-ssh-key/README.md](tests/load-ssh-key/README.md)** - BATS test suite documentation for load-ssh-key.sh
+- **[tests/record-scripts/README.md](tests/record-scripts/README.md)** - BATS test suite documentation for record*.sh scripts
+
 ### [tips-and-tricks.md](tips-and-tricks.md)
 
 A collection of useful tips and tricks for common development tasks.
@@ -142,6 +159,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 ## Scripts
 
 - [what-is-left.py](#what-is-leftpy)
+- [what-is-left.sh](#what-is-leftsh)
 - [shell-template.sh](#shell-templatesh)
 - [clean-emacs-files.sh](#clean-emacs-filessh)
 - [start-cursor-agent.sh](#start-cursor-agentsh)
@@ -198,6 +216,29 @@ The script displays a beautiful color-coded summary with:
 - New files in pub-bin (BLUE)
 
 This script is essential during the migration process to track progress, identify duplicates, and ensure no scripts are missed when migrating from the old repository.
+
+### what-is-left.sh
+
+A simple bash utility script that compares files between the old private repository (`../bin`) and the current public repository (`pub-bin`).
+
+**What it does:**
+- Lists all files in `pub-bin` (excluding `.git`)
+- Lists all files in `../bin` (excluding `.git`)
+- Shows the difference between the two directories
+- Uses temporary directories for file lists
+
+**Usage:**
+```bash
+./what-is-left.sh
+```
+
+**Details:**
+- Creates temporary files in `/tmp/` for comparison
+- Automatically cleans up temporary files on exit
+- Shows files that exist in one directory but not the other
+- Simple diff-based comparison
+
+**Note:** This is the original bash version. For more advanced features (color coding, git history analysis, migration tracking), see [what-is-left.py](#what-is-leftpy).
 
 ### shell-template.sh
 
