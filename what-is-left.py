@@ -713,14 +713,17 @@ class FileComparator:
             progress_pct = 100
         
         if not quiet:
-            # Print summary panel
+            # Print summary panel with aligned content
+            # Use consistent label width and right-align numbers with consistent spacing
+            label_width = 40
+            num_width = 4
             summary_text = f"""
-Files in old repository (../bin):     {total_old}
-Files in current repository (pub-bin): {total_pub}
-Files in both (need fixing):          {in_both_count} 🔴
-Files to migrate (old bin only):       {to_migrate_count} 🟡
-Files successfully migrated:          {moved_count} 🟢
-New files in pub-bin:                  {new_count} 🔵
+{"Files in old repository (../bin):":<{label_width}} {total_old:>{num_width}}
+{"Files in current repository (pub-bin):":<{label_width}} {total_pub:>{num_width}}
+{"Files in both (need fixing):":<{label_width}} {in_both_count:>{num_width}} 🔴
+{"Files to migrate (old bin only):":<{label_width}} {to_migrate_count:>{num_width}} 🟡
+{"Files successfully migrated:":<{label_width}} {moved_count:>{num_width}} 🟢
+{"New files in pub-bin:":<{label_width}} {new_count:>{num_width}} 🔵
 
 Progress: {progress_pct}% migrated ({moved_count} of {total_needed} files)
 """
