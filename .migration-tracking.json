@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-12-06T19:45:22.559004",
+  "last_updated": "2025-12-06T20:20:56.459242",
   "migrations": {
     "clean-emacs-files.sh": {
       "old_path": "clean_emacs_files.sh",
@@ -110,6 +110,12 @@
       "new_path": "network-tools/intelligence/record-ip-api-json.sh",
       "date": "2025-12-06T19:45:13.790221",
       "detected_date": "2025-12-06T19:45:13.790650"
+    },
+    "network-tools/diagnostics/sort-netstat-tcp.sh": {
+      "old_path": "sort-netstat-tcp.sh",
+      "new_path": "network-tools/diagnostics/sort-netstat-tcp.sh",
+      "date": "2025-12-06T20:20:56.458785",
+      "detected_date": "2025-12-06T20:20:56.459191"
     }
   }
 }

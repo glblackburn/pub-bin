@@ -15,6 +15,7 @@ Network diagnostic, scanning, intelligence, and capture tools.
 - `diagnostics/record-netstat.sh` - Network connections and ports
 - `diagnostics/record-nslookup.sh <ip>` - DNS lookups
 - `diagnostics/record-network-config.sh` - Interface configuration
+- `diagnostics/sort-netstat-tcp.sh [file]` - Sort and filter TCP connections from netstat output
 
 ### Scanning
 - `scanning/record-nmap.sh <target>` - Port scanning and service detection
