@@ -7,6 +7,7 @@
 ### December 2025
 
 - ✅ [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07.md) - What happens when you ask an AI coding assistant to review another assistant's work?
+- ✅ [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07-what-is-left.md) - From bash to Python: Migrating a migration tracker
 - ✅ [December 6, 2025](LinkedIn-posts/2025/12/2025-12-06.md) - Just finished building a bash script to automate Trufflehog security scans acros
 - ✅ [December 5, 2025](LinkedIn-posts/2025/12/2025-12-05.md) - `aws-bin`: Auto-detecting AWS SSO login for remote systems
 - ✅ [December 3, 2025](LinkedIn-posts/2025/12/2025-12-03.md) - `load-ssh-key.sh`: From bug fixes to comprehensive testing
@@ -29,6 +30,7 @@
 
 | Date | Title | Status |
 |------|-------|--------|
+| [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07-what-is-left.md) | From bash to Python: Migrating a migration tracker | ✅ Published |
 | [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07.md) | What happens when you ask an AI coding assistant to review ... | ✅ Published |
 | [December 6, 2025](LinkedIn-posts/2025/12/2025-12-06.md) | Just finished building a bash script to automate Trufflehog ... | ✅ Published |
 | [December 5, 2025](LinkedIn-posts/2025/12/2025-12-05.md) | `aws-bin`: Auto-detecting AWS SSO login for remote systems | ✅ Published |

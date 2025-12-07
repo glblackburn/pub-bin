@@ -1,6 +1,6 @@
 # December 7, 2025
 
-**LinkedIn:** [Not Published Yet]()
+**LinkedIn:** [LinkedIn](https://www.linkedin.com/posts/activity-7403558721009901568-vN85/)
 
 ---
 
@@ -20,9 +20,15 @@ So I rebuilt it in Python with the `rich` library, and the difference is night a
 
 **The before (bash):**  
 
-Raw diff output showing files with `<` and `>` prefixes. No color, no organization, just text.
+Raw diff output showing files with `<` and `>` prefixes. No color, no organization, just text. You had to scroll through multiple screens of this to understand what needed to be migrated.
 
-![Bash Version - Raw Output](2025-12-07_what-is-left-bash_1.png)
+![Bash Version - Raw Output 1](2025-12-07_what-is-left-bash_1.png)
+
+![Bash Version - Raw Output 2](2025-12-07_what-is-left-bash_2.png)
+
+![Bash Version - Raw Output 3](2025-12-07_what-is-left-bash_3.png)
+
+![Bash Version - Raw Output 4](2025-12-07_what-is-left-bash_4.png)
 
 **The after (Python):**  
 
@@ -49,7 +55,5 @@ Just finished adding multi-column layout support. The script now detects termina
 **The lesson:**  
 
 Sometimes the right tool for the job changes as requirements evolve. The bash script worked, but Python made it possible to add features that would have been painful in bash — like git history analysis and rich terminal formatting.
-
-The migration tracker now tracks the migration of the migration tracker. Meta.
 
 The repository: https://github.com/glblackburn/pub-bin

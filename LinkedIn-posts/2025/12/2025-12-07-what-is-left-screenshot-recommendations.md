@@ -14,47 +14,51 @@
 - `2025-12-07_what-is-left-python_1.png` (990KB) - Summary and files to migrate
 - `2025-12-07_what-is-left-python_2.png` (1.0MB) - Migrated and new files
 
-## Recommendation: Use 3 Images
+## Recommendation: Use 5-6 Images (Enhanced Before/After)
 
 **Optimal Selection:**
-1. **One bash screenshot** - Show the "before" state
-   - **Recommended:** `2025-12-07_what-is-left-bash_1.png`
-   - **Why:** First screenshot likely shows the clearest example of raw diff output
-   - **Purpose:** Demonstrate the "before" state - raw, unformatted output
+1. **3-4 bash screenshots** - Show the "before" state and demonstrate how hard it is to parse
+   - **Recommended:** `2025-12-07_what-is-left-bash_1.png`, `2025-12-07_what-is-left-bash_2.png`, `2025-12-07_what-is-left-bash_3.png`, and optionally `2025-12-07_what-is-left-bash_4.png`
+   - **Why:** Multiple screenshots show the repetitive, hard-to-parse nature of the raw diff output. This creates a stronger contrast with the improved Python version.
+   - **Purpose:** Demonstrate the "before" state - raw, unformatted output that requires scrolling through multiple screens to understand
 
 2. **Both Python screenshots** - Show the "after" state
    - **Image 1:** `2025-12-07_what-is-left-python_1.png` - Summary panel and files to migrate section
    - **Image 2:** `2025-12-07_what-is-left-python_2.png` - Successfully migrated and new files sections
    - **Why:** Together they show the complete improved output with color coding, multi-column layout, and categorization
-   - **Purpose:** Demonstrate the "after" state - rich, formatted, organized output
+   - **Purpose:** Demonstrate the "after" state - rich, formatted, organized output that's easy to understand at a glance
 
-## Alternative: Use 4 Images (If More Context Needed)
+## Alternative: Use 4 Images (If Space is Limited)
 
-If you want to show more of the bash output for contrast:
+If LinkedIn post length or image count is a concern:
 
 1. `2025-12-07_what-is-left-bash_1.png` - Initial bash output
-2. `2025-12-07_what-is-left-bash_2.png` - Additional bash output (optional)
+2. `2025-12-07_what-is-left-bash_2.png` - Additional bash output showing repetition
 3. `2025-12-07_what-is-left-python_1.png` - Python summary and migration section
 4. `2025-12-07_what-is-left-python_2.png` - Python migrated and new files sections
 
 ## Rationale
 
-**Why 3 images is optimal:**
-- LinkedIn posts perform best with 3-4 images
-- Clear before/after comparison (1 before, 2 after)
-- Shows the complete Python output (both screenshots together)
-- Not overwhelming - tells the story concisely
+**Why 5-6 images is optimal:**
+- LinkedIn supports up to 9 images in a carousel, so 5-6 is well within limits
+- Multiple bash screenshots demonstrate the problem more effectively - showing how much scrolling and parsing is required
+- Creates a stronger visual contrast: "look at all this raw output you have to parse" vs "here's the clean, organized version"
+- The repetition in bash screenshots reinforces the "hard to parse" message
+- Shows the complete Python output (both screenshots together) as the solution
 
-**Why not all 6 bash screenshots:**
-- Too many images can be overwhelming
-- The bash output is repetitive (all show similar diff format)
-- One bash screenshot is sufficient to show the "before" state
-- Focus should be on the improved Python version
+**Why multiple bash screenshots:**
+- One screenshot doesn't fully convey how difficult the raw diff output is to work with
+- Multiple screenshots show the repetitive nature and volume of unformatted output
+- Demonstrates the real-world problem: having to scroll through multiple screens of raw diff text
+- Creates empathy: "I've been there, scrolling through raw diff output"
 
 **Image Order in Post:**
-1. Bash screenshot (first) - establishes the "before"
-2. Python screenshot 1 (second) - shows the improvement
-3. Python screenshot 2 (third) - completes the picture
+1. Bash screenshot 1 (first) - establishes the "before" state
+2. Bash screenshot 2 (second) - shows the repetition and volume
+3. Bash screenshot 3 (third) - reinforces the difficulty of parsing
+4. Bash screenshot 4 (optional, fourth) - additional context if needed
+5. Python screenshot 1 (fifth) - shows the improvement
+6. Python screenshot 2 (sixth) - completes the picture
 
 ## Notes
 
@@ -62,3 +66,4 @@ If you want to show more of the bash output for contrast:
 - Images are properly named with date prefix for organization
 - File sizes are reasonable (700KB - 1MB each)
 - Images should be attached to the LinkedIn post in the recommended order
+- Using multiple bash screenshots creates a stronger narrative: "This is what I had to deal with" followed by "This is the solution"
