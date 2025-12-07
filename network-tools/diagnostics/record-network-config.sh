@@ -1,5 +1,66 @@
+#!/usr/bin/env bash
+set -euET -o pipefail
 
+script_name=$(basename $0)
+script_dir=$(dirname $0)
+
+################################################################################
+# CLI Parameters
+################################################################################
+
+################################################################################
+# default values
+################################################################################
 all_info=net_all_info.txt
+wifi_info=net_wifi_info.txt
+lan_info=net_lan_info.txt
+
+################################################################################
+# show command usage
+################################################################################
+function usage {
+    message=${1:-}
+    if [ ! -z "${message}" ] ; then
+	echo "Message: ${message}"
+    fi
+    cat<<EOF
+Usage: ${script_name}
+
+Record network interface configuration using ifconfig.
+
+Options
+  -h               : Display this help message.
+
+Example:
+$ ${script_name}
+EOF
+}
+
+################################################################################
+# get command line options
+################################################################################
+while getopts ":h" opt; do
+    case ${opt} in
+	h )
+            usage
+            exit 0
+            ;;
+	\? )
+            usage "Invalid Option: -$OPTARG"
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+################################################################################
+# functions
+################################################################################
+
+################################################################################
+# main script logic
+################################################################################
+
 cat<<EOF
 ================================================================================
 ifconfig - ${all_info}
@@ -7,19 +68,16 @@ ifconfig - ${all_info}
 EOF
 ifconfig | tee ${all_info}
 
-wifi_info=net_wifi_info.txt
 cat<<EOF
 ================================================================================
 ifconfig wifi en0 - ${wifi_info}
 ================================================================================
 EOF
-ifconfig en0 | tee ${wifi_info}
+ifconfig en0 2>/dev/null | tee ${wifi_info} || echo "Interface en0 not found" | tee ${wifi_info}
 
-lan_info=net_lan_info.txt
 cat<<EOF
 ================================================================================
 ifconfig lan en7 - ${lan_info}
 ================================================================================
 EOF
-ifconfig en7 | tee ${lan_info}
-
+ifconfig en7 2>/dev/null | tee ${lan_info} || echo "Interface en7 not found" | tee ${lan_info}

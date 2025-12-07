@@ -5,35 +5,77 @@ script_name=$(basename $0)
 script_dir=$(dirname $0)
 
 ################################################################################
+# CLI Parameters
+################################################################################
+
+################################################################################
 # default values
 ################################################################################
 ts=`date +%Y-%m-%d_%H%M%S`
 
 ################################################################################
+# show command usage
+################################################################################
+function usage {
+    message=${1:-}
+    if [ ! -z "${message}" ] ; then
+	echo "Message: ${message}"
+    fi
+    cat<<EOF
+Usage: ${script_name} <ip>
+
+Record DNS lookup results for an IP address using nslookup.
+
+Options
+  -h               : Display this help message.
+
+Arguments
+  <ip>             : IP address to lookup (required)
+
+Example:
+$ ${script_name} 8.8.8.8
+EOF
+}
+
+################################################################################
 # get command line options
 ################################################################################
-ip=${1}
+while getopts ":h" opt; do
+    case ${opt} in
+	h )
+            usage
+            exit 0
+            ;;
+	\? )
+            usage "Invalid Option: -$OPTARG"
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+################################################################################
+# functions
+################################################################################
 
 ################################################################################
 # main script logic
 ################################################################################
+
+if [ $# -lt 1 ]; then
+    usage "IP address is required"
+    exit 1
+fi
+
+ip=${1}
 output_file=nslookup_${ip}_${ts}.txt
-
-cat<<EOF
-################################################################################
-# Debug info
-################################################################################
-output_file=[${output_file}]
-ts=[${ts}]
-ip=[${ip}]
-
-EOF
 
 command="nslookup ${ip}"
 {
     cat<<EOF
 ts=[${ts}]
 command=[${command}]
+output_file=[${output_file}]
 EOF
     ${command}
 } | tee ${output_file}
