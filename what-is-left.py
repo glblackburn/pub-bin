@@ -411,10 +411,18 @@ class FileComparator:
         self.moved_files = moved_files
         return moved_files
     
+    def normalize_filename(self, filename: str) -> str:
+        """Normalize filename for matching (convert underscores to hyphens, lowercase)"""
+        return filename.lower().replace('_', '-')
+    
     def retro_calculate_migrations(self) -> Dict[str, Dict[str, str]]:
-        """Retroactively calculate all migrations from git history of both repos"""
+        """Retroactively calculate all migrations from git history of both repos
+        
+        Always searches full git history (no date filtering).
+        Use --force-recalculate to clear existing tracking file first.
+        """
         if self.verbose:
-            print("Retroactively calculating migrations from git history...", file=sys.stderr)
+            print("Retroactively calculating migrations from full git history...", file=sys.stderr)
         
         migrations = {}
         
@@ -454,6 +462,7 @@ class FileComparator:
         
         # Get all files that ever existed in old bin git history
         old_bin_all_files = {}
+        old_bin_by_normalized = {}  # Index by normalized name for matching
         if self.old_bin_path.joinpath('.git').exists():
             try:
                 result = subprocess.run(
@@ -481,19 +490,33 @@ class FileComparator:
                                 # Store by filename for matching
                                 file_path = Path(line)
                                 filename = file_path.name
-                                # Store earliest date for each filename
+                                normalized = self.normalize_filename(filename)
+                                
+                                # Store earliest date for each filename (exact match)
                                 if filename not in old_bin_all_files:
                                     old_bin_all_files[filename] = {
                                         'path': str(file_path).replace('\\', '/'),
                                         'date': current_date
                                     }
+                                
+                                # Store earliest date for normalized name (for underscore/hyphen matching)
+                                if normalized not in old_bin_by_normalized:
+                                    old_bin_by_normalized[normalized] = {
+                                        'path': str(file_path).replace('\\', '/'),
+                                        'date': current_date,
+                                        'original_name': filename
+                                    }
             except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
                 if self.verbose:
                     print(f"Error getting old-bin file dates: {e}", file=sys.stderr)
         
-        # Match files by filename
+        # Match files by filename (exact and normalized)
         for pub_path, pub_date in pub_bin_all_files.items():
             filename = pub_path.name
+            normalized = self.normalize_filename(filename)
+            matched = False
+            
+            # Try exact match first
             if filename in old_bin_all_files:
                 old_info = old_bin_all_files[filename]
                 old_date = old_info['date']
@@ -509,6 +532,25 @@ class FileComparator:
                         'old_date': old_date.isoformat(),
                         'detected_date': datetime.now().isoformat(),
                         'method': 'retro_calculation'
+                    }
+                    matched = True
+            
+            # Try normalized match (for underscore/hyphen differences)
+            if not matched and normalized in old_bin_by_normalized:
+                old_info = old_bin_by_normalized[normalized]
+                old_date = old_info['date']
+                old_path = old_info['path']
+                
+                # If file was added to pub-bin after it existed in old bin, it's a migration
+                if pub_date > old_date:
+                    pub_path_str = str(pub_path).replace('\\', '/')
+                    migrations[pub_path_str] = {
+                        'old_path': old_path,
+                        'new_path': pub_path_str,
+                        'date': pub_date.isoformat(),
+                        'old_date': old_date.isoformat(),
+                        'detected_date': datetime.now().isoformat(),
+                        'method': 'retro_calculation_normalized'
                     }
         
         if self.verbose:
@@ -790,6 +832,8 @@ Color coding:
                        help='Hide new files in pub-bin section')
     parser.add_argument('--retro-calculate', action='store_true',
                        help='Retroactively calculate all migrations from git history and update tracking file')
+    parser.add_argument('--force-recalculate', action='store_true',
+                       help='Force full recalculation from scratch, ignoring existing tracking file')
     parser.add_argument('--old-bin', type=str, default='../bin',
                        help='Path to old bin directory (default: ../bin)')
     parser.add_argument('--pub-bin', type=str, default='.',
@@ -812,12 +856,48 @@ Color coding:
     # Create comparator and run
     comparator = FileComparator(old_bin, pub_bin, verbose=args.verbose)
     
-    # Retroactively calculate migrations if requested
-    if args.retro_calculate:
+    # Force recalculation from scratch if requested
+    if args.force_recalculate:
+        if comparator.tracking_file.exists():
+            # Backup existing tracking file
+            backup_file = comparator.tracking_file.with_suffix('.json.backup')
+            import shutil
+            shutil.copy2(comparator.tracking_file, backup_file)
+            if not args.quiet:
+                print(f"Backed up existing tracking file to: {backup_file}", file=sys.stderr)
+            
+            # Clear tracking file before recalculation
+            comparator.tracking_file.unlink()
+            if args.verbose:
+                print("Cleared existing tracking file for full recalculation", file=sys.stderr)
+        
+        # Recalculate from full history (no existing tracking file to limit search)
         migrations = comparator.retro_calculate_migrations()
         comparator.save_tracking_file(migrations)
         if not args.quiet:
-            print(f"\nRetroactively calculated {len(migrations)} migrations from git history")
+            print(f"\nForce recalculated {len(migrations)} migrations from full git history")
+            print(f"Tracking file updated: {comparator.tracking_file}")
+    
+    # Retroactively calculate migrations if requested (incremental - adds new ones)
+    elif args.retro_calculate:
+        # Get existing migrations
+        existing = comparator.load_tracking_file()
+        existing_count = len(existing)
+        
+        # Recalculate from full history
+        migrations = comparator.retro_calculate_migrations()
+        
+        # Merge with existing (new ones will overwrite if same key, but that's fine)
+        existing.update(migrations)
+        comparator.save_tracking_file(existing)
+        
+        new_count = len(existing) - existing_count
+        if not args.quiet:
+            if new_count > 0:
+                print(f"\nRetroactively calculated {new_count} new migrations from git history")
+            else:
+                print(f"\nNo new migrations found (all {len(existing)} already tracked)")
+            print(f"Total migrations in tracking file: {len(existing)}")
             print(f"Tracking file updated: {comparator.tracking_file}")
     
     results = comparator.compare_files()
