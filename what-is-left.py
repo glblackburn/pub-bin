@@ -27,6 +27,7 @@ try:
     from rich.panel import Panel
     from rich.text import Text
     from rich.progress import Progress
+    from rich.columns import Columns
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -729,11 +730,130 @@ Progress: {progress_pct}% migrated ({moved_count} of {total_needed} files)
 """
             self.console.print(Panel(summary_text.strip(), title="Migration Status Summary", border_style="cyan"))
         
+        # Get terminal width for column layout
+        terminal_width = self.console.width if hasattr(self.console, 'width') and self.console.width else 120
+        use_columns = terminal_width >= 100  # Use columns if terminal is wide enough
+        
+        def print_files_in_columns(files_list: List[str], title: str, border_style: str, min_files_for_columns: int = 8):
+            """Print file list in columns if terminal is wide enough"""
+            if not files_list:
+                return
+            
+            self.console.print()
+            
+            if use_columns and len(files_list) >= min_files_for_columns:
+                # Format files in columns with proper alignment
+                # Account for panel borders (2 chars) and padding (2 chars on each side = 4 total)
+                panel_padding = 4  # 2 chars border + 2 chars padding on each side
+                available_width = terminal_width - panel_padding
+                
+                # Find the maximum filename length to determine if columns are feasible
+                max_filename_len = max(len(f) for f in files_list) if files_list else 0
+                
+                # Calculate spacing between columns
+                column_spacing = 3
+                indent_width = 2  # Indentation for each line
+                
+                # Determine optimal number of columns
+                # Try 3 columns first, then 2, then fall back to single column
+                num_columns = min(3, max(2, terminal_width // 40))
+                optimal_columns = None
+                optimal_col_width = 0
+                
+                for test_cols in [3, 2]:
+                    if test_cols > len(files_list):
+                        continue
+                    
+                    total_spacing = column_spacing * (test_cols - 1)
+                    # Calculate max allowed column width for this number of columns
+                    max_allowed = (available_width - total_spacing - (indent_width * test_cols)) // test_cols
+                    
+                    # If we can fit the longest filename, this is viable
+                    if max_allowed >= max_filename_len:
+                        optimal_columns = test_cols
+                        optimal_col_width = max_allowed
+                        break
+                    # If we can fit at least 30 chars, it's acceptable (with some truncation)
+                    elif max_allowed >= 30:
+                        optimal_columns = test_cols
+                        optimal_col_width = max_allowed
+                        break
+                
+                # If no good column layout found, use single column
+                if optimal_columns is None or optimal_col_width < 20:
+                    files_text = "\n".join([f"  {f}" for f in files_list])
+                    self.console.print(Panel(files_text, title=title, border_style=border_style))
+                    return
+                
+                # Use the optimal column count
+                num_columns = optimal_columns
+                uniform_col_width = optimal_col_width
+                files_per_col = (len(files_list) + num_columns - 1) // num_columns
+                
+                # Split files into columns
+                col_data = []
+                for i in range(num_columns):
+                    col_start = i * files_per_col
+                    col_end = min((i + 1) * files_per_col, len(files_list))
+                    if col_start < len(files_list):
+                        col_files = files_list[col_start:col_end]
+                        col_data.append(col_files)
+                    else:
+                        col_data.append([])
+                
+                # Format as columns with proper alignment
+                formatted_lines = []
+                max_lines = max(len(col) for col in col_data) if col_data else 0
+                
+                for line_idx in range(max_lines):
+                    line_parts = []
+                    for col_idx, col in enumerate(col_data):
+                        if line_idx < len(col):
+                            # Pad filename to uniform column width, add 2 spaces for indentation
+                            filename = col[line_idx]
+                            # Truncate only if absolutely necessary (with ellipsis)
+                            if len(filename) > uniform_col_width:
+                                filename = filename[:uniform_col_width - 3] + "..."
+                            padded = f"  {filename:<{uniform_col_width}}"
+                            line_parts.append(padded)
+                        elif col_idx < len(col_data) - 1:  # Pad empty cells (except last column)
+                            # Pad to match uniform column width + 2 spaces for indentation
+                            line_parts.append(" " * (uniform_col_width + indent_width))
+                    
+                    if line_parts:
+                        # Join columns with consistent spacing
+                        line = (" " * column_spacing).join(line_parts).rstrip()
+                        formatted_lines.append(line)
+                
+                # Wrap in Panel with colored border
+                files_text = "\n".join(formatted_lines)
+                self.console.print(Panel(files_text, title=title, border_style=border_style))
+            else:
+                # Single column layout
+                # Account for panel borders (1 char each side) and padding (1 char each side)
+                # Total: 2 border + 2 padding = 4 chars
+                panel_padding = 4
+                available_width = terminal_width - panel_padding
+                max_filename_width = available_width - 2  # Subtract 2 for indentation spaces
+                
+                formatted_files = []
+                for f in files_list:
+                    # Ensure filename fits on one line
+                    if len(f) > max_filename_width:
+                        # Truncate with ellipsis if too long
+                        truncated = f[:max_filename_width - 3] + "..."
+                        formatted_files.append(f"  {truncated}")
+                    else:
+                        formatted_files.append(f"  {f}")
+                
+                files_text = "\n".join(formatted_files)
+                # Panel will expand to full width by default
+                self.console.print(Panel(files_text, title=title, border_style=border_style))
+        
         # Print files in both places (RED)
         if results['in_both']:
-            self.console.print()
-            files_text = "\n".join([f"  {str(f[0])}" for f in results['in_both']])
-            self.console.print(Panel(files_text, title=f"🔴 Files in Both Places (Need Fixing) - {len(results['in_both'])} files", border_style="red"))
+            files_list = [str(f[0]) for f in results['in_both']]
+            print_files_in_columns(files_list, f"🔴 Files in Both Places (Need Fixing) - {len(results['in_both'])} files", "red")
         
         # Print files to migrate (YELLOW)
         if results['to_migrate']:
@@ -745,23 +865,46 @@ Progress: {progress_pct}% migrated ({moved_count} of {total_needed} files)
                 if category in categorized:
                     files = categorized[category]
                     files_text_parts.append(f"\n{category.capitalize()}s ({len(files)}):")
-                    for file_path, _ in sorted(files):
-                        files_text_parts.append(f"  {file_path}")
+                    category_files = [str(file_path) for file_path, _ in sorted(files)]
+                    
+                    if use_columns and len(category_files) >= 10:
+                        # Format category files in columns within the text
+                        num_columns = min(3, max(2, terminal_width // 40))
+                        files_per_col = (len(category_files) + num_columns - 1) // num_columns
+                        col_lines = []
+                        for i in range(num_columns):
+                            col_start = i * files_per_col
+                            col_end = min((i + 1) * files_per_col, len(category_files))
+                            if col_start < len(category_files):
+                                col_files = category_files[col_start:col_end]
+                                col_lines.append([f"  {f}" for f in col_files])
+                        
+                        # Format as columns
+                        max_lines = max(len(col) for col in col_lines) if col_lines else 0
+                        for line_idx in range(max_lines):
+                            line_parts = []
+                            for col in col_lines:
+                                if line_idx < len(col):
+                                    line_parts.append(f"{col[line_idx]:<45}")
+                            if line_parts:
+                                files_text_parts.append("  ".join(line_parts).rstrip())
+                    else:
+                        # Single column
+                        for file_path in category_files:
+                            files_text_parts.append(f"  {file_path}")
             
             files_text = "\n".join(files_text_parts)
             self.console.print(Panel(files_text, title=f"🟡 Files to Migrate (Old Bin Only) - {len(results['to_migrate'])} files", border_style="yellow"))
         
         # Print moved files (GREEN)
         if results['moved']:
-            self.console.print()
-            files_text = "\n".join([f"  {str(f[0])} (moved {f[1]})" if f[1] else f"  {str(f[0])} (moved)" for f in sorted(results['moved'])])
-            self.console.print(Panel(files_text, title=f"🟢 Successfully Migrated (Moved Files) - {len(results['moved'])} files", border_style="green"))
+            files_list = [f"{str(f[0])} (moved {f[1]})" if f[1] else str(f[0]) for f in sorted(results['moved'])]
+            print_files_in_columns(files_list, f"🟢 Successfully Migrated (Moved Files) - {len(results['moved'])} files", "green")
         
         # Print new files (BLUE)
         if show_new and results['new']:
-            self.console.print()
-            files_text = "\n".join([f"  {str(f[0])}" for f in sorted(results['new'])])
-            self.console.print(Panel(files_text, title=f"🔵 New Files in Pub-Bin - {len(results['new'])} files", border_style="blue"))
+            files_list = [str(f[0]) for f in sorted(results['new'])]
+            print_files_in_columns(files_list, f"🔵 New Files in Pub-Bin - {len(results['new'])} files", "blue")
         
         self.console.print()
     
