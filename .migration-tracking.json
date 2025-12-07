@@ -1,0 +1,115 @@
+{
+  "last_updated": "2025-12-06T19:45:22.559004",
+  "migrations": {
+    "clean-emacs-files.sh": {
+      "old_path": "clean_emacs_files.sh",
+      "new_path": "clean-emacs-files.sh",
+      "date": "2025-11-02T04:30:32-05:00",
+      "old_date": "2020-04-18T10:36:53-04:00",
+      "detected_date": "2025-12-06T19:45:22.558638",
+      "method": "retro_calculation_normalized"
+    },
+    "shell-template.sh": {
+      "old_path": "shell-template.sh",
+      "new_path": "shell-template.sh",
+      "date": "2025-11-02T04:30:32-05:00",
+      "old_date": "2024-03-21T08:49:03-04:00",
+      "detected_date": "2025-12-06T19:45:22.558712",
+      "method": "retro_calculation"
+    },
+    "rename-email.sh": {
+      "old_path": "rename-email.sh",
+      "new_path": "rename-email.sh",
+      "date": "2025-11-03T20:46:42-05:00",
+      "old_date": "2024-09-25T10:14:38-04:00",
+      "detected_date": "2025-12-06T19:45:22.558734",
+      "method": "retro_calculation"
+    },
+    "load-ssh-key.sh": {
+      "old_path": "load_ssh_key.sh",
+      "new_path": "load-ssh-key.sh",
+      "date": "2025-11-05T03:12:41-05:00",
+      "old_date": "2020-04-01T10:00:46-04:00",
+      "detected_date": "2025-12-06T19:45:22.558749",
+      "method": "retro_calculation_normalized"
+    },
+    "fix-spaces-in-filename.sh": {
+      "old_path": "fix-spaces-in-filename.sh",
+      "new_path": "fix-spaces-in-filename.sh",
+      "date": "2025-11-06T14:02:38-05:00",
+      "old_date": "2024-05-16T11:54:06-04:00",
+      "detected_date": "2025-12-06T19:45:22.558761",
+      "method": "retro_calculation"
+    },
+    "fix-spaces-in-filenames.sh": {
+      "old_path": "fix-spaces-in-filenames.sh",
+      "new_path": "fix-spaces-in-filenames.sh",
+      "date": "2025-11-06T14:02:38-05:00",
+      "old_date": "2024-05-25T17:05:39-04:00",
+      "detected_date": "2025-12-06T19:45:22.558771",
+      "method": "retro_calculation"
+    },
+    "clean-screenshots.sh": {
+      "old_path": "clean-screenshots.sh",
+      "new_path": "clean-screenshots.sh",
+      "date": "2025-11-11T03:02:12-05:00",
+      "old_date": "2020-06-04T07:30:58-04:00",
+      "detected_date": "2025-12-06T19:45:22.558785",
+      "method": "retro_calculation"
+    },
+    "network-tools/scanning/record-nmap.sh": {
+      "old_path": "record-nmap.sh",
+      "new_path": "network-tools/scanning/record-nmap.sh",
+      "date": "2025-12-06T19:45:13.790218",
+      "detected_date": "2025-12-06T19:45:13.790419"
+    },
+    "system-tools/record-uptime.sh": {
+      "old_path": "record-uptime.sh",
+      "new_path": "system-tools/record-uptime.sh",
+      "date": "2025-12-06T19:45:13.790171",
+      "detected_date": "2025-12-06T19:45:13.790442"
+    },
+    "network-tools/intelligence/record-whois.sh": {
+      "old_path": "record-whois.sh",
+      "new_path": "network-tools/intelligence/record-whois.sh",
+      "date": "2025-12-06T19:45:13.790225",
+      "detected_date": "2025-12-06T19:45:13.790459"
+    },
+    "network-tools/diagnostics/record-network-config.sh": {
+      "old_path": "netmon/record-network-config.sh",
+      "new_path": "network-tools/diagnostics/record-network-config.sh",
+      "date": "2025-12-06T19:45:13.790228",
+      "detected_date": "2025-12-06T19:45:13.790475"
+    },
+    "network-tools/diagnostics/record-nslookup.sh": {
+      "old_path": "record-nslookup.sh",
+      "new_path": "network-tools/diagnostics/record-nslookup.sh",
+      "date": "2025-12-06T19:45:13.790241",
+      "detected_date": "2025-12-06T19:45:13.790568"
+    },
+    "network-tools/capture/record-tcpdump.sh": {
+      "old_path": "netmon/record-tcpdump.sh",
+      "new_path": "network-tools/capture/record-tcpdump.sh",
+      "date": "2025-12-06T19:45:13.790247",
+      "detected_date": "2025-12-06T19:45:13.790604"
+    },
+    "system-tools/record-log-show.sh": {
+      "old_path": "record-log-show.sh",
+      "new_path": "system-tools/record-log-show.sh",
+      "date": "2025-12-06T19:45:13.790253",
+      "detected_date": "2025-12-06T19:45:13.790627"
+    },
+    "network-tools/diagnostics/record-netstat.sh": {
+      "old_path": "record-netstat.sh",
+      "new_path": "network-tools/diagnostics/record-netstat.sh",
+      "date": "2025-12-06T19:45:13.790256",
+      "detected_date": "2025-12-06T19:45:13.790639"
+    },
+    "network-tools/intelligence/record-ip-api-json.sh": {
+      "old_path": "record-ip-api-json.sh",
+      "new_path": "network-tools/intelligence/record-ip-api-json.sh",
+      "date": "2025-12-06T19:45:13.790221",
+      "detected_date": "2025-12-06T19:45:13.790650"
+    }
+  }
+}

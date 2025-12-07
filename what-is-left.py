@@ -130,7 +130,7 @@ class FileComparator:
         self.verbose = verbose
         self.console = Console() if RICH_AVAILABLE else None
         self.moved_files: Dict[Path, Tuple[Path, datetime]] = {}
-        self.tracking_file = self.old_bin_path / TRACKING_FILE_NAME
+        self.tracking_file = self.pub_bin_path / TRACKING_FILE_NAME
         
     def should_exclude(self, file_path: Path) -> bool:
         """Check if file should be excluded from comparison"""
