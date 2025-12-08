@@ -11,6 +11,7 @@ QUIET=false
 VERBOSE=false
 INTERVAL=60
 SHOW_REPO_NAME=false
+SHOW_WORKING_DIR=false
 WORKING_DIR="/tmp"
 
 ################################################################################
@@ -29,7 +30,7 @@ function usage {
 	echo "Message: ${message}"
     fi
     cat<<EOF
-Usage: ${script_name} [-hqrv] [-i <interval>] [-t <working_dir>]
+Usage: ${script_name} [-hqrvw] [-i <interval>] [-t <working_dir>]
 
 Monitor AI agent activity by tracking working directory files and git changes with
 audio feedback.
@@ -41,6 +42,7 @@ Options
   -r               : Show repository name in diff and status output.
   -t <dir>         : Working/scratch directory to monitor (Default: ${WORKING_DIR})
   -v               : Verbose output.
+  -w               : Show working directory path in work output.
 
 Example:
 $ ${script_name} -i 30
@@ -95,7 +97,11 @@ function format-work-output {
     local working_dir=$3
     local status_centered=$(center-text "${status}" 10)
 
-    printf "work:   %6s (%s) (%s)\n" "${work_count}" "${status_centered}" "${working_dir}"
+    if [ "${SHOW_WORKING_DIR}" = true ] ; then
+	printf "work:   %6s (%s) (%s)\n" "${work_count}" "${status_centered}" "${working_dir}"
+    else
+	printf "work:   %6s (%s)\n" "${work_count}" "${status_centered}"
+    fi
 }
 
 function format-diff-output {
@@ -131,7 +137,7 @@ function show-timestamp {
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":i:t:hqrv" opt; do
+while getopts ":i:t:hqrvw" opt; do
     case ${opt} in
 	i )
             INTERVAL=$OPTARG
@@ -147,6 +153,9 @@ while getopts ":i:t:hqrv" opt; do
             ;;
 	v )
             VERBOSE=true
+            ;;
+	w )
+            SHOW_WORKING_DIR=true
             ;;
 	h )
             usage
@@ -168,6 +177,14 @@ if [ -z "${INTERVAL}" ] || [ "${INTERVAL}" -le 0 ] ; then
     exit 1
 fi
 
+# Validate working directory exists
+work_dir_resolved=$(readlink -f "${WORKING_DIR}" 2>/dev/null || echo "${WORKING_DIR}")
+if [ ! -d "${work_dir_resolved}" ] ; then
+    echo "Error: Working directory does not exist: ${WORKING_DIR}" >&2
+    echo "Resolved path: ${work_dir_resolved}" >&2
+    exit 1
+fi
+
 ################################################################################
 # Main script logic
 ################################################################################
@@ -179,6 +196,7 @@ Interval: ${INTERVAL} seconds
 Working directory: ${WORKING_DIR}
 Quiet mode: ${QUIET}
 Show repo name: ${SHOW_REPO_NAME}
+Show working dir: ${SHOW_WORKING_DIR}
 Verbose mode: ${VERBOSE}
 ================================================================================
 EOF
@@ -194,10 +212,11 @@ while true ; do
 
     # Get current counts
     # Resolve symlinks and use find -L to follow symlinks
+    # Directory is validated at startup, so we can safely run find here
     work_dir_resolved=$(readlink -f "${WORKING_DIR}" 2>/dev/null || echo "${WORKING_DIR}")
-    work_count=$(find -L "${work_dir_resolved}" 2>/dev/null | wc -l | tr -d ' ')
-    diff_lines=$(git diff 2>/dev/null | wc -l | tr -d ' ')
-    status_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+    work_count=$(find -L "${work_dir_resolved}" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+    diff_lines=$(git diff 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+    status_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 
     # Calculate status for each metric
     work_status=$(get-status "${work_count}" "${prev_work_count}")
@@ -206,9 +225,7 @@ while true ; do
 
     # Generate formatted output messages
     work_output=$(format-work-output "${work_count}" "${work_status}" "${WORKING_DIR}")
-    sleep 2
     diff_output=$(format-diff-output "${diff_lines}" "${diff_status}" "${repo_name}")
-    sleep 2
     status_output=$(format-status-output "${status_count}" "${status_status}" "${repo_name}")
 
     # Update previous values for next iteration
