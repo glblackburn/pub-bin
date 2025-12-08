@@ -87,7 +87,9 @@ fi
 # Build bats command as an array
 BATS_ARGS=()
 if [ "$VERBOSE" = true ]; then
-    BATS_ARGS+=("-v")
+    # Use --print-output-on-failure to show output on failures
+    # and --verbose-run to show output from 'run' commands
+    BATS_ARGS+=("--print-output-on-failure" "--verbose-run")
 fi
 
 if [ -n "$FILTER" ]; then
