@@ -5,7 +5,8 @@
 
 ## High Priority - Recent Significant Updates
 
-### • `what-is-left.py`: From bash to Python with multi-column layout
+### ✅ `what-is-left.py`: From bash to Python with multi-column layout
+- **Status:** ✅ Published December 7, 2025
 - **Story:** Migration from bash to Python with enhanced features
 - **Key Points:**
   - Multi-column layout for wide terminals
@@ -161,14 +162,15 @@
 ## Summary
 
 - **Total topics:** 15+ potential posts
-- **High priority:** 3 (recent updates, significant work)
+- **Completed:** 1 (what-is-left.py - December 7, 2025)
+- **High priority:** 3 (1 completed, 2 remaining)
 - **Medium priority:** 5 (interesting projects, useful tools)
 - **Lower priority:** 4 (utility scripts, process topics)
 - **Special interest:** 3 (deep dives, comparisons)
 
 ## Recommended Posting Order
 
-1. **`what-is-left.py`** - Recent update, great visual output, demonstrates Python migration
+1. ✅ **`what-is-left.py`** - ✅ Published December 7, 2025 - Recent update, great visual output, demonstrates Python migration
 2. **Record scripts refactoring** - Significant work, organization story, standardization
 3. **BATS testing framework** - Comprehensive testing story, quality assurance
 4. **Arecibo Message project** - Unique, educational, interesting story
@@ -176,8 +178,12 @@
 
 ## Notes
 
-- All topics cover scripts that haven't been featured in LinkedIn posts yet
+- All topics cover scripts that haven't been featured in LinkedIn posts yet (except completed ones)
 - Topics highlight recent significant updates
 - Mix of technical depth and process insights
 - Visual appeal varies by topic - some have great screenshots, others are more conceptual
 - Consider audience interest - security tools, testing, and unique projects tend to get more engagement
+
+## Completed Posts
+
+- ✅ **December 7, 2025:** `what-is-left.py` - From bash to Python with multi-column layout
