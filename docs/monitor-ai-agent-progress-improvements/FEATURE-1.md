@@ -1,19 +1,55 @@
 # FEATURE-1: Improve Git Status Counting
 
-**Status:** Completed  
-**Priority:** High  
-**Severity:** Medium  
-**Reported:** 2025-12-08  
-**Target:** TBD
+**Status:** Completed
+**Priority:** High
+**Severity:** Medium
+**Reported:** 2025-12-08
+**Completed:** 2025-12-09
+**Commit:** 1012459
 
 **Description:**
 The current git status counting method uses `git ls-files --others` which may not accurately count all files in untracked directories. This enhancement will improve accuracy by using `find` to recursively count all files within untracked directories, ensuring all untracked files are properly tracked.
 
-**Current Implementation (lines 217-219):**
+**Previous Implementation (before FEATURE-1):**
 ```bash
 work_count=$(find -L "${work_dir_resolved}" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 diff_lines=$(git diff 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 status_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+```
+
+**Current Implementation (lines 220-248):**
+```bash
+# Count git status accurately (FEATURE-1)
+# Count modified/staged files (M, A, D, R, C in first column for staged, or space+M/D in second column for unstaged)
+# Format: "XY filename" where X=staged, Y=unstaged
+# Matches: M, A, D, R, C in first column OR M, D in second column (unstaged changes)
+modified_count=$(git status --porcelain 2>/dev/null | grep -E "^[MADRC].|^.[MD]" | wc -l | tr -d '[:space:]' || echo "0")
+
+# Count untracked files accurately using find
+untracked_count=0
+# Get untracked items, handling paths with spaces properly
+# git status --porcelain format: "?? path" or "?? "path with spaces""
+untracked_items=$(git status --porcelain 2>/dev/null | grep "^??" | sed 's/^?? //' || true)
+
+if [ -n "${untracked_items}" ] ; then
+    while IFS= read -r item; do
+        if [ -n "${item}" ] ; then
+            # Remove quotes if present (git quotes paths with spaces)
+            item=$(echo "${item}" | sed 's/^"//;s/"$//')
+            if [ -d "${item}" ] ; then
+                # Directory - count all files recursively
+                count=$(find "${item}" -type f 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
+                untracked_count=$((untracked_count + count))
+            else
+                # File - count as 1
+                untracked_count=$((untracked_count + 1))
+            fi
+        fi
+    done <<< "${untracked_items}"
+fi
+
+# Total status count is modified + untracked
+status_count=$((modified_count + untracked_count))
 ```
 
 **Issue:**
@@ -30,51 +66,30 @@ status_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ' || echo "0
 - Modified files should continue to be counted correctly
 - Combined count (modified + untracked) should be accurate
 
-**Proposed Implementation:**
+**Implementation Details:**
 
-1. **Get untracked entries from git status:**
-   ```bash
-   git status --porcelain | grep "^??"
-   ```
+The implementation includes the following improvements over the original:
 
-2. **For each untracked entry:**
-   - Check if it's a directory or file
-   - If directory: Use `find` to count all files recursively
-   - If file: Count as 1
-   - Sum all counts
+1. **Accurate Modified File Counting:**
+   - Uses `grep -E "^[MADRC].|^.[MD]"` to match both staged and unstaged modifications
+   - Catches files with `M`, `A`, `D`, `R`, `C` in first column (staged) or `M`, `D` in second column (unstaged)
+   - Fixes issue where unstaged modifications (format: ` M`) were not being counted
 
-3. **Keep modified count separate:**
-   - Continue using current method (already accurate)
-   - Display modified and untracked separately (optional enhancement)
+2. **Accurate Untracked File Counting:**
+   - Extracts untracked items using `sed 's/^?? //'` instead of `awk` for better path handling
+   - Handles paths with spaces by removing quotes if present
+   - Recursively counts all files in untracked directories using `find -type f`
+   - Counts individual untracked files as 1
 
-**Proposed Code:**
+3. **Whitespace Handling:**
+   - Uses `tr -d '[:space:]'` instead of `tr -d ' '` to remove all whitespace (including newlines)
+   - Prevents arithmetic syntax errors from newlines in `wc -l` output
+   - Applied consistently to all count variables (`work_count`, `diff_lines`, `modified_count`, `count`)
 
-```bash
-# Count modified/staged files (M, A, D, R, C in first column)
-modified_count=$(git status --porcelain 2>/dev/null | grep -E "^[MADRC]" | wc -l | tr -d ' ' || echo "0")
-
-# Count untracked files accurately using find
-untracked_count=0
-untracked_items=$(git status --porcelain 2>/dev/null | grep "^??" | awk '{print $2}' || true)
-
-if [ -n "${untracked_items}" ] ; then
-    while IFS= read -r item; do
-        if [ -n "${item}" ] ; then
-            if [ -d "${item}" ] ; then
-                # Directory - count all files recursively
-                count=$(find "${item}" -type f 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-                untracked_count=$((untracked_count + count))
-            else
-                # File - count as 1
-                untracked_count=$((untracked_count + 1))
-            fi
-        fi
-    done <<< "${untracked_items}"
-fi
-
-# Total status count is modified + untracked
-status_count=$((modified_count + untracked_count))
-```
+4. **Error Handling:**
+   - All git commands use `2>/dev/null` to suppress errors when not in a git repo
+   - Fallback values (`|| echo "0"`) ensure script continues even if commands fail
+   - Empty results handled gracefully with `[ -n "${untracked_items}" ]` check
 
 **Display Options:**
 
@@ -111,7 +126,9 @@ status:      5 (   new    ) (2 modified, 3 untracked)
 - Shell: Bash
 
 **Files Affected:**
-- `monitor-ai-agent-progress.sh` - Lines 217-219 (git status counting logic)
+- `monitor-ai-agent-progress.sh` - Lines 217-248 (git status counting logic)
+  - Lines 217-218: Updated whitespace handling for `work_count` and `diff_lines`
+  - Lines 220-248: New accurate git status counting implementation
 
 **Impact:**
 - **Medium:** Improves accuracy of git status tracking
@@ -119,12 +136,14 @@ status:      5 (   new    ) (2 modified, 3 untracked)
 - More reliable metrics for monitoring
 
 **Testing Plan:**
-1. Test with single untracked file
-2. Test with untracked directory containing multiple files
-3. Test with nested untracked directories
-4. Test with mix of untracked files and directories
-5. Test with modified files (ensure still works)
-6. Performance test with many untracked files
+1. ✅ Test with single untracked file
+2. ✅ Test with untracked directory containing multiple files
+3. ✅ Test with nested untracked directories
+4. ✅ Test with mix of untracked files and directories
+5. ✅ Test with modified files (both staged and unstaged)
+6. ✅ Test with paths containing spaces
+7. ✅ Performance test with many untracked files
+8. ✅ Test arithmetic operations (fixed whitespace handling issue)
 
 **Benefits:**
 - ✅ Accurate count of all untracked files
@@ -132,23 +151,26 @@ status:      5 (   new    ) (2 modified, 3 untracked)
 - ✅ Works with nested directory structures
 - ✅ More reliable than `git status --porcelain | wc -l` for directories
 
-**Potential Issues:**
-- **Performance:** `find` on large untracked directories might be slow
-- **Edge cases:** Need to handle special characters in filenames
-- **Git repo check:** Need to ensure we're in a git repo before running git commands
+**Issues Resolved:**
+- ✅ **Arithmetic syntax error:** Fixed by using `tr -d '[:space:]'` instead of `tr -d ' '` to remove newlines
+- ✅ **Unstaged modifications not counted:** Fixed by using pattern `^[MADRC].|^.[MD]` to match both staged and unstaged
+- ✅ **Paths with spaces:** Handled by removing quotes with `sed 's/^"//;s/"$//'`
+- ✅ **Whitespace in wc output:** Fixed by using `tr -d '[:space:]'` consistently
 
 **Implementation Notes:**
-- Use `2>/dev/null` to suppress errors
-- Handle empty results gracefully
-- Ensure `find` doesn't follow symlinks outside repo (use `-L` carefully)
-- Consider excluding `.git` directory from find if needed
+- Uses `2>/dev/null` to suppress errors when not in a git repo
+- Handles empty results gracefully with conditional checks
+- `find` uses `-type f` to only count files, not directories
+- All count variables use consistent whitespace removal pattern
 
-**Estimated Complexity:**
-- **Low (1-2 hours)**
+**Actual Complexity:**
+- **Low (1-2 hours)** - As estimated
   - Straightforward logic change
-  - Need to handle edge cases (special characters, etc.)
+  - Required handling edge cases (special characters, whitespace, unstaged modifications)
+  - Fixed arithmetic syntax error discovered during testing
 
 **Additional Notes:**
-- This is the first priority in the improvement plan
-- Quick win that improves accuracy without changing output format
-- Can be enhanced later with separate display options
+- ✅ This was the first priority in the improvement plan and has been completed
+- ✅ Quick win that improves accuracy without changing output format
+- ✅ Can be enhanced later with separate display options (Option 3 from Display Options)
+- ✅ All edge cases identified in testing have been resolved

@@ -1,7 +1,7 @@
 # monitor-ai-agent-progress.sh Improvements
 
-**Date:** December 8, 2025  
-**Current Version:** Latest (after commit b95dcae - optional working dir path)
+**Date:** December 8, 2025
+**Current Version:** Latest (after commit 1012459 - FEATURE-1 implemented)
 
 This section tracks planned improvements and enhancements for the `monitor-ai-agent-progress.sh` script. Individual feature plans are tracked in separate documents following the defect tracking pattern.
 
@@ -23,10 +23,11 @@ This section tracks planned improvements and enhancements for the `monitor-ai-ag
 
 The following features are planned in priority order:
 
-1. **[FEATURE-1: Improve Git Status Counting](FEATURE-1.md)** - Priority: High
+1. ✅ **[FEATURE-1: Improve Git Status Counting](FEATURE-1.md)** - **COMPLETED**
    - Accurately count all untracked files, including all files within untracked directories
-   - Estimated: Low (1-2 hours)
-   - Quick win that improves accuracy
+   - Completed: 2025-12-09 (Commit: 1012459)
+   - Accurately counts both staged and unstaged modifications
+   - Recursively counts all files in untracked directories
 
 2. **[FEATURE-2: Add Process Count Monitoring](FEATURE-2.md)** - Priority: High
    - Add a fourth metric to monitor system process count
@@ -63,8 +64,8 @@ This update sets the foundation for:
   - State persistence: Medium-High (3-4 hours)
   - Full implementation: High (4-6 hours)
 
-**Implementation Recommendation:** 
-1. Start with FEATURE-1 (quick fix, improves accuracy)
+**Implementation Recommendation:**
+1. ✅ **FEATURE-1 completed** (quick fix, improves accuracy)
 2. Add FEATURE-2 (straightforward addition, immediate value)
 3. Then add basic signal handling and simple summary (FEATURE-3)
 4. Finally add state persistence in a follow-up update

@@ -1,9 +1,9 @@
 # FEATURE-2: Add Process Count Monitoring
 
-**Status:** Open  
-**Priority:** High  
-**Severity:** Low  
-**Reported:** 2025-12-08  
+**Status:** Open
+**Priority:** High
+**Severity:** Low
+**Reported:** 2025-12-08
 **Target:** TBD
 
 **Description:**

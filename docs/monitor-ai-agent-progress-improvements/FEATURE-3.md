@@ -1,9 +1,9 @@
 # FEATURE-3: Graceful Exit Handling
 
-**Status:** Open  
-**Priority:** High  
-**Severity:** Low  
-**Reported:** 2025-12-08  
+**Status:** Open
+**Priority:** High
+**Severity:** Low
+**Reported:** 2025-12-08
 **Target:** TBD
 
 **Description:**
@@ -108,11 +108,11 @@ Currently, Ctrl+C just kills the script immediately with no way to see final sta
        echo "  diff:      ${min_diff_lines} / ${max_diff_lines}"
        echo "  status:    ${min_status_count} / ${max_status_count}"
        echo "  processes: ${min_process_count} / ${max_process_count}"
-       
+
        if [ "${SAVE_STATE}" = true ] ; then
            save_state_to_file
        fi
-       
+
        exit ${exit_code}
    }
    ```
