@@ -2,6 +2,8 @@
 
 **Style Guide:** See [LinkedIn Style Guide](LinkedIn-posts/LinkedIn-style-guide.md) for formatting rules, workflow, and writing guidelines.
 
+**Post Topics Recommendations:** See [LinkedIn Post Topics Recommendations](LinkedIn-posts/linkedin-post-topics-recommendations.md) for suggested post topics based on scripts that haven't been covered or have had significant updates.
+
 ## Table of Contents
 
 ### December 2025
