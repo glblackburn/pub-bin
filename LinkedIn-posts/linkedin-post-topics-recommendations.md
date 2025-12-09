@@ -1,9 +1,38 @@
 # LinkedIn Post Topics - Recommended Subjects
 
-**Generated:** December 7, 2025  
+**Generated:** December 7, 2025
+**Last Updated:** December 9, 2025
 **Purpose:** Recommendations for LinkedIn posts about scripts that haven't been covered or have had significant updates
 
 ## High Priority - Recent Significant Updates
+
+### ✅ React2Shell Server: Building a Security Testing Testbed
+- **Status:** ✅ Published December 9, 2025 (Part 1 of 4-part series)
+- **Story:** Comprehensive security testing testbed for validating scanner detection
+- **Key Points:**
+  - React/Next.js version switching for vulnerability testing
+  - Dual framework support (Vite and Next.js)
+  - Framework-aware Express server
+  - Comprehensive Selenium test suite (28 tests)
+  - Performance tracking and optimization (52% improvement)
+  - Scanner verification automation
+- **Visual Appeal:** Framework architecture, test output, performance metrics
+- **Technical Interest:** Security testing, framework-aware architecture, test automation, performance optimization
+- **Note:** Parts 2-4 are drafted and ready to post
+
+### ✅ `monitor-ai-agent-progress.sh`: Recent Feature Improvements (FEATURE-1 & FEATURE-2)
+- **Status:** ⏳ Not yet posted - High priority
+- **Story:** Two major improvements completed December 9, 2025 - accurate git status counting and process count monitoring
+- **Key Points:**
+  - **FEATURE-1:** Improved git status counting - accurately counts all untracked files including those in directories using `find`
+  - **FEATURE-2:** Added process count monitoring with `-p` flag (off by default)
+  - Fixed alignment issues for all metrics
+  - Handles both staged and unstaged modifications correctly
+  - Cross-platform process counting using `ps -e`
+  - Framework-aware improvements following defect tracking pattern
+- **Visual Appeal:** Before/after comparison of git status accuracy, process monitoring output
+- **Technical Interest:** Git internals, process monitoring, cross-platform compatibility, incremental feature development
+- **Commits:** 1012459 (FEATURE-1), 3e8ac64 (FEATURE-2)
 
 ### ✅ `what-is-left.py`: From bash to Python with multi-column layout
 - **Status:** ✅ Published December 7, 2025
@@ -161,20 +190,22 @@
 
 ## Summary
 
-- **Total topics:** 15+ potential posts
-- **Completed:** 1 (what-is-left.py - December 7, 2025)
-- **High priority:** 3 (1 completed, 2 remaining)
+- **Total topics:** 16+ potential posts
+- **Completed:** 7 posts (including React2Shell Server Part 1)
+- **High priority:** 3 topics (1 completed - React2Shell Server, 1 pending - monitor-ai-agent-progress improvements, 1 completed - what-is-left.py)
 - **Medium priority:** 5 (interesting projects, useful tools)
 - **Lower priority:** 4 (utility scripts, process topics)
 - **Special interest:** 3 (deep dives, comparisons)
+- **Draft posts ready:** React2Shell Server Parts 2-4 (pending LinkedIn URLs)
 
 ## Recommended Posting Order
 
-1. ✅ **`what-is-left.py`** - ✅ Published December 7, 2025 - Recent update, great visual output, demonstrates Python migration
-2. **Record scripts refactoring** - Significant work, organization story, standardization
-3. **BATS testing framework** - Comprehensive testing story, quality assurance
-4. **Arecibo Message project** - Unique, educational, interesting story
-5. **GreyNoise/Azure tools** - Security focus, API integration
+1. ✅ **React2Shell Server** - ✅ Published December 9, 2025 (Part 1) - Comprehensive security testing tool, great technical story
+2. **`monitor-ai-agent-progress.sh` improvements (FEATURE-1 & FEATURE-2)** - ⏳ High priority - Two major features just completed, demonstrates incremental improvement process
+3. **Record scripts refactoring** - Significant work, organization story, standardization
+4. **BATS testing framework** - Comprehensive testing story, quality assurance
+5. **Arecibo Message project** - Unique, educational, interesting story
+6. **GreyNoise/Azure tools** - Security focus, API integration
 
 ## Notes
 
@@ -186,4 +217,10 @@
 
 ## Completed Posts
 
+- ✅ **December 9, 2025:** React2Shell Server: Building a Security Testing Testbed (Part 1 of 4)
 - ✅ **December 7, 2025:** `what-is-left.py` - From bash to Python with multi-column layout
+- ✅ **December 7, 2025:** AI coding assistant code review (Antigravity reviewing Cursor work)
+- ✅ **December 6, 2025:** Trufflehog security scanning automation
+- ✅ **December 5, 2025:** `aws-bin` - AWS SSO auto-detection
+- ✅ **December 3, 2025:** `load-ssh-key.sh` - From bug fixes to comprehensive testing
+- ✅ **December 2, 2025:** Is Ruby Dead?
