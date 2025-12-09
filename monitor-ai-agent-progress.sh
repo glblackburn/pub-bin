@@ -11,8 +11,10 @@ QUIET=false
 VERBOSE=false
 INTERVAL=60
 SHOW_REPO_NAME=false
-SHOW_WORKING_DIR=false
+SHOW_WORK_METRIC=false
+SHOW_WORK_PATH=false
 SHOW_PROCESSES=false
+AUDIO_CHANGES_ONLY=false
 WORKING_DIR="/tmp"
 
 ################################################################################
@@ -32,7 +34,7 @@ function usage {
 	echo "Message: ${message}"
     fi
     cat<<EOF
-Usage: ${script_name} [-hqrvwp] [-i <interval>] [-t <working_dir>]
+Usage: ${script_name} [-hqrvwWpc] [-i <interval>] [-t <working_dir>]
 
 Monitor AI agent activity by tracking working directory files and git changes with
 audio feedback.
@@ -45,7 +47,9 @@ Options
   -r               : Show repository name in diff and status output.
   -t <dir>         : Working/scratch directory to monitor (Default: ${WORKING_DIR})
   -v               : Verbose output.
-  -w               : Show working directory path in work output.
+  -w               : Show work metric monitoring.
+  -W               : Show working directory path in work output (requires -w).
+  -c               : Audio only for changes. Only announce when metrics are increasing or decreasing.
 
 Example:
 $ ${script_name} -i 30
@@ -100,7 +104,7 @@ function format-work-output {
     local working_dir=$3
     local status_centered=$(center-text "${status}" 10)
 
-    if [ "${SHOW_WORKING_DIR}" = true ] ; then
+    if [ "${SHOW_WORK_PATH}" = true ] ; then
 	printf "%-10s %6s (%s) (%s)\n" "work:" "${work_count}" "${status_centered}" "${working_dir}"
     else
 	printf "%-10s %6s (%s)\n" "work:" "${work_count}" "${status_centered}"
@@ -145,10 +149,34 @@ function show-timestamp {
     date
 }
 
+function has-status-changes {
+    local work_status=$1
+    local diff_status=$2
+    local status_status=$3
+    local process_status=$4
+
+    # Check if any status is "increasing" or "decreasing"
+    if [ "${work_status}" = "increasing" ] || [ "${work_status}" = "decreasing" ] ; then
+	return 0
+    fi
+    if [ "${diff_status}" = "increasing" ] || [ "${diff_status}" = "decreasing" ] ; then
+	return 0
+    fi
+    if [ "${status_status}" = "increasing" ] || [ "${status_status}" = "decreasing" ] ; then
+	return 0
+    fi
+    if [ -n "${process_status}" ] && ( [ "${process_status}" = "increasing" ] || [ "${process_status}" = "decreasing" ] ) ; then
+	return 0
+    fi
+
+    # No changes detected
+    return 1
+}
+
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":i:t:hqrvwp" opt; do
+while getopts ":i:t:hqrvwWpc" opt; do
     case ${opt} in
 	i )
             INTERVAL=$OPTARG
@@ -166,10 +194,16 @@ while getopts ":i:t:hqrvwp" opt; do
             VERBOSE=true
             ;;
 	w )
-            SHOW_WORKING_DIR=true
+            SHOW_WORK_METRIC=true
+            ;;
+	W )
+            SHOW_WORK_PATH=true
             ;;
 	p )
             SHOW_PROCESSES=true
+            ;;
+	c )
+            AUDIO_CHANGES_ONLY=true
             ;;
 	h )
             usage
@@ -210,8 +244,10 @@ Interval: ${INTERVAL} seconds
 Working directory: ${WORKING_DIR}
 Quiet mode: ${QUIET}
 Show repo name: ${SHOW_REPO_NAME}
-Show working dir: ${SHOW_WORKING_DIR}
+Show work metric: ${SHOW_WORK_METRIC}
+Show work path: ${SHOW_WORK_PATH}
 Show processes: ${SHOW_PROCESSES}
+Audio changes only: ${AUDIO_CHANGES_ONLY}
 Verbose mode: ${VERBOSE}
 ================================================================================
 EOF
@@ -228,9 +264,14 @@ while true ; do
     # Get current counts
     # Resolve symlinks and use find -L to follow symlinks
     # Directory is validated at startup, so we can safely run find here
-    work_dir_resolved=$(readlink -f "${WORKING_DIR}" 2>/dev/null || echo "${WORKING_DIR}")
-    work_count=$(find -L "${work_dir_resolved}" 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
     diff_lines=$(git diff 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
+
+    # Get work count only if work metric is enabled
+    work_count=0
+    if [ "${SHOW_WORK_METRIC}" = true ] ; then
+	work_dir_resolved=$(readlink -f "${WORKING_DIR}" 2>/dev/null || echo "${WORKING_DIR}")
+	work_count=$(find -L "${work_dir_resolved}" 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
+    fi
 
     # Count git status accurately (FEATURE-1)
     # Count modified/staged files (M, A, D, R, C in first column for staged, or space+M/D in second column for unstaged)
@@ -281,24 +322,37 @@ while true ; do
     fi
 
     # Calculate status for each metric
-    work_status=$(get-status "${work_count}" "${prev_work_count}")
     diff_status=$(get-status "${diff_lines}" "${prev_diff_count}")
     status_status=$(get-status "${status_count}" "${prev_status_count}")
 
+    # Calculate work status only if work metric is enabled
+    work_status=""
+    if [ "${SHOW_WORK_METRIC}" = true ] ; then
+	work_status=$(get-status "${work_count}" "${prev_work_count}")
+    fi
+
     # Generate formatted output messages
-    work_output=$(format-work-output "${work_count}" "${work_status}" "${WORKING_DIR}")
     diff_output=$(format-diff-output "${diff_lines}" "${diff_status}" "${repo_name}")
     status_output=$(format-status-output "${status_count}" "${status_status}" "${repo_name}")
 
     # Update previous values for next iteration
-    prev_work_count="${work_count}"
     prev_diff_count="${diff_lines}"
     prev_status_count="${status_count}"
+    # Update work_count only if work metric is enabled
+    if [ "${SHOW_WORK_METRIC}" = true ] ; then
+	prev_work_count="${work_count}"
+    fi
 
     # Combine outputs and display/speak together
-    combined_message="${work_output}
-${diff_output}
+    combined_message="${diff_output}
 ${status_output}"
+
+    # Add work output only if enabled
+    if [ "${SHOW_WORK_METRIC}" = true ] ; then
+	work_output=$(format-work-output "${work_count}" "${work_status}" "${WORKING_DIR}")
+	combined_message="${work_output}
+${combined_message}"
+    fi
 
     # Add process output only if enabled
     if [ "${SHOW_PROCESSES}" = true ] ; then
@@ -309,7 +363,27 @@ ${process_output}"
     fi
     echo "${combined_message}"
     if [ "${QUIET}" != true ] ; then
-	echo "${combined_message}" | say || true
+	# Check if we should announce based on changes-only flag
+	should_announce=true
+	if [ "${AUDIO_CHANGES_ONLY}" = true ] ; then
+	    # Get work_status if work metric is enabled, otherwise use empty string
+	    work_status_for_check=""
+	    if [ "${SHOW_WORK_METRIC}" = true ] ; then
+		work_status_for_check="${work_status}"
+	    fi
+	    # Get process_status if process metric is enabled, otherwise use empty string
+	    process_status_for_check=""
+	    if [ "${SHOW_PROCESSES}" = true ] ; then
+		process_status_for_check="${process_status}"
+	    fi
+	    if ! has-status-changes "${work_status_for_check}" "${diff_status}" "${status_status}" "${process_status_for_check}" ; then
+		should_announce=false
+	    fi
+	fi
+
+	if [ "${should_announce}" = true ] ; then
+	    echo "${combined_message}" | say || true
+	fi
     fi
 
     sleep ${INTERVAL}

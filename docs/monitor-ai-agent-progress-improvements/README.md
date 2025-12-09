@@ -7,18 +7,23 @@ This section tracks planned improvements and enhancements for the `monitor-ai-ag
 
 | ID | Status | Priority | Severity | Title | Description |
 |----|--------|----------|----------|-------|-------------|
+| ID | Status | Priority | Severity | Title | Description |
+|----|--------|----------|----------|-------|-------------|
 | [FEATURE-1](FEATURE-1.md) | Completed | High | Medium | Improve Git Status Counting | Accurately count all untracked files, including all files within untracked directories using `find` |
 | [FEATURE-2](FEATURE-2.md) | Completed | High | Low | Add Process Count Monitoring | Add a fourth metric to monitor system process count for better visibility into AI agent activity |
+| [FEATURE-4](FEATURE-4.md) | Completed | Medium | Low | Audio Changes Only Mode | Add `-c` flag to only announce audio when metrics are increasing or decreasing |
+| [FEATURE-5](FEATURE-5.md) | Completed | Medium | Low | Refactor Work Metric Display | Change `-w` flag to work like `-p` (show/hide metric), add new flag for path display |
 | [FEATURE-3](FEATURE-3.md) | Open | High | Low | Graceful Exit Handling | Add signal handling for clean shutdown and optional summary on exit |
 
 ## Recently Completed ✅
 
-1. ✅ **FEATURE-2: Add Process Count Monitoring** - Added fourth metric to monitor system process count for better visibility into AI agent activity
-2. ✅ **FEATURE-1: Improve Git Status Counting** - Accurately count all untracked files, including all files within untracked directories using `find`
-3. ✅ Added `-w` flag to optionally show working directory path (hidden by default)
-4. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
-5. ✅ Added startup validation for working directory existence
-6. ✅ Improved error handling for missing directories
+1. ✅ **FEATURE-5: Refactor Work Metric Display** - Changed `-w` flag to work like `-p` (show/hide metric), added `-W` flag for path display
+2. ✅ **FEATURE-4: Audio Changes Only Mode** - Added `-c` flag to only announce audio when metrics are increasing or decreasing
+3. ✅ **FEATURE-2: Add Process Count Monitoring** - Added fourth metric to monitor system process count for better visibility into AI agent activity
+4. ✅ **FEATURE-1: Improve Git Status Counting** - Accurately count all untracked files, including all files within untracked directories using `find`
+5. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
+6. ✅ Added startup validation for working directory existence
+7. ✅ Improved error handling for missing directories
 
 ## Implementation Order
 
@@ -36,7 +41,20 @@ The following features are planned in priority order:
    - Cross-platform process counting using `ps -e`
    - Tracks process count changes and includes in audio announcements
 
-3. **[FEATURE-3: Graceful Exit Handling](FEATURE-3.md)** - Priority: High
+3. ✅ **[FEATURE-4: Audio Changes Only Mode](FEATURE-4.md)** - **COMPLETED**
+   - Add `-c` flag to only announce audio when metrics are increasing or decreasing
+   - Completed: 2025-12-09
+   - Reduces audio noise during stable periods
+   - Maintains backward compatibility (opt-in feature)
+
+4. ✅ **[FEATURE-5: Refactor Work Metric Display](FEATURE-5.md)** - **COMPLETED**
+   - Changed `-w` flag to work like `-p` (show/hide entire metric)
+   - Added `-W` flag for working directory path display
+   - Work metric off by default (consistency with `-p`)
+   - Completed: 2025-12-09
+   - Performance optimized: work count only calculated when metric enabled
+
+5. **[FEATURE-3: Graceful Exit Handling](FEATURE-3.md)** - Priority: High
    - Add signal handling for clean shutdown and optional summary on exit
    - Estimated: Medium-High (4-6 hours for full implementation)
    - Can be implemented incrementally (basic signal handling first)
@@ -69,8 +87,10 @@ This update sets the foundation for:
 **Implementation Recommendation:**
 1. ✅ **FEATURE-1 completed** (quick fix, improves accuracy)
 2. ✅ **FEATURE-2 completed** (straightforward addition, immediate value)
-3. Then add basic signal handling and simple summary (FEATURE-3)
-4. Finally add state persistence in a follow-up update
+3. ✅ **FEATURE-4 completed** (audio noise reduction, improves UX)
+4. ✅ **FEATURE-5 completed** (consistent flag behavior, performance optimization)
+5. Then add basic signal handling and simple summary (FEATURE-3)
+6. Finally add state persistence in a follow-up update
 
 ## Legend
 
