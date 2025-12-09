@@ -8,6 +8,10 @@
 
 ### December 2025
 
+- ✅ [December 9, 2025](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part1.md) - React2Shell Server: Building a Security Testing Testbed
+- ⏳ [December 9, 2025 - Part 2](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part2.txt) - Framework-Aware Architecture (Draft)
+- ⏳ [December 9, 2025 - Part 3](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part3.txt) - Performance Optimization (Draft)
+- ⏳ [December 9, 2025 - Part 4](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part4.txt) - Lessons Learned (Draft)
 - ✅ [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07.md) - What happens when you ask an AI coding assistant to review another assistant's work?
 - ✅ [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07-what-is-left.md) - From bash to Python: Migrating a migration tracker
 - ✅ [December 6, 2025](LinkedIn-posts/2025/12/2025-12-06.md) - Just finished building a bash script to automate Trufflehog security scans acros
@@ -32,6 +36,10 @@
 
 | Date | Title | Status |
 |------|-------|--------|
+| [December 9, 2025](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part1.md) | React2Shell Server: Building a Security Testing Testbed | ✅ Published |
+| [December 9, 2025 - Part 2](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part2.txt) | Framework-Aware Architecture | ⏳ Draft |
+| [December 9, 2025 - Part 3](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part3.txt) | Performance Optimization | ⏳ Draft |
+| [December 9, 2025 - Part 4](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part4.txt) | Lessons Learned | ⏳ Draft |
 | [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07-what-is-left.md) | From bash to Python: Migrating a migration tracker | ✅ Published |
 | [December 7, 2025](LinkedIn-posts/2025/12/2025-12-07.md) | What happens when you ask an AI coding assistant to review ... | ✅ Published |
 | [December 6, 2025](LinkedIn-posts/2025/12/2025-12-06.md) | Just finished building a bash script to automate Trufflehog ... | ✅ Published |

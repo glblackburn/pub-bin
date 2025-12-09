@@ -1,0 +1,17 @@
+Performance optimization is iterative - small changes compound into significant improvements.  
+
+When I started testing React2Shell Server, the test suite took 5m33s. Through iterative optimization, I got it down to 2m27s. That's a 52% improvement.  
+
+𝐖𝐡𝐚𝐭 𝐜𝐡𝐚𝐧𝐠𝐞𝐝:  
+
+▶ Reduced wait times - implicit waits: 10s → 3s, explicit waits: 10s → 5s  
+▶ Smart caching - check if React version already installed before npm install  
+▶ Browser optimizations - use headless mode, disable unnecessary features  
+▶ Parallel execution - optimized to 6 workers per version  
+▶ Performance tracking - automatic regression detection with personalized time limits  
+
+But more importantly, I built performance tracking that detects regressions automatically. Each test has personalized time limits based on historical performance, and the system warns when tests start running slower.  
+
+The lesson: measure before optimizing. Tracking actual metrics (5m33s → 2m27s) validates the work and shows where to focus.  
+
+#TestAutomation #Performance #Selenium #Python

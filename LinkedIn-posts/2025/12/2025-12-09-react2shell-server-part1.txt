@@ -1,0 +1,19 @@
+What happens when you need to test security scanners but don't have a reliable way to validate they're actually detecting vulnerabilities?  
+
+I just finished building React2Shell Server - a testbed for security scanners that lets you easily switch between vulnerable and fixed React/Next.js versions to verify scanner detection works correctly.  
+
+𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
+
+▶ A React application with Makefile-based version switching - switch between 7 React versions or 11 Next.js versions with a single command  
+▶ Dual framework support - works with both Vite (standalone React) and Next.js (React Server Components)  
+▶ Framework-aware Express server that adapts to the current framework mode automatically  
+▶ Comprehensive Selenium test suite - 28 tests covering UI, version info, and security status across all versions  
+▶ Performance tracking system - automatic baseline comparison, regression detection, and historical trend analysis  
+▶ Scanner verification script - automated testing of 9 vulnerable and 2 fixed Next.js versions against the react2shell-scanner  
+
+The project evolved from a simple idea into a comprehensive testing platform over ~18.5 hours of development across 13 phases.  
+
+Project: https://github.com/glblackburn/react2shell-server  
+Full development narrative: https://github.com/glblackburn/react2shell-server/blob/main/DEVELOPMENT_NARRATIVE.md  
+
+#SecurityTesting #React #NextJS #TestAutomation

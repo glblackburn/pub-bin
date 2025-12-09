@@ -1,0 +1,19 @@
+Some bugs aren't fixable. And that's okay.  
+
+Next.js 14.0.0 and 14.1.0 have an internal bug when processing RCE PoC payloads - the error handler crashes due to a null reference, causing requests to hang indefinitely.  
+
+After multiple investigation iterations, I documented it as a framework limitation and moved on.  
+
+𝐖𝐡𝐚𝐭 𝐈 𝐥𝐞𝐚𝐫𝐧𝐞𝐝:  
+
+▶ Start simple, then iterate - began with basic version switching, added features incrementally  
+▶ Some bugs are framework limitations - document and work around, don't try to fix unfixable issues  
+▶ Test what you think you're testing - initially version tests only ran when current version matched; had to actually switch versions to test all scenarios  
+▶ Framework-aware architecture - servers and utilities that adapt to context are more flexible  
+
+The project now serves as both a functional security testing tool and a learning resource for version management, test automation, and framework-aware architecture.  
+
+Project: https://github.com/glblackburn/react2shell-server  
+Full development narrative with all 13 phases: https://github.com/glblackburn/react2shell-server/blob/main/DEVELOPMENT_NARRATIVE.md  
+
+#SoftwareDevelopment #LessonsLearned #TestAutomation #React
