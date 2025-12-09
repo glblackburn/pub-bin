@@ -41,6 +41,33 @@ The following features are planned in priority order:
 
 See individual feature documents for detailed specifications, implementation details, testing plans, and code examples.
 
+## Related Improvements
+
+This update sets the foundation for:
+- State persistence (Phase 2)
+- Historical logging (Phase 3)
+- Summary statistics (Phase 3)
+
+## Estimated Complexity
+
+- **FEATURE-1 (Git status improvement):** Low (1-2 hours)
+  - Straightforward logic change
+  - Need to handle edge cases (special characters, etc.)
+- **FEATURE-2 (Process count monitoring):** Low-Medium (1-2 hours)
+  - Simple to add, but need to handle cross-platform differences
+  - Performance considerations for systems with many processes
+- **FEATURE-3 (Graceful exit handling):**
+  - Basic signal handling: Low (1-2 hours)
+  - Exit summary: Medium (2-3 hours)
+  - State persistence: Medium-High (3-4 hours)
+  - Full implementation: High (4-6 hours)
+
+**Implementation Recommendation:** 
+1. Start with FEATURE-1 (quick fix, improves accuracy)
+2. Add FEATURE-2 (straightforward addition, immediate value)
+3. Then add basic signal handling and simple summary (FEATURE-3)
+4. Finally add state persistence in a follow-up update
+
 ## Legend
 
 - **Status:** Open, In Progress, Completed, Closed
