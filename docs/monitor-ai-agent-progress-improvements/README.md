@@ -7,16 +7,17 @@ This section tracks planned improvements and enhancements for the `monitor-ai-ag
 
 | ID | Status | Priority | Severity | Title | Description |
 |----|--------|----------|----------|-------|-------------|
-| [FEATURE-1](FEATURE-1.md) | Open | High | Medium | Improve Git Status Counting | Accurately count all untracked files, including all files within untracked directories using `find` |
+| [FEATURE-1](FEATURE-1.md) | Completed | High | Medium | Improve Git Status Counting | Accurately count all untracked files, including all files within untracked directories using `find` |
 | [FEATURE-2](FEATURE-2.md) | Open | High | Low | Add Process Count Monitoring | Add a fourth metric to monitor system process count for better visibility into AI agent activity |
 | [FEATURE-3](FEATURE-3.md) | Open | High | Low | Graceful Exit Handling | Add signal handling for clean shutdown and optional summary on exit |
 
 ## Recently Completed ✅
 
-1. ✅ Added `-w` flag to optionally show working directory path (hidden by default)
-2. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
-3. ✅ Added startup validation for working directory existence
-4. ✅ Improved error handling for missing directories
+1. ✅ **FEATURE-1: Improve Git Status Counting** - Accurately count all untracked files, including all files within untracked directories using `find`
+2. ✅ Added `-w` flag to optionally show working directory path (hidden by default)
+3. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
+4. ✅ Added startup validation for working directory existence
+5. ✅ Improved error handling for missing directories
 
 ## Implementation Order
 

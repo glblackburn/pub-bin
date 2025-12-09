@@ -214,9 +214,40 @@ while true ; do
     # Resolve symlinks and use find -L to follow symlinks
     # Directory is validated at startup, so we can safely run find here
     work_dir_resolved=$(readlink -f "${WORKING_DIR}" 2>/dev/null || echo "${WORKING_DIR}")
-    work_count=$(find -L "${work_dir_resolved}" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-    diff_lines=$(git diff 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-    status_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+    work_count=$(find -L "${work_dir_resolved}" 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
+    diff_lines=$(git diff 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
+
+    # Count git status accurately (FEATURE-1)
+    # Count modified/staged files (M, A, D, R, C in first column for staged, or space+M/D in second column for unstaged)
+    # Format: "XY filename" where X=staged, Y=unstaged
+    # Matches: M, A, D, R, C in first column OR M, D in second column (unstaged changes)
+    modified_count=$(git status --porcelain 2>/dev/null | grep -E "^[MADRC].|^.[MD]" | wc -l | tr -d '[:space:]' || echo "0")
+
+    # Count untracked files accurately using find
+    untracked_count=0
+    # Get untracked items, handling paths with spaces properly
+    # git status --porcelain format: "?? path" or "?? "path with spaces""
+    untracked_items=$(git status --porcelain 2>/dev/null | grep "^??" | sed 's/^?? //' || true)
+
+    if [ -n "${untracked_items}" ] ; then
+	while IFS= read -r item; do
+	    if [ -n "${item}" ] ; then
+		# Remove quotes if present (git quotes paths with spaces)
+		item=$(echo "${item}" | sed 's/^"//;s/"$//')
+		if [ -d "${item}" ] ; then
+		    # Directory - count all files recursively
+		    count=$(find "${item}" -type f 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
+		    untracked_count=$((untracked_count + count))
+		else
+		    # File - count as 1
+		    untracked_count=$((untracked_count + 1))
+		fi
+	    fi
+	done <<< "${untracked_items}"
+    fi
+
+    # Total status count is modified + untracked
+    status_count=$((modified_count + untracked_count))
 
     # Calculate status for each metric
     work_status=$(get-status "${work_count}" "${prev_work_count}")
