@@ -8,16 +8,17 @@ This section tracks planned improvements and enhancements for the `monitor-ai-ag
 | ID | Status | Priority | Severity | Title | Description |
 |----|--------|----------|----------|-------|-------------|
 | [FEATURE-1](FEATURE-1.md) | Completed | High | Medium | Improve Git Status Counting | Accurately count all untracked files, including all files within untracked directories using `find` |
-| [FEATURE-2](FEATURE-2.md) | Open | High | Low | Add Process Count Monitoring | Add a fourth metric to monitor system process count for better visibility into AI agent activity |
+| [FEATURE-2](FEATURE-2.md) | Completed | High | Low | Add Process Count Monitoring | Add a fourth metric to monitor system process count for better visibility into AI agent activity |
 | [FEATURE-3](FEATURE-3.md) | Open | High | Low | Graceful Exit Handling | Add signal handling for clean shutdown and optional summary on exit |
 
 ## Recently Completed ✅
 
-1. ✅ **FEATURE-1: Improve Git Status Counting** - Accurately count all untracked files, including all files within untracked directories using `find`
-2. ✅ Added `-w` flag to optionally show working directory path (hidden by default)
-3. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
-4. ✅ Added startup validation for working directory existence
-5. ✅ Improved error handling for missing directories
+1. ✅ **FEATURE-2: Add Process Count Monitoring** - Added fourth metric to monitor system process count for better visibility into AI agent activity
+2. ✅ **FEATURE-1: Improve Git Status Counting** - Accurately count all untracked files, including all files within untracked directories using `find`
+3. ✅ Added `-w` flag to optionally show working directory path (hidden by default)
+4. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
+5. ✅ Added startup validation for working directory existence
+6. ✅ Improved error handling for missing directories
 
 ## Implementation Order
 
@@ -29,10 +30,11 @@ The following features are planned in priority order:
    - Accurately counts both staged and unstaged modifications
    - Recursively counts all files in untracked directories
 
-2. **[FEATURE-2: Add Process Count Monitoring](FEATURE-2.md)** - Priority: High
+2. ✅ **[FEATURE-2: Add Process Count Monitoring](FEATURE-2.md)** - **COMPLETED**
    - Add a fourth metric to monitor system process count
-   - Estimated: Low-Medium (1-2 hours)
-   - Straightforward addition with immediate value
+   - Completed: 2025-12-09
+   - Cross-platform process counting using `ps -e`
+   - Tracks process count changes and includes in audio announcements
 
 3. **[FEATURE-3: Graceful Exit Handling](FEATURE-3.md)** - Priority: High
    - Add signal handling for clean shutdown and optional summary on exit
@@ -66,7 +68,7 @@ This update sets the foundation for:
 
 **Implementation Recommendation:**
 1. ✅ **FEATURE-1 completed** (quick fix, improves accuracy)
-2. Add FEATURE-2 (straightforward addition, immediate value)
+2. ✅ **FEATURE-2 completed** (straightforward addition, immediate value)
 3. Then add basic signal handling and simple summary (FEATURE-3)
 4. Finally add state persistence in a follow-up update
 

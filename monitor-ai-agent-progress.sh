@@ -12,6 +12,7 @@ VERBOSE=false
 INTERVAL=60
 SHOW_REPO_NAME=false
 SHOW_WORKING_DIR=false
+SHOW_PROCESSES=false
 WORKING_DIR="/tmp"
 
 ################################################################################
@@ -20,6 +21,7 @@ WORKING_DIR="/tmp"
 prev_work_count=""
 prev_diff_count=""
 prev_status_count=""
+prev_process_count=""
 
 ################################################################################
 # Functions
@@ -30,7 +32,7 @@ function usage {
 	echo "Message: ${message}"
     fi
     cat<<EOF
-Usage: ${script_name} [-hqrvw] [-i <interval>] [-t <working_dir>]
+Usage: ${script_name} [-hqrvwp] [-i <interval>] [-t <working_dir>]
 
 Monitor AI agent activity by tracking working directory files and git changes with
 audio feedback.
@@ -38,6 +40,7 @@ audio feedback.
 Options
   -h               : Display this help message.
   -i <interval>    : Update interval in seconds (Default: ${INTERVAL})
+  -p               : Show process count monitoring.
   -q               : Quiet mode. Output as little as possible.
   -r               : Show repository name in diff and status output.
   -t <dir>         : Working/scratch directory to monitor (Default: ${WORKING_DIR})
@@ -98,9 +101,9 @@ function format-work-output {
     local status_centered=$(center-text "${status}" 10)
 
     if [ "${SHOW_WORKING_DIR}" = true ] ; then
-	printf "work:   %6s (%s) (%s)\n" "${work_count}" "${status_centered}" "${working_dir}"
+	printf "%-10s %6s (%s) (%s)\n" "work:" "${work_count}" "${status_centered}" "${working_dir}"
     else
-	printf "work:   %6s (%s)\n" "${work_count}" "${status_centered}"
+	printf "%-10s %6s (%s)\n" "work:" "${work_count}" "${status_centered}"
     fi
 }
 
@@ -111,9 +114,9 @@ function format-diff-output {
     local status_centered=$(center-text "${status}" 10)
 
     if [ "${SHOW_REPO_NAME}" = true ] ; then
-	printf "diff:   %6s (%s) (%s)\n" "${diff_lines}" "${status_centered}" "${repo_name}"
+	printf "%-10s %6s (%s) (%s)\n" "diff:" "${diff_lines}" "${status_centered}" "${repo_name}"
     else
-	printf "diff:   %6s (%s)\n" "${diff_lines}" "${status_centered}"
+	printf "%-10s %6s (%s)\n" "diff:" "${diff_lines}" "${status_centered}"
     fi
 }
 
@@ -124,10 +127,18 @@ function format-status-output {
     local status_centered=$(center-text "${status}" 10)
 
     if [ "${SHOW_REPO_NAME}" = true ] ; then
-	printf "status: %6s (%s) (%s)\n" "${status_count}" "${status_centered}" "${repo_name}"
+	printf "%-10s %6s (%s) (%s)\n" "status:" "${status_count}" "${status_centered}" "${repo_name}"
     else
-	printf "status: %6s (%s)\n" "${status_count}" "${status_centered}"
+	printf "%-10s %6s (%s)\n" "status:" "${status_count}" "${status_centered}"
     fi
+}
+
+function format-process-output {
+    local process_count=$1
+    local status=$2
+    local status_centered=$(center-text "${status}" 10)
+
+    printf "%-10s %6s (%s)\n" "processes:" "${process_count}" "${status_centered}"
 }
 
 function show-timestamp {
@@ -137,7 +148,7 @@ function show-timestamp {
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":i:t:hqrvw" opt; do
+while getopts ":i:t:hqrvwp" opt; do
     case ${opt} in
 	i )
             INTERVAL=$OPTARG
@@ -156,6 +167,9 @@ while getopts ":i:t:hqrvw" opt; do
             ;;
 	w )
             SHOW_WORKING_DIR=true
+            ;;
+	p )
+            SHOW_PROCESSES=true
             ;;
 	h )
             usage
@@ -197,6 +211,7 @@ Working directory: ${WORKING_DIR}
 Quiet mode: ${QUIET}
 Show repo name: ${SHOW_REPO_NAME}
 Show working dir: ${SHOW_WORKING_DIR}
+Show processes: ${SHOW_PROCESSES}
 Verbose mode: ${VERBOSE}
 ================================================================================
 EOF
@@ -249,6 +264,22 @@ while true ; do
     # Total status count is modified + untracked
     status_count=$((modified_count + untracked_count))
 
+    # Get process count (FEATURE-2) - only if enabled
+    process_count=0
+    process_status=""
+    if [ "${SHOW_PROCESSES}" = true ] ; then
+	# Cross-platform process counting
+	if command -v ps >/dev/null 2>&1 ; then
+	    # Try ps -e first (more portable, shows all processes)
+	    process_count=$(ps -e 2>/dev/null | wc -l | tr -d '[:space:]' || echo "0")
+	    # Subtract header line if count > 0
+	    if [ "${process_count}" -gt 0 ] ; then
+		process_count=$((process_count - 1))
+	    fi
+	fi
+	process_status=$(get-status "${process_count}" "${prev_process_count}")
+    fi
+
     # Calculate status for each metric
     work_status=$(get-status "${work_count}" "${prev_work_count}")
     diff_status=$(get-status "${diff_lines}" "${prev_diff_count}")
@@ -268,6 +299,14 @@ while true ; do
     combined_message="${work_output}
 ${diff_output}
 ${status_output}"
+
+    # Add process output only if enabled
+    if [ "${SHOW_PROCESSES}" = true ] ; then
+	process_output=$(format-process-output "${process_count}" "${process_status}")
+	combined_message="${combined_message}
+${process_output}"
+	prev_process_count="${process_count}"
+    fi
     echo "${combined_message}"
     if [ "${QUIET}" != true ] ; then
 	echo "${combined_message}" | say || true
