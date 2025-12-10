@@ -24,6 +24,8 @@ prev_work_count=""
 prev_diff_count=""
 prev_status_count=""
 prev_process_count=""
+prev_repo_name=""
+prev_branch_name=""
 
 ################################################################################
 # Functions
@@ -114,27 +116,17 @@ function format-work-output {
 function format-diff-output {
     local diff_lines=$1
     local status=$2
-    local repo_name=$3
     local status_centered=$(center-text "${status}" 10)
 
-    if [ "${SHOW_REPO_NAME}" = true ] ; then
-	printf "%-10s %6s (%s) (%s)\n" "diff:" "${diff_lines}" "${status_centered}" "${repo_name}"
-    else
-	printf "%-10s %6s (%s)\n" "diff:" "${diff_lines}" "${status_centered}"
-    fi
+    printf "%-10s %6s (%s)\n" "diff:" "${diff_lines}" "${status_centered}"
 }
 
 function format-status-output {
     local status_count=$1
     local status=$2
-    local repo_name=$3
     local status_centered=$(center-text "${status}" 10)
 
-    if [ "${SHOW_REPO_NAME}" = true ] ; then
-	printf "%-10s %6s (%s) (%s)\n" "status:" "${status_count}" "${status_centered}" "${repo_name}"
-    else
-	printf "%-10s %6s (%s)\n" "status:" "${status_count}" "${status_centered}"
-    fi
+    printf "%-10s %6s (%s)\n" "status:" "${status_count}" "${status_centered}"
 }
 
 function format-process-output {
@@ -146,7 +138,19 @@ function format-process-output {
 }
 
 function show-timestamp {
-    date
+    # Get repository name and branch if in git repo (FEATURE-6)
+    local repo_info=""
+    local repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+    if [ -n "${repo_root}" ] ; then
+	local repo_name=$(basename "${repo_root}" 2>/dev/null || echo "unknown")
+	local branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+	# Handle detached HEAD state
+	if [ "${branch_name}" = "HEAD" ] ; then
+	    branch_name=$(git rev-parse --short HEAD 2>/dev/null || echo "detached")
+	fi
+	repo_info=" [${repo_name}:${branch_name}]"
+    fi
+    echo "$(date)${repo_info}"
 }
 
 function has-status-changes {
@@ -255,10 +259,26 @@ EOF
 while true ; do
     show-timestamp
 
-    # Get repository name if needed
+    # Get repository name and branch if needed
     repo_name=""
+    branch_name=""
     if [ "${SHOW_REPO_NAME}" = true ] ; then
-	repo_name=$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null || echo "unknown")
+	repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+	if [ -n "${repo_root}" ] ; then
+	    repo_name=$(basename "${repo_root}" 2>/dev/null || echo "unknown")
+	    branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+	else
+	    repo_name="unknown"
+	    branch_name="unknown"
+	fi
+    fi
+
+    # Check if repository name or branch has changed (for audio output)
+    repo_info_changed=false
+    if [ "${SHOW_REPO_NAME}" = true ] ; then
+	if [ "${repo_name}" != "${prev_repo_name}" ] || [ "${branch_name}" != "${prev_branch_name}" ] ; then
+	    repo_info_changed=true
+	fi
     fi
 
     # Get current counts
@@ -332,8 +352,8 @@ while true ; do
     fi
 
     # Generate formatted output messages
-    diff_output=$(format-diff-output "${diff_lines}" "${diff_status}" "${repo_name}")
-    status_output=$(format-status-output "${status_count}" "${status_status}" "${repo_name}")
+    diff_output=$(format-diff-output "${diff_lines}" "${diff_status}")
+    status_output=$(format-status-output "${status_count}" "${status_status}")
 
     # Update previous values for next iteration
     prev_diff_count="${diff_lines}"
@@ -379,11 +399,31 @@ ${process_output}"
 	    if ! has-status-changes "${work_status_for_check}" "${diff_status}" "${status_status}" "${process_status_for_check}" ; then
 		should_announce=false
 	    fi
+	    # If repo name changed, we should announce (even if other metrics are stable)
+	    if [ "${SHOW_REPO_NAME}" = true ] && [ "${repo_info_changed}" = true ] ; then
+		should_announce=true
+	    fi
 	fi
 
 	if [ "${should_announce}" = true ] ; then
-	    echo "${combined_message}" | say || true
+	    # Build audio message
+	    audio_message="${combined_message}"
+	    # Add repository and branch info to audio if -r flag is enabled
+	    if [ "${SHOW_REPO_NAME}" = true ] ; then
+		# Follow -c option: only say repo/branch if it changed (when -c is set) or always (when -c is not set)
+		if [ "${AUDIO_CHANGES_ONLY}" != true ] || [ "${repo_info_changed}" = true ] ; then
+		    audio_message="${audio_message}
+repository: ${repo_name} branch: ${branch_name}"
+		fi
+	    fi
+	    echo "${audio_message}" | say || true
 	fi
+    fi
+
+    # Update previous repository name and branch for next iteration
+    if [ "${SHOW_REPO_NAME}" = true ] ; then
+	prev_repo_name="${repo_name}"
+	prev_branch_name="${branch_name}"
     fi
 
     sleep ${INTERVAL}

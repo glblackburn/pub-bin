@@ -7,13 +7,15 @@ This section tracks planned improvements and enhancements for the `monitor-ai-ag
 
 | ID | Status | Priority | Severity | Title | Description |
 |----|--------|----------|----------|-------|-------------|
-| ID | Status | Priority | Severity | Title | Description |
-|----|--------|----------|----------|-------|-------------|
 | [FEATURE-1](FEATURE-1.md) | Completed | High | Medium | Improve Git Status Counting | Accurately count all untracked files, including all files within untracked directories using `find` |
 | [FEATURE-2](FEATURE-2.md) | Completed | High | Low | Add Process Count Monitoring | Add a fourth metric to monitor system process count for better visibility into AI agent activity |
 | [FEATURE-4](FEATURE-4.md) | Completed | Medium | Low | Audio Changes Only Mode | Add `-c` flag to only announce audio when metrics are increasing or decreasing |
 | [FEATURE-5](FEATURE-5.md) | Completed | Medium | Low | Refactor Work Metric Display | Change `-w` flag to work like `-p` (show/hide metric), add new flag for path display |
+| [FEATURE-6](FEATURE-6.md) | Open | Medium | Low | Show Git Repository Name and Branch Information | Display git repository name and current branch information in the output |
 | [FEATURE-3](FEATURE-3.md) | Open | High | Low | Graceful Exit Handling | Add signal handling for clean shutdown and optional summary on exit |
+| [FEATURE-7](FEATURE-7.md) | Open | Medium | Low | State Persistence | Optional state file to save previous values, resume monitoring with historical context |
+| [FEATURE-8](FEATURE-8.md) | Open | Low | Low | Historical Logging | Optional log file to track metrics over time in CSV format with rotation |
+| [FEATURE-9](FEATURE-9.md) | Open | Low | Low | Summary Statistics | Show min/max/average values over monitoring session, display on exit or with option |
 
 ## Recently Completed ✅
 
@@ -54,7 +56,13 @@ The following features are planned in priority order:
    - Completed: 2025-12-09
    - Performance optimized: work count only calculated when metric enabled
 
-5. **[FEATURE-3: Graceful Exit Handling](FEATURE-3.md)** - Priority: High
+5. **[FEATURE-6: Show Git Repository Name and Branch Information](FEATURE-6.md)** - Priority: Medium
+   - Display git repository name and current branch in output
+   - Improve context awareness when monitoring multiple repositories
+   - Estimated: Low (1-2 hours)
+   - Display format TBD (timestamp line, separate line, or in metrics)
+
+6. **[FEATURE-3: Graceful Exit Handling](FEATURE-3.md)** - Priority: High
    - Add signal handling for clean shutdown and optional summary on exit
    - Estimated: Medium-High (4-6 hours for full implementation)
    - Can be implemented incrementally (basic signal handling first)
@@ -65,10 +73,23 @@ See individual feature documents for detailed specifications, implementation det
 
 ## Related Improvements
 
-This update sets the foundation for:
-- State persistence (Phase 2)
-- Historical logging (Phase 3)
-- Summary statistics (Phase 3)
+The following features are planned for future phases:
+
+- **[FEATURE-7: State Persistence](FEATURE-7.md)** - Phase 2
+  - Optional state file to save previous values
+  - Resume monitoring with historical context
+  - Estimated: Medium-High (3-4 hours)
+
+- **[FEATURE-8: Historical Logging](FEATURE-8.md)** - Phase 3
+  - Optional log file to track metrics over time
+  - CSV format for easy analysis
+  - Log rotation to prevent unlimited growth
+  - Estimated: Medium (2-3 hours)
+
+- **[FEATURE-9: Summary Statistics](FEATURE-9.md)** - Phase 3
+  - Show min/max/average values over monitoring session
+  - Display on exit or with special option
+  - Estimated: Low-Medium (2-3 hours)
 
 ## Estimated Complexity
 
@@ -89,8 +110,9 @@ This update sets the foundation for:
 2. ✅ **FEATURE-2 completed** (straightforward addition, immediate value)
 3. ✅ **FEATURE-4 completed** (audio noise reduction, improves UX)
 4. ✅ **FEATURE-5 completed** (consistent flag behavior, performance optimization)
-5. Then add basic signal handling and simple summary (FEATURE-3)
-6. Finally add state persistence in a follow-up update
+5. **FEATURE-6** - Show git repository and branch info (improves context, low complexity)
+6. Then add basic signal handling and simple summary (FEATURE-3)
+7. Finally add state persistence in a follow-up update
 
 ## Legend
 
