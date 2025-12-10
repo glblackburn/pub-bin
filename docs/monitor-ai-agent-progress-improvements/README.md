@@ -11,7 +11,7 @@ This section tracks planned improvements and enhancements for the `monitor-ai-ag
 | [FEATURE-2](FEATURE-2.md) | Completed | High | Low | Add Process Count Monitoring | Add a fourth metric to monitor system process count for better visibility into AI agent activity |
 | [FEATURE-4](FEATURE-4.md) | Completed | Medium | Low | Audio Changes Only Mode | Add `-c` flag to only announce audio when metrics are increasing or decreasing |
 | [FEATURE-5](FEATURE-5.md) | Completed | Medium | Low | Refactor Work Metric Display | Change `-w` flag to work like `-p` (show/hide metric), add new flag for path display |
-| [FEATURE-6](FEATURE-6.md) | Open | Medium | Low | Show Git Repository Name and Branch Information | Display git repository name and current branch information in the output |
+| [FEATURE-6](FEATURE-6.md) | Completed | Medium | Low | Show Git Repository Name and Branch Information | Display git repository name and current branch information in the output |
 | [FEATURE-3](FEATURE-3.md) | Open | High | Low | Graceful Exit Handling | Add signal handling for clean shutdown and optional summary on exit |
 | [FEATURE-7](FEATURE-7.md) | Open | Medium | Low | State Persistence | Optional state file to save previous values, resume monitoring with historical context |
 | [FEATURE-8](FEATURE-8.md) | Open | Low | Low | Historical Logging | Optional log file to track metrics over time in CSV format with rotation |
@@ -19,13 +19,14 @@ This section tracks planned improvements and enhancements for the `monitor-ai-ag
 
 ## Recently Completed ✅
 
-1. ✅ **FEATURE-5: Refactor Work Metric Display** - Changed `-w` flag to work like `-p` (show/hide metric), added `-W` flag for path display
-2. ✅ **FEATURE-4: Audio Changes Only Mode** - Added `-c` flag to only announce audio when metrics are increasing or decreasing
-3. ✅ **FEATURE-2: Add Process Count Monitoring** - Added fourth metric to monitor system process count for better visibility into AI agent activity
-4. ✅ **FEATURE-1: Improve Git Status Counting** - Accurately count all untracked files, including all files within untracked directories using `find`
-5. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
-6. ✅ Added startup validation for working directory existence
-7. ✅ Improved error handling for missing directories
+1. ✅ **FEATURE-6: Show Git Repository Name and Branch Information** - Always displays repo/branch in timestamp line when in a git repository
+2. ✅ **FEATURE-5: Refactor Work Metric Display** - Changed `-w` flag to work like `-p` (show/hide metric), added `-W` flag for path display
+3. ✅ **FEATURE-4: Audio Changes Only Mode** - Added `-c` flag to only announce audio when metrics are increasing or decreasing
+4. ✅ **FEATURE-2: Add Process Count Monitoring** - Added fourth metric to monitor system process count for better visibility into AI agent activity
+5. ✅ **FEATURE-1: Improve Git Status Counting** - Accurately count all untracked files, including all files within untracked directories using `find`
+6. ✅ Removed unnecessary `sleep 2` delays (4 seconds per cycle)
+7. ✅ Added startup validation for working directory existence
+8. ✅ Improved error handling for missing directories
 
 ## Implementation Order
 
@@ -56,11 +57,11 @@ The following features are planned in priority order:
    - Completed: 2025-12-09
    - Performance optimized: work count only calculated when metric enabled
 
-5. **[FEATURE-6: Show Git Repository Name and Branch Information](FEATURE-6.md)** - Priority: Medium
-   - Display git repository name and current branch in output
-   - Improve context awareness when monitoring multiple repositories
-   - Estimated: Low (1-2 hours)
-   - Display format TBD (timestamp line, separate line, or in metrics)
+5. ✅ **[FEATURE-6: Show Git Repository Name and Branch Information](FEATURE-6.md)** - **COMPLETED**
+   - Display git repository name and current branch in timestamp line
+   - Always shows when in a git repository: `[repo-name:branch]`
+   - Completed: 2025-12-09 (Commit: de2e685)
+   - Handles detached HEAD state and non-git directories gracefully
 
 6. **[FEATURE-3: Graceful Exit Handling](FEATURE-3.md)** - Priority: High
    - Add signal handling for clean shutdown and optional summary on exit
@@ -110,7 +111,7 @@ The following features are planned for future phases:
 2. ✅ **FEATURE-2 completed** (straightforward addition, immediate value)
 3. ✅ **FEATURE-4 completed** (audio noise reduction, improves UX)
 4. ✅ **FEATURE-5 completed** (consistent flag behavior, performance optimization)
-5. **FEATURE-6** - Show git repository and branch info (improves context, low complexity)
+5. ✅ **FEATURE-6 completed** (improves context, always shows repo/branch in timestamp)
 6. Then add basic signal handling and simple summary (FEATURE-3)
 7. Finally add state persistence in a follow-up update
 

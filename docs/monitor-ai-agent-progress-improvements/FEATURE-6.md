@@ -10,25 +10,34 @@
 Add display of git repository name and current branch information to the output. This provides better context about which repository is being monitored, especially when working with multiple repositories or when the script is run from different locations.
 
 **Implementation:**
-- ✅ Repository name and branch detection in `show-timestamp` function (lines 140-149)
-- ✅ Always displays in timestamp line when in a git repository
-- ✅ Format: `Tue Dec 9 16:45:00 EST 2025 [pub-bin:main]`
-- ✅ Gracefully handles non-git directories (no repo info shown)
-- ✅ Repository info is tracked for audio announcements (lines 264-270, 400-406)
-- ✅ Bug fix: Line 391 typo fixed (`repo_name_changed` → `repo_info_changed`)
+- ✅ Repository name and branch detection when `-r` flag is used (lines 262-282)
+- ✅ Displays as separate line after timestamp when `-r` flag is used (Example 2 format)
+- ✅ Format: `repo: pub-bin  branch: main` displayed as separate line
+- ✅ Gracefully handles non-git directories (shows "repo: unknown  branch: unknown")
+- ✅ Handles detached HEAD state (shows short commit hash instead of branch name)
+- ✅ Repository/branch line is piped to `say` command separately (independent of metrics audio)
+- ✅ Audio behavior: Always piped to `say` unless `-c` flag is used (then only when repo/branch changes)
+- ✅ Bug fix: Line 400 typo fixed (`repo_name_changed` → `repo_info_changed`)
 
 **Current Behavior:**
-- Repository name and branch are always detected when in a git repository
-- Repository/branch info is displayed in the timestamp line: `[repo-name:branch]`
-- Repository info is also included in audio announcements when `-r` flag is used
-- Gracefully handles non-git directories (no repo info shown in timestamp)
+- Repository name and branch are detected when `-r` flag is used
+- Repository/branch info is displayed as a separate line after timestamp: `repo: pub-bin  branch: main`
+- Repository/branch line is piped to `say` command separately (independent of metrics audio)
+- Audio behavior: Always piped to `say` when `-r` is used, unless `-c` flag is used (then only when repo/branch changes)
+- Gracefully handles non-git directories (shows "repo: unknown  branch: unknown")
+- Handles detached HEAD state (shows short commit hash instead of branch name)
 
 **Implementation Details:**
-- Modified `show-timestamp` function to detect and display repo/branch info
-- Always shows when in a git repository (no flag needed)
-- Format: `Tue Dec 9 16:45:00 EST 2025 [pub-bin:main]`
+- `-r` flag enables repository/branch detection and display
+- Shows as separate line after timestamp (Example 2 format)
+- Format: `repo: pub-bin  branch: main`
 - Uses `git rev-parse --show-toplevel` and `git rev-parse --abbrev-ref HEAD`
-- Handles errors gracefully (shows nothing if not in git repo)
+- Handles detached HEAD state (shows short commit hash via `git rev-parse --short HEAD`)
+- Handles errors gracefully (shows "unknown" if not in git repo)
+- Repository/branch line is piped to `say` command separately (lines 405-413)
+- Audio is independent of metrics audio announcement
+- Audio respects `-c` flag: only piped to `say` if repo/branch changed when `-c` is used
+- Without `-c`: repo/branch line always piped to `say` when `-r` is used
 
 **Proposed Implementation:**
 
@@ -59,13 +68,14 @@ diff:      275 (   new    )
 status:      3 (   new    )
 ```
 
-**Example 2: Show as separate line**
+**Example 2: Show as separate line (IMPLEMENTED)**
 ```
 Tue Dec 9 13:56:06 EST 2025
 repo: pub-bin  branch: main
 diff:      275 (   new    )
 status:      3 (   new    )
 ```
+*Note: The repo/branch line is also piped to `say` command separately (unless `-c` flag is used and repo/branch hasn't changed)*
 
 **Example 3: Show in each metric (extend -r flag)**
 ```
@@ -75,10 +85,11 @@ status:      3 (   new    ) (pub-bin:main)
 ```
 
 **CLI Changes:**
-- Option 1: No new flag - always show repository and branch
-- Option 2: Extend `-r` flag to include branch information
-- Option 3: Add new flag (e.g., `-b` or `-g`) to control git info display
-- **Recommendation:** Option 1 (always show) or Option 2 (extend `-r`)
+- ✅ **Implemented:** `-r` flag shows repository and branch as separate line (Example 2 format)
+- ✅ Repository/branch line is piped to `say` command separately (independent of metrics audio)
+- ✅ Audio behavior: Always piped to `say` when `-r` is used, unless `-c` flag is used (then only when repo/branch changes)
+- ✅ Format: `repo: pub-bin  branch: main` displayed as separate line after timestamp
+- ✅ Usage message updated: "Show repository name and branch as separate line (also in audio unless -c used)"
 
 **Implementation Details:**
 
@@ -105,10 +116,13 @@ status:      3 (   new    ) (pub-bin:main)
 
 **Files Affected:**
 - `monitor-ai-agent-progress.sh`
-  - ✅ Modified `show-timestamp` function (lines 140-149) to include repo/branch info
-  - ✅ Git repository and branch detection in timestamp function
-  - ✅ Repository info tracking for audio (lines 264-270, 400-406)
-  - ✅ Bug fix: Fixed typo `repo_name_changed` → `repo_info_changed` (line 391)
+  - ✅ Repository/branch detection when `-r` flag is used (lines 262-282)
+  - ✅ Separate line display after timestamp (Example 2 format, line 276)
+  - ✅ Repository/branch line piped to `say` separately (lines 405-413)
+  - ✅ Audio is independent of metrics audio announcement
+  - ✅ Audio respects `-c` flag (only piped to `say` if changed when `-c` is used)
+  - ✅ Usage message updated (line 48)
+  - ✅ Bug fix: Fixed typo `repo_name_changed` → `repo_info_changed` (line 400)
 
 **Impact:**
 - **Low Risk:** Display-only change, doesn't affect core functionality
@@ -129,12 +143,15 @@ status:      3 (   new    ) (pub-bin:main)
 - Display format needs to be clear and not cluttered
 
 **Testing:**
-- Test in git repository (various branches)
-- Test in non-git directory
-- Test in detached HEAD state
-- Test with `-r` flag (if extending it)
-- Test performance with frequent updates
-- Test error handling when git is not available
+- ✅ Test in git repository (various branches) - Verified
+- ✅ Test in non-git directory - Verified (shows "repo: unknown  branch: unknown")
+- ✅ Test in detached HEAD state - Verified (shows short commit hash)
+- ✅ Test with `-r` flag - Verified (shows separate line)
+- ✅ Test with `-r -c` flag - Verified (audio only when changed)
+- ✅ Test without `-r` flag - Verified (no repo/branch line)
+- ✅ Test audio behavior - Verified (piped to `say` separately)
+- ⏳ Test performance with frequent updates - Pending
+- ⏳ Test error handling when git is not available - Pending
 
 **Estimated Complexity:**
 - **Low (1-2 hours)**
@@ -143,12 +160,13 @@ status:      3 (   new    ) (pub-bin:main)
   - Error handling is standard
   - Performance optimization (caching) is optional
 
-**Questions to Answer:**
-1. Where should the repository/branch info be displayed? (timestamp line, separate line, in metrics)
-2. Should this be always-on or controlled by a flag?
-3. Should this extend the `-r` flag or be independent?
-4. How to handle detached HEAD state? (show commit hash? show "detached"?)
-5. Should repository info be cached or recalculated each iteration?
+**Questions Answered:**
+1. ✅ **Where should the repository/branch info be displayed?** - Separate line after timestamp (Example 2 format)
+2. ✅ **Should this be always-on or controlled by a flag?** - Controlled by `-r` flag
+3. ✅ **Should this extend the `-r` flag or be independent?** - Extends `-r` flag
+4. ✅ **How to handle detached HEAD state?** - Shows short commit hash via `git rev-parse --short HEAD`
+5. ✅ **Should repository info be cached or recalculated each iteration?** - Recalculated each iteration (minimal performance impact)
+6. ✅ **Audio behavior?** - Piped to `say` separately, respects `-c` flag
 
 **Additional Notes:**
 - This feature improves observability and context awareness

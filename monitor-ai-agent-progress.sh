@@ -46,7 +46,7 @@ Options
   -i <interval>    : Update interval in seconds (Default: ${INTERVAL})
   -p               : Show process count monitoring.
   -q               : Quiet mode. Output as little as possible.
-  -r               : Show repository name in diff and status output.
+  -r               : Show repository name and branch as separate line (also in audio unless -c used).
   -t <dir>         : Working/scratch directory to monitor (Default: ${WORKING_DIR})
   -v               : Verbose output.
   -w               : Show work metric monitoring.
@@ -138,19 +138,7 @@ function format-process-output {
 }
 
 function show-timestamp {
-    # Get repository name and branch if in git repo (FEATURE-6)
-    local repo_info=""
-    local repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
-    if [ -n "${repo_root}" ] ; then
-	local repo_name=$(basename "${repo_root}" 2>/dev/null || echo "unknown")
-	local branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-	# Handle detached HEAD state
-	if [ "${branch_name}" = "HEAD" ] ; then
-	    branch_name=$(git rev-parse --short HEAD 2>/dev/null || echo "detached")
-	fi
-	repo_info=" [${repo_name}:${branch_name}]"
-    fi
-    echo "$(date)${repo_info}"
+    date
 }
 
 function has-status-changes {
@@ -259,17 +247,26 @@ EOF
 while true ; do
     show-timestamp
 
-    # Get repository name and branch if needed
+    # Get repository name and branch if -r flag is used (FEATURE-6)
     repo_name=""
     branch_name=""
+    repo_info_line=""
     if [ "${SHOW_REPO_NAME}" = true ] ; then
 	repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
 	if [ -n "${repo_root}" ] ; then
 	    repo_name=$(basename "${repo_root}" 2>/dev/null || echo "unknown")
 	    branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+	    # Handle detached HEAD state
+	    if [ "${branch_name}" = "HEAD" ] ; then
+		branch_name=$(git rev-parse --short HEAD 2>/dev/null || echo "detached")
+	    fi
+	    repo_info_line="repo: ${repo_name}  branch: ${branch_name}"
+	    echo "${repo_info_line}"
 	else
 	    repo_name="unknown"
 	    branch_name="unknown"
+	    repo_info_line="repo: unknown  branch: unknown"
+	    echo "${repo_info_line}"
 	fi
     fi
 
@@ -405,17 +402,19 @@ ${process_output}"
 	    fi
 	fi
 
-	if [ "${should_announce}" = true ] ; then
-	    # Build audio message
-	    audio_message="${combined_message}"
-	    # Add repository and branch info to audio if -r flag is enabled
-	    if [ "${SHOW_REPO_NAME}" = true ] ; then
-		# Follow -c option: only say repo/branch if it changed (when -c is set) or always (when -c is not set)
-		if [ "${AUDIO_CHANGES_ONLY}" != true ] || [ "${repo_info_changed}" = true ] ; then
-		    audio_message="${audio_message}
-repository: ${repo_name} branch: ${branch_name}"
-		fi
+	# Handle repo/branch line audio (FEATURE-6)
+	# Always pipe repo/branch line to say when -r is used, unless -c is used (then only when changed)
+	if [ "${SHOW_REPO_NAME}" = true ] && [ -n "${repo_info_line}" ] ; then
+	    # If -c flag is NOT used, always pipe repo/branch line to say
+	    # If -c flag IS used, only pipe if repo/branch changed
+	    if [ "${AUDIO_CHANGES_ONLY}" != true ] || [ "${repo_info_changed}" = true ] ; then
+		echo "${repo_info_line}" | say || true
 	    fi
+	fi
+
+	if [ "${should_announce}" = true ] ; then
+	    # Build audio message for metrics
+	    audio_message="${combined_message}"
 	    echo "${audio_message}" | say || true
 	fi
     fi
