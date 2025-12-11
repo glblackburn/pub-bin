@@ -64,18 +64,20 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
    - Add two trailing spaces to all section headings and bullet points
    - Add zero-width spaces to file names (e.g., `script​.sh`) to prevent LinkedIn auto-linking
    - Keep URLs clean (no zero-width spaces) so they remain clickable
-3. **Save Temporary File**: Save as plain text file (e.g., `linkedin-post-topic.txt`) for clean copy-paste into LinkedIn
-4. **Post to LinkedIn**: Copy-paste from the temporary .txt file and publish on LinkedIn
-5. **Get LinkedIn URL**: After posting, copy the direct LinkedIn post URL
-6. **Convert to Markdown**: 
+3. **Check Content Length**: Always verify the character count of the LinkedIn-formatted post text before finalizing. LinkedIn's character limit for regular posts is **3,000 characters**. Posts should be trimmed if they exceed this limit. Count characters in the plain text version (the .txt file content).
+4. **Save Temporary File**: Save as plain text file (e.g., `linkedin-post-topic.txt`) for clean copy-paste into LinkedIn
+5. **Post to LinkedIn**: Copy-paste from the temporary .txt file and publish on LinkedIn
+6. **Get LinkedIn URL**: After posting, copy the direct LinkedIn post URL
+7. **Convert to Markdown**: 
    - Add the post to `LinkedIn-posts.md` with proper markdown formatting
    - Use date heading format: `## [Month Day, Year](LinkedIn-URL)`
    - Add `[LinkedIn](LinkedIn-URL)` link below the heading
    - Remove zero-width spaces from GitHub URLs (keep markdown file URLs clean)
    - Ensure all section headings and bullet points have trailing spaces for proper markdown rendering
-7. **Clean Up**: Delete the temporary .txt file after the post is added to `LinkedIn-posts.md`
+8. **Clean Up**: Delete the temporary .txt file after the post is added to `LinkedIn-posts.md`
 
 **Verification Checklist:**
+- ✅ Content length has been checked and is within LinkedIn's character limit (3,000 characters)
 - ✅ All section headings have trailing spaces
 - ✅ All bullet points have trailing spaces
 - ✅ Rendered markdown matches LinkedIn format (each item on its own line)
