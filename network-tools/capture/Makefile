@@ -1,6 +1,6 @@
 # Makefile for analyze-tcpdump.py testing and development
 
-.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean check-deps install-deps pytest install-pytest
+.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean check-deps pytest install-pytest
 
 # Configuration
 PYTEST = pytest
@@ -26,8 +26,8 @@ help:
 	@echo "  make test-coverage    - Run tests with coverage report"
 	@echo "  make test-verbose     - Run tests with verbose output"
 	@echo "  make test-fast        - Run tests excluding performance tests"
-	@echo "  make install-deps     - Install required dependencies (pytest)"
 	@echo "  make check-deps       - Check if required dependencies are installed"
+	@echo "  make install-pytest   - Install pytest and pytest-cov"
 	@echo "  make lint             - Run code quality checks (pylint/flake8)"
 	@echo "  make type-check       - Run type checking (mypy)"
 	@echo "  make clean            - Clean test artifacts"
@@ -48,11 +48,8 @@ install-pytest:
 # Check if pytest is installed
 check-deps:
 	@echo "Checking dependencies..."
-	@command -v $(PYTEST) >/dev/null 2>&1 && echo "✓ pytest is installed" || (echo "✗ pytest is not installed" && echo "  Install with: make install-deps" && exit 1)
+	@command -v $(PYTEST) >/dev/null 2>&1 && echo "✓ pytest is installed" || (echo "✗ pytest is not installed" && echo "  Install with: make install-pytest" && exit 1)
 	@echo "All dependencies are installed."
-
-# Install required dependencies (alias for install-pytest)
-install-deps: install-pytest
 
 # Run all tests
 # Note: Tests handle Python path in conftest.py or test file itself
