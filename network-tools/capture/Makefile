@@ -169,9 +169,9 @@ install-mypy:
 type-check: mypy
 	@echo "Running mypy..."
 	@if command -v mypy >/dev/null 2>&1; then \
-		mypy $(SCRIPT); \
+		mypy --check-untyped-defs $(SCRIPT); \
 	else \
-		$(PYTHON) -m mypy $(SCRIPT); \
+		$(PYTHON) -m mypy --check-untyped-defs $(SCRIPT); \
 	fi
 
 # Clean test artifacts

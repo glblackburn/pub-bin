@@ -191,7 +191,7 @@ class TcpdumpParser:  # pylint: disable=too-few-public-methods
 class ConnectionAnalyzer:  # pylint: disable=too-many-instance-attributes
     """Analyze and aggregate network connection data."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize analyzer with empty counters."""
         self.src_ip_counts: Counter = Counter()
         self.dst_ip_counts: Counter = Counter()
@@ -202,7 +202,7 @@ class ConnectionAnalyzer:  # pylint: disable=too-many-instance-attributes
         self.protocol_counts: Counter = Counter()
         self.src_port_counts: Counter = Counter()
         self.dst_port_counts: Counter = Counter()
-        self.total_packets = 0
+        self.total_packets: int = 0
         self.unique_src_ips: Set[str] = set()
         self.unique_dst_ips: Set[str] = set()
 
