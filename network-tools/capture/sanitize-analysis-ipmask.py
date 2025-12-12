@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 from ipaddress import ip_address, AddressValueError
 from collections import OrderedDict
+from typing import Optional
 import random
 import string
 
@@ -287,6 +288,32 @@ class IPMaskSanitizer:
         return header + content
 
 
+def find_latest_analysis_file(directory: Path) -> Optional[Path]:
+    """
+    Find the latest analysis file in a directory.
+    
+    Looks for files matching the pattern '*_analysis.txt' created by
+    analyze-tcpdump.py.
+    
+    Args:
+        directory: Directory to search
+        
+    Returns:
+        Path to latest analysis file, or None if not found
+    """
+    if not directory.exists():
+        return None
+    
+    pattern = '*_analysis.txt'
+    files = list(directory.glob(pattern))
+    if not files:
+        return None
+    
+    # Sort by modification time (newest first)
+    files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return files[0]
+
+
 def main():
     """Main entry point."""
     import argparse
@@ -297,7 +324,8 @@ def main():
     parser.add_argument(
         'input_file',
         type=str,
-        help='Input analysis file to sanitize'
+        nargs='?',
+        help='Input analysis file to sanitize (default: find latest in log directory)'
     )
     parser.add_argument(
         '-o', '--output',
@@ -322,8 +350,30 @@ def main():
     
     args = parser.parse_args()
     
-    # Read input
-    input_path = Path(args.input_file)
+    # Get script directory for log path
+    script_dir = Path(__file__).parent.resolve()
+    log_dir = script_dir / 'log'
+    
+    # Determine input file
+    if args.input_file:
+        # Use provided input file
+        input_path = Path(args.input_file)
+        if not input_path.is_absolute():
+            input_path = (script_dir / input_path).resolve()
+    else:
+        # Find latest analysis file in log directory
+        if not log_dir.exists():
+            print(f"Error: Log directory not found: {log_dir}", file=sys.stderr)
+            sys.exit(1)
+        
+        input_path = find_latest_analysis_file(log_dir)
+        if not input_path:
+            print(f"Error: No analysis files found in {log_dir}", file=sys.stderr)
+            print("  (Looking for files matching pattern: *_analysis.txt)", file=sys.stderr)
+            sys.exit(1)
+        
+        print(f"Using latest analysis file: {input_path}", file=sys.stderr)
+    
     if not input_path.exists():
         print(f"Error: File not found: {input_path}", file=sys.stderr)
         sys.exit(1)
@@ -338,18 +388,38 @@ def main():
     sanitized = sanitizer.sanitize(content, use_randomization=False)
     sanitized = sanitizer.add_header_comment(sanitized, use_randomization=False)
     
-    # Write output
+    # Determine output file path
     if args.output:
         output_path = Path(args.output)
+        if not output_path.is_absolute():
+            output_path = (script_dir / output_path).resolve()
     else:
-        output_path = input_path.parent / f"{input_path.stem}.sanitized{input_path.suffix}"
+        # Save to log directory with .ipmasked suffix
+        log_dir.mkdir(exist_ok=True)
+        # Generate output filename based on input filename
+        if '_analysis' in input_path.stem:
+            # If input is an analysis file, add .ipmasked before extension
+            # record-tcpdump_2025-12-12_082910_analysis.txt -> record-tcpdump_2025-12-12_082910_analysis.ipmasked.txt
+            output_name = f"{input_path.stem}.ipmasked{input_path.suffix}"
+        else:
+            # Otherwise, create analysis.ipmasked file
+            output_name = f"{input_path.stem}_analysis.ipmasked{input_path.suffix}"
+        output_path = log_dir / output_name
     
+    # Display output to stdout
+    print(sanitized)
+    
+    # Write output to file
     output_path.write_text(sanitized)
-    print(f"Sanitized output written to: {output_path}")
-    print(f"  - {len(sanitizer.ip_map)} unique IPs mapped")
     
+    # Show mapping table if requested (to stdout so it can be captured/piped)
     if args.show_mapping:
-        print("\n" + sanitizer.generate_mapping_table())
+        print(sanitizer.generate_mapping_table())
+        print()
+    
+    # Show output file name at the end (to stderr so it doesn't interfere with output)
+    print(f"Sanitized output written to: {output_path}", file=sys.stderr)
+    print(f"  - {len(sanitizer.ip_map)} unique IPs mapped", file=sys.stderr)
 
 
 if __name__ == '__main__':

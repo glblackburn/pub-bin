@@ -802,33 +802,71 @@ Examples:
 
     # Generate output
     file_info = {'files': input_files}
+    
+    # Capture output to save to file
+    output_lines = []
 
     if args.csv:
         # CSV output
         csv_format = args.output_format if args.output_format != 'all' else 'connections'
-        print(output_csv(analyzer, csv_format))
+        output_text = output_csv(analyzer, csv_format)
+        output_lines.append(output_text)
+        print(output_text)
     else:
         # Text output
         if args.output_format in ('summary', 'all'):
-            print(generate_summary(analyzer, file_info))
+            summary_text = generate_summary(analyzer, file_info)
+            output_lines.append(summary_text)
+            print(summary_text)
             if args.output_format == 'all':
+                output_lines.append('')
                 print()
 
         if args.output_format in ('ips', 'all'):
-            print(generate_all_ips_report(analyzer))
+            ips_text = generate_all_ips_report(analyzer)
+            output_lines.append(ips_text)
+            print(ips_text)
             if args.output_format == 'all':
+                output_lines.append('')
                 print()
 
         if args.output_format == 'connections' or (args.output_format == 'all' and not args.quiet):
-            print(generate_connections_report(analyzer, args.top))
+            connections_text = generate_connections_report(analyzer, args.top)
+            output_lines.append(connections_text)
+            print(connections_text)
             if args.output_format == 'all':
+                output_lines.append('')
                 print()
 
         if args.output_format == 'ports' or (args.output_format == 'all' and not args.quiet):
-            print(generate_ports_report(analyzer, args.top, 'source'))
+            source_ports_text = generate_ports_report(analyzer, args.top, 'source')
+            output_lines.append(source_ports_text)
+            print(source_ports_text)
             if args.output_format == 'all':
+                output_lines.append('')
                 print()
-            print(generate_ports_report(analyzer, args.top, 'destination'))
+            dest_ports_text = generate_ports_report(analyzer, args.top, 'destination')
+            output_lines.append(dest_ports_text)
+            print(dest_ports_text)
+    
+    # Save output to file in log directory
+    # Use first input file to determine output filename
+    if input_files:
+        first_input = input_files[0]
+        # Generate output filename: input_stem + '_analysis' + extension
+        output_filename = f"{first_input.stem}_analysis{first_input.suffix}"
+        output_path = default_log_dir / output_filename
+        
+        # Ensure log directory exists
+        default_log_dir.mkdir(exist_ok=True)
+        
+        # Write output to file
+        output_content = '\n'.join(output_lines)
+        output_path.write_text(output_content)
+        
+        # Show output file name at the end
+        if not args.quiet:
+            print(f"\nAnalysis saved to: {output_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":
