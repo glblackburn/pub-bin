@@ -1,6 +1,6 @@
 # Makefile for analyze-tcpdump.py testing and development
 
-.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean
+.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean check-deps install-deps
 
 # Configuration
 PYTEST = pytest
@@ -26,39 +26,77 @@ help:
 	@echo "  make test-coverage    - Run tests with coverage report"
 	@echo "  make test-verbose     - Run tests with verbose output"
 	@echo "  make test-fast        - Run tests excluding performance tests"
+	@echo "  make install-deps     - Install required dependencies (pytest)"
+	@echo "  make check-deps       - Check if required dependencies are installed"
 	@echo "  make lint             - Run code quality checks (pylint/flake8)"
 	@echo "  make type-check       - Run type checking (mypy)"
 	@echo "  make clean            - Clean test artifacts"
 
+# Check if pytest is installed
+check-deps:
+	@echo "Checking dependencies..."
+	@command -v $(PYTEST) >/dev/null 2>&1 && echo "✓ pytest is installed" || (echo "✗ pytest is not installed" && echo "  Install with: make install-deps" && exit 1)
+	@echo "All dependencies are installed."
+
+# Install required dependencies
+install-deps:
+	@echo "Installing required dependencies..."
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		echo "pytest is already installed"; \
+	else \
+		echo "Installing pytest..."; \
+		$(PYTHON) -m pip install --user pytest pytest-cov || $(PYTHON) -m pip install pytest pytest-cov; \
+		echo "✓ pytest installed successfully"; \
+	fi
+	@echo "All dependencies installed."
+
+# Check for pytest before running tests
+# This function is called by all test targets
+check-pytest:
+	@if ! command -v $(PYTEST) >/dev/null 2>&1; then \
+		echo "Error: pytest is not installed."; \
+		echo ""; \
+		echo "Install it with one of the following:"; \
+		echo "  make install-deps"; \
+		echo "  $(PYTHON) -m pip install --user pytest pytest-cov"; \
+		echo "  $(PYTHON) -m pip install pytest pytest-cov"; \
+		echo ""; \
+		exit 1; \
+	fi
+
 # Run all tests
 # Note: Tests handle Python path in conftest.py or test file itself
-test:
+test: check-pytest
 	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR)
 
 # Run unit tests only (exclude integration and performance)
-test-unit:
+test-unit: check-pytest
 	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not integration and not performance"
 
 # Run integration tests only
-test-integration:
+test-integration: check-pytest
 	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m integration
 
 # Run performance tests only
-test-performance:
+test-performance: check-pytest
 	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m performance
 
 # Run tests with coverage report
-test-coverage:
+test-coverage: check-pytest
+	@if ! $(PYTHON) -m pytest --version >/dev/null 2>&1 && ! command -v pytest-cov >/dev/null 2>&1; then \
+		echo "Warning: pytest-cov not installed. Coverage reports may not work."; \
+		echo "Install with: $(PYTHON) -m pip install pytest-cov"; \
+	fi
 	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) --cov=$(COV_MODULE) --cov-report=html --cov-report=term --cov-report=xml $(TEST_DIR)
 	@echo "Coverage report generated in htmlcov/"
 	@echo "Open htmlcov/index.html in browser to view"
 
 # Run tests with verbose output
-test-verbose:
+test-verbose: check-pytest
 	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) -v $(TEST_DIR)
 
 # Run fast tests (exclude performance)
-test-fast:
+test-fast: check-pytest
 	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not performance"
 
 # Run code quality checks
