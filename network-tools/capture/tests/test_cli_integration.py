@@ -605,3 +605,25 @@ class TestErrorPaths:
         files = find_tcpdump_files(empty_dir)
         
         assert files == []
+    
+    def test_find_tcpdump_files_excludes_analysis_output(self, tmp_path):
+        """Test that find_tcpdump_files excludes analysis output files"""
+        test_dir = tmp_path / "log"
+        test_dir.mkdir()
+        
+        # Create actual tcpdump capture file
+        capture_file = test_dir / "record-tcpdump_2025-12-12_082910.txt"
+        capture_file.write_text("10:00:00.000000 IP 192.168.1.1 > 192.168.1.2: ICMP\n")
+        
+        # Create analysis output files (should be excluded)
+        analysis_file1 = test_dir / "record-tcpdump_2025-12-12_082910_analysis.txt"
+        analysis_file1.write_text("Analysis output")
+        analysis_file2 = test_dir / "record-tcpdump_2025-12-12_082910_analysis.ipmasked.txt"
+        analysis_file2.write_text("Sanitized output")
+        
+        files = find_tcpdump_files(test_dir)
+        
+        # Should only find the actual capture file, not analysis files
+        assert len(files) == 1
+        assert files[0].name == "record-tcpdump_2025-12-12_082910.txt"
+        assert "_analysis" not in files[0].name

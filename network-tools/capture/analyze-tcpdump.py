@@ -318,6 +318,8 @@ def find_tcpdump_files(directory: Path) -> List[Path]:
     """
     Find tcpdump files in a directory.
 
+    Excludes analysis output files (files containing '_analysis' in the name).
+
     Args:
         directory: Directory to search
 
@@ -329,6 +331,8 @@ def find_tcpdump_files(directory: Path) -> List[Path]:
 
     pattern = 'record-tcpdump_*.txt'
     files = list(directory.glob(pattern))
+    # Exclude analysis output files (these are output from analyze-tcpdump.py, not input)
+    files = [f for f in files if '_analysis' not in f.name]
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return files
 
