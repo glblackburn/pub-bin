@@ -58,6 +58,14 @@ Network diagnostic, scanning, intelligence, and capture tools.
   - Options: `-h` for help
   - Requires: sudo privileges
   - Note: Runs continuously until stopped (Ctrl+C)
+- `capture/analyze-tcpdump.py` - Analyze tcpdump output files
+  - Analyzes tcpdump output to extract IP addresses and connection statistics
+  - Supports UDP, TCP, ICMP, and QUIC protocols
+  - Multiple output formats: summary, IPs, connections, ports, CSV
+  - Filtering by protocol, IP address, port, and local IP exclusion
+  - Usage: `analyze-tcpdump.py [options] [tcpdump_file...]`
+  - Options: `-h` for help, see tool help for full usage and examples
+  - Default: Analyzes latest file in `log/` directory if no file specified
 
 ## Usage
 

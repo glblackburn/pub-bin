@@ -1,0 +1,3 @@
+21:56:12.338504 IP 192.168.1.254 > 192.168.1.100: ICMP time exceeded in-transit, length 40
+23:06:21.395971 IP 203.0.113.13 > 192.168.1.100: ICMP host 203.0.113.13 unreachable, length 64
+21:56:13.456789 IP 192.168.1.1 > 192.168.1.100: ICMP echo request, id 12345, seq 1, length 64
