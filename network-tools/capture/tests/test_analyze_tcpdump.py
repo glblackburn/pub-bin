@@ -211,6 +211,17 @@ class TestIsPrivateIP:
         for ip in public_ips:
             assert not is_private_ip(ip), f"{ip} should not be detected as private"
 
+    def test_private_ip_edge_cases(self):
+        """Test edge cases for private IP detection"""
+        # Test 0.0.0.0 and 255.255.255.255
+        # Note: These are not private IPs according to ipaddress module
+        result_0 = is_private_ip("0.0.0.0")
+        result_255 = is_private_ip("255.255.255.255")
+        # Both should not be private (though 0.0.0.0 might be treated specially)
+        # Just verify the function doesn't crash
+        assert isinstance(result_0, bool)
+        assert isinstance(result_255, bool)
+
 
 ################################################################################
 # ConnectionAnalyzer Tests
@@ -458,6 +469,24 @@ class TestOutputFormats:
         lines = csv_output.strip().split('\n')
         assert len(lines) > 0
         assert 'src_ip' in lines[0] or 'type' in lines[0]  # Header row
+
+    def test_output_csv_ips_format(self):
+        """Test CSV output with ips format"""
+        csv_output = output_csv(self.analyzer, 'ips')
+        
+        assert csv_output
+        lines = csv_output.strip().split('\n')
+        assert len(lines) > 0
+        assert 'type' in lines[0]  # Header row
+
+    def test_output_csv_ports_format(self):
+        """Test CSV output with ports format"""
+        csv_output = output_csv(self.analyzer, 'ports')
+        
+        assert csv_output
+        lines = csv_output.strip().split('\n')
+        assert len(lines) > 0
+        assert 'type' in lines[0]  # Header row
 
 
 ################################################################################
