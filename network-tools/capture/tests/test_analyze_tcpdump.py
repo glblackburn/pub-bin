@@ -205,7 +205,7 @@ class TestIsPrivateIP:
         public_ips = [
             "8.8.8.8",
             "1.1.1.1",
-            "203.0.113.1",
+            "142.250.9.100",  # Google public IP
         ]
         
         for ip in public_ips:
