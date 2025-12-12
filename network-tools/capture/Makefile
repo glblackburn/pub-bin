@@ -1,6 +1,6 @@
 # Makefile for analyze-tcpdump.py testing and development
 
-.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean check-deps install-deps
+.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean check-deps install-deps pytest install-pytest
 
 # Configuration
 PYTEST = pytest
@@ -19,7 +19,7 @@ COV_MODULE = analyze_tcpdump
 
 help:
 	@echo "Available targets:"
-	@echo "  make test              - Run all tests"
+	@echo "  make test              - Run all tests (auto-installs pytest if needed)"
 	@echo "  make test-unit        - Run unit tests only"
 	@echo "  make test-integration - Run integration tests only"
 	@echo "  make test-performance - Run performance tests only"
@@ -32,72 +32,87 @@ help:
 	@echo "  make type-check       - Run type checking (mypy)"
 	@echo "  make clean            - Clean test artifacts"
 
+# Ensure pytest is available - auto-installs if missing
+pytest:
+	@if ! command -v $(PYTEST) >/dev/null 2>&1 && ! $(PYTHON) -m pytest --version >/dev/null 2>&1; then \
+		echo "pytest not found, installing..."; \
+		make install-pytest; \
+	fi
+
+# Install pytest and pytest-cov
+install-pytest:
+	@echo "Installing pytest and pytest-cov..."
+	@$(PYTHON) -m pip install --user pytest pytest-cov 2>/dev/null || $(PYTHON) -m pip install pytest pytest-cov
+	@echo "✓ pytest installed successfully"
+
 # Check if pytest is installed
 check-deps:
 	@echo "Checking dependencies..."
 	@command -v $(PYTEST) >/dev/null 2>&1 && echo "✓ pytest is installed" || (echo "✗ pytest is not installed" && echo "  Install with: make install-deps" && exit 1)
 	@echo "All dependencies are installed."
 
-# Install required dependencies
-install-deps:
-	@echo "Installing required dependencies..."
-	@if command -v $(PYTEST) >/dev/null 2>&1; then \
-		echo "pytest is already installed"; \
-	else \
-		echo "Installing pytest..."; \
-		$(PYTHON) -m pip install --user pytest pytest-cov || $(PYTHON) -m pip install pytest pytest-cov; \
-		echo "✓ pytest installed successfully"; \
-	fi
-	@echo "All dependencies installed."
-
-# Check for pytest before running tests
-# This function is called by all test targets
-check-pytest:
-	@if ! command -v $(PYTEST) >/dev/null 2>&1; then \
-		echo "Error: pytest is not installed."; \
-		echo ""; \
-		echo "Install it with one of the following:"; \
-		echo "  make install-deps"; \
-		echo "  $(PYTHON) -m pip install --user pytest pytest-cov"; \
-		echo "  $(PYTHON) -m pip install pytest pytest-cov"; \
-		echo ""; \
-		exit 1; \
-	fi
+# Install required dependencies (alias for install-pytest)
+install-deps: install-pytest
 
 # Run all tests
 # Note: Tests handle Python path in conftest.py or test file itself
-test: check-pytest
-	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR)
+# Use python3 -m pytest if pytest command not in PATH
+test: pytest
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR); \
+	else \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest $(TEST_DIR); \
+	fi
 
 # Run unit tests only (exclude integration and performance)
-test-unit: check-pytest
-	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not integration and not performance"
+test-unit: pytest
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not integration and not performance"; \
+	else \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest $(TEST_DIR) -m "not integration and not performance"; \
+	fi
 
 # Run integration tests only
-test-integration: check-pytest
-	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m integration
+test-integration: pytest
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m integration; \
+	else \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest $(TEST_DIR) -m integration; \
+	fi
 
 # Run performance tests only
-test-performance: check-pytest
-	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m performance
+test-performance: pytest
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m performance; \
+	else \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest $(TEST_DIR) -m performance; \
+	fi
 
 # Run tests with coverage report
-test-coverage: check-pytest
-	@if ! $(PYTHON) -m pytest --version >/dev/null 2>&1 && ! command -v pytest-cov >/dev/null 2>&1; then \
-		echo "Warning: pytest-cov not installed. Coverage reports may not work."; \
-		echo "Install with: $(PYTHON) -m pip install pytest-cov"; \
+test-coverage: pytest
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) --cov=$(COV_MODULE) --cov-report=html --cov-report=term --cov-report=xml $(TEST_DIR); \
+	else \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest --cov=$(COV_MODULE) --cov-report=html --cov-report=term --cov-report=xml $(TEST_DIR); \
 	fi
-	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) --cov=$(COV_MODULE) --cov-report=html --cov-report=term --cov-report=xml $(TEST_DIR)
 	@echo "Coverage report generated in htmlcov/"
 	@echo "Open htmlcov/index.html in browser to view"
 
 # Run tests with verbose output
-test-verbose: check-pytest
-	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) -v $(TEST_DIR)
+test-verbose: pytest
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) -v $(TEST_DIR); \
+	else \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest -v $(TEST_DIR); \
+	fi
 
 # Run fast tests (exclude performance)
-test-fast: check-pytest
-	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not performance"
+test-fast: pytest
+	@if command -v $(PYTEST) >/dev/null 2>&1; then \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not performance"; \
+	else \
+		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest $(TEST_DIR) -m "not performance"; \
+	fi
 
 # Run code quality checks
 lint:

@@ -11,6 +11,7 @@ Tests cover:
 """
 
 import sys
+import importlib.util
 from pathlib import Path
 
 # Add parent directory (capture/) to Python path for imports
@@ -18,20 +19,26 @@ CAPTURE_DIR = Path(__file__).parent.parent
 if str(CAPTURE_DIR) not in sys.path:
     sys.path.insert(0, str(CAPTURE_DIR))
 
+# Import analyze-tcpdump.py (hyphenated filename) as a module
+SCRIPT_PATH = CAPTURE_DIR / "analyze-tcpdump.py"
+spec = importlib.util.spec_from_file_location("analyze_tcpdump", SCRIPT_PATH)
+analyze_tcpdump = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(analyze_tcpdump)
+
 import pytest
-from analyze_tcpdump import (
-    TcpdumpParser,
-    ConnectionAnalyzer,
-    is_private_ip,
-    find_tcpdump_files,
-    process_file,
-    generate_summary,
-    generate_top_ips_report,
-    generate_connections_report,
-    generate_ports_report,
-    generate_all_ips_report,
-    output_csv,
-)
+
+# Import from the loaded module
+TcpdumpParser = analyze_tcpdump.TcpdumpParser
+ConnectionAnalyzer = analyze_tcpdump.ConnectionAnalyzer
+is_private_ip = analyze_tcpdump.is_private_ip
+find_tcpdump_files = analyze_tcpdump.find_tcpdump_files
+process_file = analyze_tcpdump.process_file
+generate_summary = analyze_tcpdump.generate_summary
+generate_top_ips_report = analyze_tcpdump.generate_top_ips_report
+generate_connections_report = analyze_tcpdump.generate_connections_report
+generate_ports_report = analyze_tcpdump.generate_ports_report
+generate_all_ips_report = analyze_tcpdump.generate_all_ips_report
+output_csv = analyze_tcpdump.output_csv
 
 # Test data directory
 TEST_DATA_DIR = Path(__file__).parent / "data" / "tcpdump"
