@@ -51,6 +51,81 @@ cd network-tools/capture/
 ./analyze-tcpdump.py [options] [tcpdump_file...]
 ```
 
+## Table of Contents
+
+- [Tool Overview](#tool-overview)
+  - [File Location Details](#file-location-details)
+  - [Usage Path](#usage-path)
+- [Requirements](#requirements)
+  - [Functional Requirements](#functional-requirements)
+  - [Non-Functional Requirements](#non-functional-requirements)
+- [Features](#features)
+  - [Core Features](#core-features)
+  - [Optional Features](#optional-features)
+- [CLI Interface](#cli-interface)
+  - [Command Syntax](#command-syntax)
+  - [Options](#options)
+  - [Arguments](#arguments)
+  - [Examples](#examples)
+- [Output Format](#output-format)
+  - [Standard Output Formats](#standard-output-formats)
+  - [Error Output](#error-output)
+  - [File Output (optional)](#file-output-optional)
+- [TCPDump Output Format Understanding](#tcpdump-output-format-understanding)
+  - [Actual tcpdump Output Format (from real data)](#actual-tcpdump-output-format-from-real-data)
+  - [Real Examples from Actual Data](#real-examples-from-actual-data)
+  - [Parsing Strategy](#parsing-strategy)
+  - [Key Observations from Real Data](#key-observations-from-real-data)
+- [Configuration](#configuration)
+  - [Config Variables](#config-variables)
+  - [Interactive Setup](#interactive-setup)
+- [Dependencies](#dependencies)
+  - [Python Version](#python-version)
+  - [Standard Library Modules (No Installation Required)](#standard-library-modules-no-installation-required)
+  - [Optional Third-Party Libraries](#optional-third-party-libraries)
+  - [External Libraries/APIs](#external-librariesapis)
+- [Implementation Details](#implementation-details)
+  - [Script Structure](#script-structure)
+  - [Code Organization](#code-organization)
+  - [Key Classes and Functions](#key-classes-and-functions)
+  - [Error Handling](#error-handling)
+  - [Edge Cases (Validated from Real Data)](#edge-cases-validated-from-real-data)
+- [Testing Plan](#testing-plan)
+  - [Test File Location and Folder Structure](#test-file-location-and-folder-structure)
+  - [Test Framework](#test-framework)
+  - [Test Data Requirements](#test-data-requirements)
+  - [Unit Tests (pytest)](#unit-tests-pytest)
+  - [Integration Tests](#integration-tests)
+  - [Performance Tests](#performance-tests)
+  - [Test Organization](#test-organization)
+  - [Test Execution](#test-execution)
+  - [Makefile Design](#makefile-design)
+  - [Test Coverage Goals](#test-coverage-goals)
+- [Documentation](#documentation)
+  - [README Updates](#readme-updates)
+  - [Code Comments](#code-comments)
+- [Implementation Checklist](#implementation-checklist)
+  - [Phase 1: Core Parsing (Foundation)](#phase-1-core-parsing-foundation)
+  - [Phase 2: Data Extraction and Aggregation](#phase-2-data-extraction-and-aggregation)
+  - [Phase 3: Filtering](#phase-3-filtering)
+  - [Phase 4: Reporting](#phase-4-reporting)
+  - [Phase 5: File Management](#phase-5-file-management)
+  - [Phase 6: Testing](#phase-6-testing)
+  - [Phase 7: Documentation](#phase-7-documentation)
+  - [Phase 8: Code Quality](#phase-8-code-quality)
+- [Future Enhancements](#future-enhancements)
+  - [Phase 2 Features (Post-MVP)](#phase-2-features-post-mvp)
+- [Python Implementation Details](#python-implementation-details)
+  - [Why Python for This Tool?](#why-python-for-this-tool)
+  - [Key Python Features and Patterns](#key-python-features-and-patterns)
+- [Notes](#notes)
+  - [TCPDump Output Variations](#tcpdump-output-variations)
+  - [Performance Considerations (Critical for Large Files)](#performance-considerations-critical-for-large-files)
+  - [Integration Opportunities](#integration-opportunities)
+  - [Similar Tools Reference](#similar-tools-reference)
+  - [Location and Integration](#location-and-integration)
+  - [Code Quality Standards](#code-quality-standards)
+
 ## Requirements
 
 ### Functional Requirements
@@ -525,10 +600,41 @@ if __name__ == "__main__":
 
 ## Testing Plan
 
-### Test File Location
-- **Primary location:** `tests/scripts/unit/test_analyze_tcpdump.py` (pytest)
-- **Alternative:** `tests/python/unit/test_analyze_tcpdump.py` (if separate Python test directory structure)
-- **Test data:** `tests/data/tcpdump/` directory with sample files
+### Test File Location and Folder Structure
+
+**Test code organization (co-located with tool):**
+```
+network-tools/
+└── capture/
+    ├── analyze-tcpdump.py            # Main tool
+    ├── log/                           # Default tcpdump output location
+    │   └── record-tcpdump_*.txt
+    ├── Makefile                       # Makefile for running tests
+    └── tests/                         # Test directory (co-located with tool)
+        ├── test_analyze_tcpdump.py    # Main pytest test file
+        ├── conftest.py                # Pytest configuration (optional)
+        ├── helpers/                   # Test helper functions (optional)
+        │   └── tcpdump_helpers.py
+        └── data/                      # Test data files
+            └── tcpdump/
+                ├── sample_udp.txt
+                ├── sample_icmp.txt
+                ├── sample_quic.txt
+                ├── sample_tcp.txt
+                ├── sample_mixed.txt
+                ├── sample_multicast.txt
+                ├── sample_dns.txt
+                ├── sample_empty.txt
+                ├── sample_malformed.txt
+                └── sample_large.txt
+```
+
+**Rationale for co-located tests:**
+- **Proximity:** Tests are next to the code they test, making it easier to find and maintain
+- **Self-contained:** All tool-related files (code, tests, test data) are in one directory
+- **Simpler imports:** Tests can import the tool directly without complex path manipulation
+- **Isolation:** Each tool in `network-tools/` can have its own test structure
+- **Follows Python best practices:** Common pattern for Python projects (tests/ directory at package root)
 
 ### Test Framework
 - **pytest** for Python testing framework
@@ -539,7 +645,7 @@ if __name__ == "__main__":
 
 ### Test Data Requirements
 
-**Sample tcpdump files in `tests/data/tcpdump/`:**
+**Sample tcpdump files in `network-tools/capture/tests/data/tcpdump/`:**
 
 1. **`sample_udp.txt`** - UDP packets only
    - Standard UDP packets with ports
@@ -890,11 +996,39 @@ if __name__ == "__main__":
 
 **Test file structure:**
 ```python
-# tests/scripts/unit/test_analyze_tcpdump.py
+# network-tools/capture/tests/test_analyze_tcpdump.py
+
+import sys
+from pathlib import Path
+
+# Add parent directory (capture/) to Python path for imports
+# This allows importing analyze_tcpdump module directly
+CAPTURE_DIR = Path(__file__).parent.parent
+if str(CAPTURE_DIR) not in sys.path:
+    sys.path.insert(0, str(CAPTURE_DIR))
 
 import pytest
-from pathlib import Path
 from analyze_tcpdump import TcpdumpParser, ConnectionAnalyzer, ...
+```
+
+**Using conftest.py for shared configuration:**
+```python
+# network-tools/capture/tests/conftest.py (optional, for shared pytest configuration)
+
+import sys
+from pathlib import Path
+
+# Add capture directory to Python path
+CAPTURE_DIR = Path(__file__).parent.parent
+if str(CAPTURE_DIR) not in sys.path:
+    sys.path.insert(0, str(CAPTURE_DIR))
+
+# Pytest fixtures can be defined here for shared test setup
+@pytest.fixture
+def sample_tcpdump_data_dir():
+    """Return path to test data directory"""
+    return Path(__file__).parent / "data" / "tcpdump"
+```
 
 class TestTcpdumpParser:
     """Tests for TcpdumpParser class"""
@@ -943,26 +1077,184 @@ class TestPerformance:
 
 ### Test Execution
 
-**Running tests:**
+**Using Makefile (recommended):**
 ```bash
+# From network-tools/capture/ directory
+cd network-tools/capture/
+make test              # Run all tests
+make test-unit        # Run unit tests only
+make test-integration # Run integration tests only
+make test-performance # Run performance tests only
+make test-coverage    # Run tests with coverage report
+make test-verbose     # Run tests with verbose output
+make test-fast        # Run tests excluding performance tests
+```
+
+**Using pytest directly:**
+```bash
+# From network-tools/capture/ directory
+cd network-tools/capture/
+
 # Run all tests
-pytest tests/scripts/unit/test_analyze_tcpdump.py
+pytest tests/
 
 # Run with verbose output
-pytest -v tests/scripts/unit/test_analyze_tcpdump.py
+pytest -v tests/
+
+# Run specific test file
+pytest tests/test_analyze_tcpdump.py
 
 # Run specific test class
-pytest tests/scripts/unit/test_analyze_tcpdump.py::TestTcpdumpParser
+pytest tests/test_analyze_tcpdump.py::TestTcpdumpParser
 
 # Run specific test
-pytest tests/scripts/unit/test_analyze_tcpdump.py::TestTcpdumpParser::test_parse_udp_packet
+pytest tests/test_analyze_tcpdump.py::TestTcpdumpParser::test_parse_udp_packet
 
 # Run with coverage
-pytest --cov=network_tools.capture.analyze_tcpdump tests/scripts/unit/test_analyze_tcpdump.py
+pytest --cov=analyze_tcpdump --cov-report=html --cov-report=term tests/
 
 # Run performance tests only
-pytest -m performance tests/scripts/unit/test_analyze_tcpdump.py
+pytest -m performance tests/
 ```
+
+### Makefile Design
+
+**Location:** `network-tools/capture/Makefile`
+
+**Purpose:** Provide convenient commands to run various test categories and development tasks.
+
+**Makefile structure:**
+```makefile
+# Makefile for analyze-tcpdump.py testing and development
+
+.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help
+
+# Configuration
+PYTEST = pytest
+PYTHON = python3
+SCRIPT = analyze-tcpdump.py
+# Paths relative to network-tools/capture/ directory
+TEST_DIR = tests
+TEST_FILE = $(TEST_DIR)/test_analyze_tcpdump.py
+TEST_DATA = $(TEST_DIR)/data/tcpdump
+# For imports, add capture directory to Python path
+CAPTURE_DIR = $(shell pwd)
+COV_MODULE = analyze_tcpdump
+
+# Default target
+.DEFAULT_GOAL := help
+
+help:
+	@echo "Available targets:"
+	@echo "  make test              - Run all tests"
+	@echo "  make test-unit        - Run unit tests only"
+	@echo "  make test-integration - Run integration tests only"
+	@echo "  make test-performance - Run performance tests only"
+	@echo "  make test-coverage    - Run tests with coverage report"
+	@echo "  make test-verbose     - Run tests with verbose output"
+	@echo "  make test-fast        - Run tests excluding performance tests"
+	@echo "  make lint             - Run code quality checks (pylint/flake8)"
+	@echo "  make type-check       - Run type checking (mypy)"
+	@echo "  make clean            - Clean test artifacts"
+
+# Run all tests
+# Note: Tests handle Python path in conftest.py or test file itself
+test:
+	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR)
+
+# Run unit tests only (exclude integration and performance)
+test-unit:
+	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not integration and not performance"
+
+# Run integration tests only
+test-integration:
+	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m integration
+
+# Run performance tests only
+test-performance:
+	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m performance
+
+# Run tests with coverage report
+test-coverage:
+	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) --cov=$(COV_MODULE) --cov-report=html --cov-report=term --cov-report=xml --cov-config=.coveragerc $(TEST_DIR)
+	@echo "Coverage report generated in htmlcov/"
+	@echo "Open htmlcov/index.html in browser to view"
+
+# Run tests with verbose output
+test-verbose:
+	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) -v $(TEST_DIR)
+
+# Run fast tests (exclude performance)
+test-fast:
+	PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTEST) $(TEST_DIR) -m "not performance"
+
+# Run code quality checks
+lint:
+	@echo "Running pylint..."
+	@command -v pylint >/dev/null 2>&1 && pylint $(SCRIPT) || echo "pylint not installed, skipping"
+	@echo "Running flake8..."
+	@command -v flake8 >/dev/null 2>&1 && flake8 $(SCRIPT) || echo "flake8 not installed, skipping"
+
+# Run type checking
+type-check:
+	@echo "Running mypy..."
+	@command -v mypy >/dev/null 2>&1 && mypy $(SCRIPT) || echo "mypy not installed, skipping"
+
+# Clean test artifacts
+clean:
+	rm -rf .pytest_cache
+	rm -rf htmlcov
+	rm -rf .coverage
+	rm -rf tests/__pycache__
+	rm -rf tests/.pytest_cache
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find tests -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+```
+
+**Makefile targets:**
+
+1. **`make test`** - Run all tests (default)
+2. **`make test-unit`** - Run unit tests only (excludes integration and performance)
+3. **`make test-integration`** - Run integration tests only
+4. **`make test-performance`** - Run performance tests only
+5. **`make test-coverage`** - Run tests with HTML and terminal coverage reports
+6. **`make test-verbose`** - Run tests with verbose output
+7. **`make test-fast`** - Run tests excluding performance tests
+8. **`make lint`** - Run code quality checks (pylint, flake8)
+9. **`make type-check`** - Run type checking (mypy)
+10. **`make clean`** - Clean test artifacts and cache files
+11. **`make help`** - Display available targets
+
+**Usage examples:**
+```bash
+# Quick test run
+cd network-tools/capture/
+make test
+
+# Run only unit tests during development
+make test-unit
+
+# Check code coverage
+make test-coverage
+# Then open htmlcov/index.html in browser
+
+# Run with verbose output for debugging
+make test-verbose
+
+# Run fast tests (skip performance tests)
+make test-fast
+
+# Check code quality before committing
+make lint
+make type-check
+
+# Clean test artifacts
+make clean
+```
+
+**Note on Python path:** The Makefile sets `PYTHONPATH` to include the `capture/` directory so tests can import `analyze_tcpdump`. Since tests are co-located in `capture/tests/`, the path setup is simpler - tests can import the parent directory's module directly. The `conftest.py` or test files handle the path setup.
 
 ### Test Coverage Goals
 
@@ -1011,6 +1303,10 @@ pytest -m performance tests/scripts/unit/test_analyze_tcpdump.py
 - [ ] Test protocol detection (UDP, QUIC, ICMP, TCP)
 - [ ] Add error handling for malformed lines
 - [ ] Add type hints and docstrings
+- [ ] **Create test directory structure:**
+  - Create `network-tools/capture/tests/` directory
+  - Create `network-tools/capture/tests/data/tcpdump/` directory for test data
+  - Prepare for test file creation in Phase 6
 
 ### Phase 2: Data Extraction and Aggregation
 - [ ] Implement `ConnectionAnalyzer` class
@@ -1064,7 +1360,7 @@ pytest -m performance tests/scripts/unit/test_analyze_tcpdump.py
 
 ### Phase 6: Testing
 - [ ] Write pytest test suite following test plan
-- [ ] Create test data files in `tests/data/tcpdump/`
+- [ ] Create test data files in `network-tools/capture/tests/data/tcpdump/`
 - [ ] **Verify testability:** Ensure all functions can be tested in isolation
   - No hardcoded paths or system dependencies in core logic
   - All functions accept parameters and return values
@@ -1075,6 +1371,11 @@ pytest -m performance tests/scripts/unit/test_analyze_tcpdump.py
 - [ ] Verify all output formats
 - [ ] Test performance with large files
 - [ ] Achieve 90%+ code coverage
+- [ ] **Create Makefile** at `network-tools/capture/Makefile` with test targets
+  - Add targets for unit, integration, performance tests
+  - Add coverage and linting targets
+  - Add help target
+- [ ] Verify all Makefile targets work correctly
 - [ ] Run tests in CI/CD pipeline (if applicable)
 
 ### Phase 7: Documentation
