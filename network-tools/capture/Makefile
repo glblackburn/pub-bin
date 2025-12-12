@@ -1,6 +1,6 @@
 # Makefile for analyze-tcpdump.py testing and development
 
-.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean check-deps pytest install-pytest
+.PHONY: test test-unit test-integration test-performance test-coverage test-verbose test-fast help lint type-check clean check-deps pytest install-pytest pylint flake8 install-pylint install-flake8 mypy install-mypy
 
 # Configuration
 PYTEST = pytest
@@ -28,8 +28,8 @@ help:
 	@echo "  make test-fast        - Run tests excluding performance tests"
 	@echo "  make check-deps       - Check if required dependencies are installed"
 	@echo "  make install-pytest   - Install pytest and pytest-cov"
-	@echo "  make lint             - Run code quality checks (pylint/flake8)"
-	@echo "  make type-check       - Run type checking (mypy)"
+	@echo "  make lint             - Run code quality checks (auto-installs pylint/flake8 if needed)"
+	@echo "  make type-check       - Run type checking (auto-installs mypy if needed)"
 	@echo "  make clean            - Clean test artifacts"
 
 # Ensure pytest is available - auto-installs if missing
@@ -111,17 +111,68 @@ test-fast: pytest
 		PYTHONPATH=$(CAPTURE_DIR):$$PYTHONPATH $(PYTHON) -m pytest $(TEST_DIR) -m "not performance"; \
 	fi
 
+# Ensure pylint is available - auto-installs if missing
+pylint:
+	@if ! command -v pylint >/dev/null 2>&1 && ! $(PYTHON) -m pylint --version >/dev/null 2>&1; then \
+		echo "pylint not found, installing..."; \
+		make install-pylint; \
+	fi
+
+# Install pylint
+install-pylint:
+	@echo "Installing pylint..."
+	@$(PYTHON) -m pip install --user pylint 2>/dev/null || $(PYTHON) -m pip install pylint
+	@echo "✓ pylint installed successfully"
+
+# Ensure flake8 is available - auto-installs if missing
+flake8:
+	@if ! command -v flake8 >/dev/null 2>&1 && ! $(PYTHON) -m flake8 --version >/dev/null 2>&1; then \
+		echo "flake8 not found, installing..."; \
+		make install-flake8; \
+	fi
+
+# Install flake8
+install-flake8:
+	@echo "Installing flake8..."
+	@$(PYTHON) -m pip install --user flake8 2>/dev/null || $(PYTHON) -m pip install flake8
+	@echo "✓ flake8 installed successfully"
+
 # Run code quality checks
-lint:
+lint: pylint flake8
 	@echo "Running pylint..."
-	@command -v pylint >/dev/null 2>&1 && pylint $(SCRIPT) || echo "pylint not installed, skipping"
+	@if command -v pylint >/dev/null 2>&1; then \
+		pylint $(SCRIPT); \
+	else \
+		$(PYTHON) -m pylint $(SCRIPT); \
+	fi
 	@echo "Running flake8..."
-	@command -v flake8 >/dev/null 2>&1 && flake8 $(SCRIPT) || echo "flake8 not installed, skipping"
+	@if command -v flake8 >/dev/null 2>&1; then \
+		flake8 $(SCRIPT); \
+	else \
+		$(PYTHON) -m flake8 $(SCRIPT); \
+	fi
+
+# Ensure mypy is available - auto-installs if missing
+mypy:
+	@if ! command -v mypy >/dev/null 2>&1 && ! $(PYTHON) -m mypy --version >/dev/null 2>&1; then \
+		echo "mypy not found, installing..."; \
+		make install-mypy; \
+	fi
+
+# Install mypy
+install-mypy:
+	@echo "Installing mypy..."
+	@$(PYTHON) -m pip install --user mypy 2>/dev/null || $(PYTHON) -m pip install mypy
+	@echo "✓ mypy installed successfully"
 
 # Run type checking
-type-check:
+type-check: mypy
 	@echo "Running mypy..."
-	@command -v mypy >/dev/null 2>&1 && mypy $(SCRIPT) || echo "mypy not installed, skipping"
+	@if command -v mypy >/dev/null 2>&1; then \
+		mypy $(SCRIPT); \
+	else \
+		$(PYTHON) -m mypy $(SCRIPT); \
+	fi
 
 # Clean test artifacts
 clean:

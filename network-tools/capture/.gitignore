@@ -8,3 +8,6 @@ htmlcov/
 __pycache__/
 *.pyc
 *.pyo
+
+# Type checking cache
+.mypy_cache/
