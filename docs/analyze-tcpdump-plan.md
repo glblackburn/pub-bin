@@ -63,11 +63,18 @@ cd network-tools/capture/
 - [x] Filter by protocol, IP address, or port
 - [x] Support multiple input files
 - [x] Generate summary reports
+- [x] **Enable automated testing:** Implementation must support comprehensive automated testing through pytest
 
 ### Non-Functional Requirements
 - [x] Performance: Handle large tcpdump files efficiently
 - [x] Compatibility: Works on macOS and Linux (tcpdump output format)
 - [x] Security: No special privileges required (reads files only)
+- [x] **Testability:** Code structure must enable automated testing:
+  - Functions and classes must be importable and testable in isolation
+  - No hardcoded file paths or system dependencies in core logic
+  - Output functions must be separable from CLI for testing
+  - Use dependency injection where appropriate for testability
+  - All parsing and analysis logic must be unit testable without file I/O
 
 ## Features
 
@@ -361,6 +368,12 @@ HH:MM:SS.microseconds IP source_ip.source_port > dest_ip.dest_port: protocol_inf
 - Main function pattern with `if __name__ == "__main__"`
 - Proper exception handling with try/except blocks
 - Uses `argparse` for CLI argument parsing
+- **Testability:** Code organized to enable automated testing:
+  - Core logic separated from CLI interface
+  - Functions accept parameters rather than reading global state
+  - File I/O abstracted to enable mocking in tests
+  - Classes and functions can be imported and tested independently
+  - Output generation separated from file writing for testability
 
 ### Code Organization
 ```python
@@ -387,16 +400,40 @@ except ImportError:
     RICH_AVAILABLE = False
 
 # Classes and functions
+# NOTE: All classes and functions must be designed for testability:
+# - Accept parameters rather than reading global state
+# - Return values rather than only printing
+# - Separate I/O from business logic
+# - Enable dependency injection for file operations
+
 class TcpdumpParser:
     """Parse tcpdump output lines"""
+    # Can be instantiated and tested independently
+    # parse_line() accepts string, returns dict (no file I/O)
     ...
 
 class ConnectionAnalyzer:
     """Analyze network connections from parsed data"""
+    # Can be instantiated and tested independently
+    # Methods accept data, return results (no file I/O)
+    ...
+
+def process_file(file_path: Path, analyzer: ConnectionAnalyzer, ...) -> int:
+    """Process file - accepts file path, returns count"""
+    # Separates file I/O from parsing logic
+    # Can be mocked in tests
+    ...
+
+def generate_summary(analyzer: ConnectionAnalyzer, ...) -> str:
+    """Generate summary - returns string, doesn't print"""
+    # Returns formatted string for testing
+    # Printing handled by caller
     ...
 
 def main():
-    """Main entry point"""
+    """Main entry point - handles CLI and orchestrates"""
+    # CLI-specific logic here
+    # Calls testable functions above
     ...
 
 if __name__ == "__main__":
@@ -488,38 +525,452 @@ if __name__ == "__main__":
 
 ## Testing Plan
 
-### Unit Tests (pytest)
-- [ ] Test `TcpdumpParser.parse_line()` with various line formats
-- [ ] Test IP address extraction (with and without ports)
-- [ ] Test protocol detection (TCP, UDP, ICMP, QUIC)
-- [ ] Test port extraction (including ICMP no-port case)
-- [ ] Test `is_private_ip()` function
-- [ ] Test `ConnectionAnalyzer` methods
-- [ ] Test connection counting and aggregation
-- [ ] Test top N IPs selection
-- [ ] Test file finding logic
-
-### Integration Tests
-- [ ] Test with real tcpdump output file (sample from actual data)
-- [ ] Test with multiple input files
-- [ ] Test all output formats (summary, ips, connections, ports, CSV)
-- [ ] Test all filter options (protocol, IP, port, local IP exclusion)
-- [ ] Test error handling (missing file, invalid format, empty file)
-- [ ] Test large file processing (250K+ lines)
-
 ### Test File Location
-- `tests/scripts/unit/test_analyze_tcpdump.py` (pytest)
-- Or: `tests/python/unit/test_analyze_tcpdump.py` (if separate Python test directory)
-
-### Test Data
-- Create sample tcpdump output files in `tests/data/tcpdump/`
-- Include various protocols, IP formats, edge cases
-- Include real sample lines from actual tcpdump file
+- **Primary location:** `tests/scripts/unit/test_analyze_tcpdump.py` (pytest)
+- **Alternative:** `tests/python/unit/test_analyze_tcpdump.py` (if separate Python test directory structure)
+- **Test data:** `tests/data/tcpdump/` directory with sample files
 
 ### Test Framework
-- **pytest** for Python testing
-- Use `pytest.fixture` for test data setup
+- **pytest** for Python testing framework
+- Use `pytest.fixture` for test data setup and teardown
 - Use `pytest.parametrize` for testing multiple input formats
+- Use `pytest.mark` for test categorization (unit, integration, performance)
+- Use `pytest.raises` for exception testing
+
+### Test Data Requirements
+
+**Sample tcpdump files in `tests/data/tcpdump/`:**
+
+1. **`sample_udp.txt`** - UDP packets only
+   - Standard UDP packets with ports
+   - Various port numbers
+   - Different packet lengths
+
+2. **`sample_icmp.txt`** - ICMP packets only
+   - ICMP packets without ports
+   - Various ICMP message types
+   - Time exceeded, host unreachable, etc.
+
+3. **`sample_quic.txt`** - QUIC packets only
+   - QUIC packets with various flags
+   - Initial, protected, handshake packets
+   - Packets with dcid, scid, token fields
+
+4. **`sample_tcp.txt`** - TCP packets only
+   - TCP packets with Flags
+   - SYN, ACK, FIN flags
+   - Various TCP states
+
+5. **`sample_mixed.txt`** - Mixed protocols
+   - UDP, ICMP, QUIC, TCP packets
+   - Various IP addresses (private and public)
+   - Different port numbers
+
+6. **`sample_multicast.txt`** - Multicast/broadcast
+   - mDNS packets (224.0.0.251)
+   - Broadcast addresses
+   - Multicast with ports
+
+7. **`sample_dns.txt`** - DNS queries embedded in UDP
+   - DNS query packets
+   - Various query types
+   - Different domain names
+
+8. **`sample_empty.txt`** - Empty file
+   - Empty tcpdump file
+   - For error handling tests
+
+9. **`sample_malformed.txt`** - Malformed lines
+   - Invalid tcpdump lines
+   - Missing fields
+   - Corrupted data
+
+10. **`sample_large.txt`** - Large file (optional, for performance)
+    - 10K+ lines
+    - For performance testing
+    - Can be generated programmatically
+
+### Unit Tests (pytest)
+
+#### TcpdumpParser Tests
+
+**Test `parse_line()` method:**
+
+1. **Valid UDP packet parsing**
+   - [ ] Parse standard UDP packet with ports
+   - [ ] Extract source IP and port correctly
+   - [ ] Extract destination IP and port correctly
+   - [ ] Detect UDP protocol
+   - [ ] Extract packet length
+
+2. **Valid ICMP packet parsing**
+   - [ ] Parse ICMP packet without ports
+   - [ ] Extract source IP (no port)
+   - [ ] Extract destination IP (no port)
+   - [ ] Detect ICMP protocol
+   - [ ] Handle various ICMP message types
+
+3. **Valid QUIC packet parsing**
+   - [ ] Parse QUIC packet with ports
+   - [ ] Detect QUIC protocol (lowercase)
+   - [ ] Handle QUIC flags (initial, protected, handshake)
+   - [ ] Ignore QUIC-specific fields (dcid, scid, token)
+
+4. **Valid TCP packet parsing**
+   - [ ] Parse TCP packet with Flags
+   - [ ] Detect TCP protocol
+   - [ ] Handle various TCP flags
+
+5. **Invalid line handling**
+   - [ ] Return None for lines without timestamp
+   - [ ] Return None for non-IP packets (ARP, etc.)
+   - [ ] Return None for lines with insufficient fields
+   - [ ] Return None for malformed IP addresses
+   - [ ] Continue processing after invalid line
+
+6. **Edge cases**
+   - [ ] Handle IPv4 addresses with multiple dots correctly
+   - [ ] Handle multicast addresses (224.x.x.x)
+   - [ ] Handle broadcast addresses (255.255.255.255)
+   - [ ] Handle private IP ranges (10.x, 172.16-31.x, 192.168.x)
+   - [ ] Handle DNS queries embedded in UDP
+
+#### IP Address and Port Extraction Tests
+
+1. **IP extraction with ports**
+   - [ ] Extract IP from `192.168.1.100.54321` → `192.168.1.100`
+   - [ ] Extract port from `192.168.1.100.54321` → `54321`
+   - [ ] Handle high port numbers (65535)
+   - [ ] Handle low port numbers (1)
+
+2. **IP extraction without ports (ICMP)**
+   - [ ] Extract IP from `192.168.1.254` → `192.168.1.254`
+   - [ ] Return None for port in ICMP packets
+
+3. **Edge cases**
+   - [ ] Handle IPs with all octets (0.0.0.0, 255.255.255.255)
+   - [ ] Handle private IP ranges correctly
+   - [ ] Handle multicast/broadcast IPs
+
+#### Protocol Detection Tests
+
+1. **Protocol detection**
+   - [ ] Detect UDP (case-sensitive "UDP")
+   - [ ] Detect ICMP (case-sensitive "ICMP")
+   - [ ] Detect QUIC (lowercase "quic")
+   - [ ] Detect TCP ("Flags" or "tcp")
+   - [ ] Return "UNKNOWN" for unrecognized protocols
+
+2. **Protocol in various positions**
+   - [ ] Detect protocol after colon
+   - [ ] Detect protocol after comma
+   - [ ] Handle protocol in middle of line
+
+#### is_private_ip() Function Tests
+
+1. **Private IP detection**
+   - [ ] Detect 10.x.x.x as private
+   - [ ] Detect 172.16.x.x - 172.31.x.x as private
+   - [ ] Detect 192.168.x.x as private
+   - [ ] Detect 127.x.x.x as private (loopback)
+   - [ ] Detect 169.254.x.x as private (link-local)
+
+2. **Public IP detection**
+   - [ ] Detect public IPs as not private
+   - [ ] Handle edge cases (0.0.0.0, 255.255.255.255)
+
+#### ConnectionAnalyzer Tests
+
+1. **add_connection() method**
+   - [ ] Add connection to analyzer
+   - [ ] Increment IP counts (source and destination)
+   - [ ] Increment connection pair counts
+   - [ ] Increment protocol counts
+   - [ ] Increment port counts (when ports present)
+
+2. **get_top_ips() method**
+   - [ ] Return top N source IPs
+   - [ ] Return top N destination IPs
+   - [ ] Handle N larger than available IPs
+   - [ ] Return empty list for N=0
+   - [ ] Sort by count (descending)
+
+3. **get_connection_counts() method**
+   - [ ] Return connection pair counts
+   - [ ] Include protocol in connection key
+   - [ ] Handle multiple connections between same IPs
+
+4. **get_protocol_counts() method**
+   - [ ] Return Counter of protocol counts
+   - [ ] Include all protocols found
+
+5. **get_port_counts() method**
+   - [ ] Return source port counts
+   - [ ] Return destination port counts
+   - [ ] Exclude None ports (ICMP)
+
+#### File Finding Tests
+
+1. **find_tcpdump_files() function**
+   - [ ] Find files matching pattern
+   - [ ] Sort by modification time (newest first)
+   - [ ] Return empty list for empty directory
+   - [ ] Handle non-existent directory
+   - [ ] Filter by filename pattern
+
+### Integration Tests
+
+#### File Processing Tests
+
+1. **Single file processing**
+   - [ ] Process valid tcpdump file
+   - [ ] Process file with mixed protocols
+   - [ ] Process file with only one protocol
+   - [ ] Process empty file (graceful handling)
+   - [ ] Process file with malformed lines (skip and continue)
+
+2. **Multiple file processing**
+   - [ ] Process multiple files sequentially
+   - [ ] Aggregate results from multiple files
+   - [ ] Handle file not found errors
+   - [ ] Continue processing after file error
+
+3. **Large file processing**
+   - [ ] Process file with 10K+ lines
+   - [ ] Verify streaming (no memory issues)
+   - [ ] Measure processing time
+   - [ ] Verify all packets processed
+
+#### Output Format Tests
+
+1. **Summary format (`-o summary`)**
+   - [ ] Generate summary with correct totals
+   - [ ] Include unique IP counts
+   - [ ] Include protocol breakdown
+   - [ ] Include top N IPs
+   - [ ] Format numbers with commas
+
+2. **IPs format (`-o ips`)**
+   - [ ] List all unique source IPs
+   - [ ] List all unique destination IPs
+   - [ ] Sort IPs alphabetically
+   - [ ] Handle empty IP lists
+
+3. **Connections format (`-o connections`)**
+   - [ ] List connection pairs
+   - [ ] Include protocol in output
+   - [ ] Include packet count
+   - [ ] Sort by packet count (descending)
+   - [ ] Limit to top N connections
+
+4. **Ports format (`-o ports`)**
+   - [ ] List source ports with counts
+   - [ ] List destination ports with counts
+   - [ ] Include port name (if well-known)
+   - [ ] Sort by count (descending)
+
+5. **CSV format (`-c`)**
+   - [ ] Generate valid CSV output
+   - [ ] Include headers
+   - [ ] Escape special characters
+   - [ ] Handle empty data
+
+#### Filter Tests
+
+1. **Protocol filtering (`-p`)**
+   - [ ] Filter UDP only
+   - [ ] Filter TCP only
+   - [ ] Filter ICMP only
+   - [ ] Filter QUIC only
+   - [ ] Filter all protocols (default)
+
+2. **IP filtering (`-i`)**
+   - [ ] Filter by source IP
+   - [ ] Filter by destination IP
+   - [ ] Show connections involving specific IP
+   - [ ] Handle IP not found in data
+
+3. **Port filtering (`-P`)**
+   - [ ] Filter by source port
+   - [ ] Filter by destination port
+   - [ ] Handle port not found
+
+4. **Local IP exclusion (`-l`)**
+   - [ ] Exclude 10.x.x.x addresses
+   - [ ] Exclude 172.16-31.x.x addresses
+   - [ ] Exclude 192.168.x.x addresses
+   - [ ] Exclude 127.x.x.x addresses
+   - [ ] Exclude 169.254.x.x addresses
+   - [ ] Keep public IPs only
+
+5. **Combined filters**
+   - [ ] Protocol + IP filter
+   - [ ] Protocol + port filter
+   - [ ] Protocol + local IP exclusion
+   - [ ] All filters combined
+
+#### CLI Option Tests
+
+1. **Help option (`-h`)**
+   - [ ] Display help message
+   - [ ] Include usage information
+   - [ ] Include all options
+   - [ ] Include examples
+
+2. **Quiet mode (`-q`)**
+   - [ ] Suppress verbose output
+   - [ ] Show only essential information
+   - [ ] Suppress progress indicators
+
+3. **Verbose mode (`-v`)**
+   - [ ] Show detailed processing information
+   - [ ] Show file processing progress
+   - [ ] Show parsing statistics
+
+4. **File option (`-f`)**
+   - [ ] Specify file with `-f` option
+   - [ ] Handle file not found
+   - [ ] Handle invalid file path
+
+5. **Directory option (`-d`)**
+   - [ ] Find latest file in directory
+   - [ ] Handle empty directory
+   - [ ] Handle non-existent directory
+
+6. **Top N option (`-t`)**
+   - [ ] Limit output to top N IPs
+   - [ ] Handle N=0
+   - [ ] Handle N larger than available
+   - [ ] Default to 10 if not specified
+
+#### Error Handling Tests
+
+1. **File errors**
+   - [ ] Handle file not found (clear error message)
+   - [ ] Handle permission denied
+   - [ ] Handle unreadable file
+   - [ ] Handle directory instead of file
+
+2. **Format errors**
+   - [ ] Handle invalid tcpdump format
+   - [ ] Handle empty file (informative message)
+   - [ ] Handle file with only whitespace
+   - [ ] Continue processing after format errors
+
+3. **Argument errors**
+   - [ ] Handle invalid option
+   - [ ] Handle missing required argument
+   - [ ] Handle invalid protocol name
+   - [ ] Handle invalid IP format
+   - [ ] Handle invalid port number
+
+4. **Exit codes**
+   - [ ] Exit 0 on success
+   - [ ] Exit 1 on general error
+   - [ ] Exit 2 on parse error
+
+### Performance Tests
+
+1. **Large file processing**
+   - [ ] Process 10K line file in reasonable time
+   - [ ] Process 100K line file (if test data available)
+   - [ ] Verify memory usage stays constant (streaming)
+   - [ ] Measure processing speed (lines/second)
+
+2. **Memory efficiency**
+   - [ ] Verify no memory growth with file size
+   - [ ] Verify only aggregated data in memory
+   - [ ] Test with multiple large files
+
+3. **Regex performance**
+   - [ ] Verify compiled regex patterns used
+   - [ ] Measure parsing speed per line
+
+### Test Organization
+
+**Test file structure:**
+```python
+# tests/scripts/unit/test_analyze_tcpdump.py
+
+import pytest
+from pathlib import Path
+from analyze_tcpdump import TcpdumpParser, ConnectionAnalyzer, ...
+
+class TestTcpdumpParser:
+    """Tests for TcpdumpParser class"""
+    def test_parse_udp_packet(self):
+        ...
+    
+    def test_parse_icmp_packet(self):
+        ...
+    
+    @pytest.mark.parametrize("line,expected", [
+        ("...", {...}),
+        ...
+    ])
+    def test_parse_various_formats(self, line, expected):
+        ...
+
+class TestConnectionAnalyzer:
+    """Tests for ConnectionAnalyzer class"""
+    ...
+
+class TestIPFunctions:
+    """Tests for IP-related functions"""
+    ...
+
+class TestFileProcessing:
+    """Integration tests for file processing"""
+    ...
+
+class TestOutputFormats:
+    """Tests for output format generation"""
+    ...
+
+class TestFilters:
+    """Tests for filtering functionality"""
+    ...
+
+class TestErrorHandling:
+    """Tests for error handling"""
+    ...
+
+@pytest.mark.performance
+class TestPerformance:
+    """Performance tests"""
+    ...
+```
+
+### Test Execution
+
+**Running tests:**
+```bash
+# Run all tests
+pytest tests/scripts/unit/test_analyze_tcpdump.py
+
+# Run with verbose output
+pytest -v tests/scripts/unit/test_analyze_tcpdump.py
+
+# Run specific test class
+pytest tests/scripts/unit/test_analyze_tcpdump.py::TestTcpdumpParser
+
+# Run specific test
+pytest tests/scripts/unit/test_analyze_tcpdump.py::TestTcpdumpParser::test_parse_udp_packet
+
+# Run with coverage
+pytest --cov=network_tools.capture.analyze_tcpdump tests/scripts/unit/test_analyze_tcpdump.py
+
+# Run performance tests only
+pytest -m performance tests/scripts/unit/test_analyze_tcpdump.py
+```
+
+### Test Coverage Goals
+
+- **Unit tests:** 90%+ code coverage
+- **Integration tests:** All major workflows covered
+- **Edge cases:** All identified edge cases tested
+- **Error handling:** All error paths tested
+- **Performance:** Large file processing verified
 
 ## Documentation
 
@@ -548,8 +999,14 @@ if __name__ == "__main__":
 - [ ] Create Python script file at `network-tools/capture/analyze-tcpdump.py`
 - [ ] Make script executable: `chmod +x network-tools/capture/analyze-tcpdump.py`
 - [ ] Add shebang: `#!/usr/bin/env python3`
+- [ ] **Design for testability:** Structure code to enable automated testing
+  - Separate parsing logic from file I/O
+  - Make functions accept parameters (not read global state)
+  - Return values instead of only printing
 - [ ] Implement CLI argument parsing with `argparse`
 - [ ] Implement `TcpdumpParser` class with `parse_line()` method
+  - Method accepts string, returns dict (no file I/O)
+  - Can be tested independently
 - [ ] Test IP and port extraction with unit tests
 - [ ] Test protocol detection (UDP, QUIC, ICMP, TCP)
 - [ ] Add error handling for malformed lines
@@ -557,11 +1014,17 @@ if __name__ == "__main__":
 
 ### Phase 2: Data Extraction and Aggregation
 - [ ] Implement `ConnectionAnalyzer` class
+  - Methods accept data, return results (no file I/O)
+  - Can be instantiated and tested independently
 - [ ] Implement streaming file reading (line-by-line)
+  - Separate file I/O function that can be mocked in tests
+  - Accept file path as parameter
 - [ ] Implement connection counting and aggregation
+- [ ] **Write unit tests alongside implementation** (TDD approach)
 - [ ] Test with sample tcpdump file
 - [ ] Handle large files efficiently (streaming, no memory loading)
 - [ ] Add progress indicator (if `rich` available)
+  - Make progress callback injectable for testing
 
 ### Phase 3: Filtering
 - [ ] Implement `is_private_ip()` function using `ipaddress` module
@@ -574,13 +1037,22 @@ if __name__ == "__main__":
 
 ### Phase 4: Reporting
 - [ ] Implement `generate_summary()` function
+  - Returns formatted string (doesn't print)
+  - Can be tested by checking return value
 - [ ] Implement `generate_top_ips_report()` function
+  - Returns formatted string for testing
 - [ ] Implement `generate_connections_report()` function
+  - Returns formatted string for testing
 - [ ] Implement `generate_ports_report()` function
+  - Returns formatted string for testing
 - [ ] Implement all output formats (summary, ips, connections, ports)
+  - All functions return strings, printing handled by caller
 - [ ] Implement CSV output format using `csv` module
+  - Return CSV string or write to file object (testable)
 - [ ] Add optional `rich` formatting for better output
+  - Graceful fallback if rich not available (testable)
 - [ ] Add fallback plain text formatting
+- [ ] **Test all output formats** by checking return values
 
 ### Phase 5: File Management
 - [ ] Implement `find_tcpdump_files()` function using `pathlib`
@@ -591,13 +1063,19 @@ if __name__ == "__main__":
 - [ ] Handle relative paths correctly (from script location or current working directory)
 
 ### Phase 6: Testing
-- [ ] Write pytest test suite
+- [ ] Write pytest test suite following test plan
 - [ ] Create test data files in `tests/data/tcpdump/`
+- [ ] **Verify testability:** Ensure all functions can be tested in isolation
+  - No hardcoded paths or system dependencies in core logic
+  - All functions accept parameters and return values
+  - File I/O can be mocked
 - [ ] Test all error cases
 - [ ] Test edge cases (ICMP, malformed lines, empty files)
 - [ ] Test with real tcpdump output sample
 - [ ] Verify all output formats
 - [ ] Test performance with large files
+- [ ] Achieve 90%+ code coverage
+- [ ] Run tests in CI/CD pipeline (if applicable)
 
 ### Phase 7: Documentation
 - [ ] Update `network-tools/README.md`
@@ -664,6 +1142,12 @@ if __name__ == "__main__":
 - Compiled regex: Use `re.compile()` for repeated pattern matching
 - Graceful degradation: Check for optional libraries (`rich`), fall back to plain text
 - Docstrings: Use Google or NumPy style for all functions/classes
+- **Testability:** Design for automated testing:
+  - Functions accept parameters, return values (not just print)
+  - Separate business logic from I/O operations
+  - Enable dependency injection for file operations
+  - Make classes and functions importable and testable independently
+  - Use dependency injection patterns for testability
 
 ## Notes
 
