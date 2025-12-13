@@ -1,6 +1,6 @@
-## December 12, 2025
+## [December 12, 2025](https://www.linkedin.com/posts/activity-7405645127089541120-9K6b)
 
-**Status:** ⏳ Publication pending - LinkedIn URL will be added after posting
+[LinkedIn](https://www.linkedin.com/posts/activity-7405645127089541120-9K6b)
 
 ---
 

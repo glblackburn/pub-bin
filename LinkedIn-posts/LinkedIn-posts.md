@@ -12,7 +12,7 @@
 
 | Date | Topic | Project/Tool | Status |
 |------|-------|--------------|--------|
-| Dec 12, 2025 | Network capture analysis tools | `network-tools/capture` | 📝 Draft |
+| Dec 12, 2025 | Network capture analysis tools | `network-tools/capture` | ✅ Published |
 | Dec 9, 2025 | Monitor AI agent progress | `monitor-ai-agent-progress.sh` | ✅ Published |
 | Dec 9, 2025 | React2Shell server | React2Shell | ✅ Published |
 | Dec 7, 2025 | What is left analysis | Various | ✅ Published |
@@ -35,12 +35,9 @@
 
 ## December 2025
 
-### [December 12, 2025 - Network Capture Analysis Tools](2025/12/2025-12-12-network-capture-analysis-tools.md) 📝 Draft
+### [December 12, 2025 - Network Capture Analysis Tools](2025/12/2025-12-12-network-capture-analysis-tools.md)
 
-**Status:** Draft (not posted yet)  
-**Topic:** Basic tcpdump analysis tool  
-**Project:** `network-tools/capture`  
-**File:** [`2025-12-12-network-capture-analysis-tools.md`](2025/12/2025-12-12-network-capture-analysis-tools.md)
+[LinkedIn](https://www.linkedin.com/posts/activity-7405645127089541120-9K6b)
 
 ---
 
