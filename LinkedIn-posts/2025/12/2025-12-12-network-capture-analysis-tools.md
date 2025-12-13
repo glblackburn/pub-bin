@@ -1,6 +1,6 @@
-## [December 12, 2025](https://www.linkedin.com/posts/activity-XXXXX)
+## December 12, 2025
 
-[LinkedIn](https://www.linkedin.com/posts/activity-XXXXX)
+**Status:** ⏳ Publication pending - LinkedIn URL will be added after posting
 
 ---
 
@@ -41,24 +41,18 @@ It's a basic tool, but built with attention to quality: good test coverage, type
 
 𝐔𝐬𝐚𝐠𝐞:  
 
-```bash
-# Capture network traffic (runs continuously until stopped)
-./record-tcpdump​.sh
-# Saves to log/record-tcpdump_YYYY-MM-DD_HHMMSS.txt
+▶ Capture: `./record-tcpdump​.sh` (saves to log/record-tcpdump_YYYY-MM-DD_HHMMSS.txt)  
 
-# Analyze the capture (auto-saves to log/record-tcpdump_YYYY-MM-DD_HHMMSS_analysis.txt)
-./analyze-tcpdump​.py
+▶ Analyze: `./analyze-tcpdump​.py` (auto-saves analysis file)  
 
-# Filter TCP only, exclude local IPs
-./analyze-tcpdump​.py -p tcp -l
+▶ Filter: `./analyze-tcpdump​.py -p tcp -l` (TCP only, exclude local IPs)  
 
-# Sanitize for public sharing (auto-finds latest analysis file)
-./sanitize-analysis-ipmask​.py
-# Output saved to log/record-tcpdump_YYYY-MM-DD_HHMMSS_analysis.ipmasked.txt
-```
+▶ Sanitize: `./sanitize-analysis-ipmask​.py` (auto-finds latest analysis file)  
 
 The tools automatically save output files while still displaying results, making it easy to review output immediately and keep a record for later. The sanitize script can auto-discover the latest analysis file, so the workflow is: capture → analyze → sanitize, all with minimal typing.
 
 Nothing revolutionary, just a useful tool for quickly understanding what's in a tcpdump capture file.
+
+The tools: https://github.com/glblackburn/pub-bin/tree/main/network-tools/capture
 
 #NetworkAnalysis #NetworkSecurity #Python #OpenSource #DevTools #NetworkEngineering #Cybersecurity #Tcpdump #NetworkMonitoring
