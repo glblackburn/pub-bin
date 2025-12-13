@@ -12,6 +12,7 @@
 
 | Date | Topic | Project/Tool | Status |
 |------|-------|--------------|--------|
+| Dec 13, 2025 | LinkedIn posting process and style guide | `LinkedIn-posts/` | 📝 Draft |
 | Dec 12, 2025 | Network capture analysis tools | `network-tools/capture` | ✅ Published |
 | Dec 9, 2025 | Monitor AI agent progress | `monitor-ai-agent-progress.sh` | ✅ Published |
 | Dec 9, 2025 | React2Shell server | React2Shell | ✅ Published |
@@ -34,6 +35,15 @@
 ---
 
 ## December 2025
+
+### [December 13, 2025 - LinkedIn Posting Process and Style Guide](2025/12/2025-12-13-linkedin-posting-process.md) 📝 Draft
+
+**Status:** Draft (not posted yet)  
+**Topic:** Building a style guide for AI-assisted LinkedIn post creation  
+**Project:** `LinkedIn-posts/`  
+**File:** [`2025-12-13-linkedin-posting-process.md`](2025/12/2025-12-13-linkedin-posting-process.md)
+
+---
 
 ### [December 12, 2025 - Network Capture Analysis Tools](2025/12/2025-12-12-network-capture-analysis-tools.md)
 
