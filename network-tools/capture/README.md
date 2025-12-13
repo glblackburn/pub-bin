@@ -54,12 +54,25 @@ Analyzes tcpdump output files to extract IP addresses, connection statistics, an
 
 ### record-tcpdump.sh
 
-Records network traffic using tcpdump and saves output to log files.
+Records network traffic using tcpdump and saves output to timestamped log files.
+
+**Features:**
+- Captures all network traffic on default interface
+- Saves output to `log/record-tcpdump_YYYY-MM-DD_HHMMSS.txt`
+- Runs continuously until stopped (Ctrl+C)
+- Automatically runs tcpdump with sudo (no need to run script with sudo)
+- Automatically creates log directory if needed
 
 **Usage:**
 ```bash
-./record-tcpdump.sh [interface] [duration_seconds]
+# Record network traffic (runs continuously until stopped)
+./record-tcpdump.sh
+
+# Display help
+./record-tcpdump.sh -h
 ```
+
+**Note:** The script runs continuously until manually stopped. It automatically uses `sudo` to run tcpdump internally, so you don't need to run the script itself with sudo. Output is saved to timestamped files in the `log/` directory.
 
 ### sanitize-analysis-ipmask.py
 
@@ -94,6 +107,25 @@ Original:  192.168.42.7
 Masked:    192.GS.QS.7
            (2nd octet 168 -> GS, 3rd octet 42 -> QS)
 ```
+
+**Real Example Output:**
+See [`examples/record-tcpdump_2025-12-12_104608_analysis.ipmasked.txt`](examples/record-tcpdump_2025-12-12_104608_analysis.ipmasked.txt) for a complete example of sanitized output. The file shows:
+- Private IPs masked (e.g., `192.168.1.12` → `192.JN.MU.12`)
+- Public IPs remain unchanged (e.g., `151.101.67.5` stays as-is)
+- All statistics and relationships preserved
+- IP format maintained (looks like valid IP addresses)
+
+Example from the file:
+```
+Top 10 Source IPs:
+  192.JN.MU.12        18,134 packets
+  151.101.67.5         4,590 packets
+  151.101.3.5          3,664 packets
+  192.JN.MU.7         1,781 packets
+  23.63.157.145        1,310 packets
+```
+
+The masked IPs (like `192.JN.MU.12`) maintain the IP-like appearance while anonymizing private network addresses for safe public sharing.
 
 ## Development
 
@@ -135,6 +167,7 @@ Tools auto-install dependencies when needed:
 
 ## Documentation
 
+- **Examples:** `examples/` - Example sanitized output files
 - **Bug Documentation:** `docs/bugs/` - Historical bug fixes
 - **Sanitization:** `docs/sanitization/` - IP masking documentation and examples
 - **Test Coverage:** `docs/test-coverage-analysis.md` - Coverage analysis and recommendations
@@ -156,6 +189,8 @@ network-tools/capture/
 ├── record-tcpdump.sh           # Recording script
 ├── sanitize-analysis-ipmask.py # Sanitization tool
 ├── Makefile                    # Build configuration
+├── examples/                   # Example output files
+│   └── record-tcpdump_2025-12-12_104608_analysis.ipmasked.txt
 ├── tests/                      # Test suite
 │   ├── test_analyze_tcpdump.py
 │   ├── test_cli_integration.py
@@ -165,7 +200,7 @@ network-tools/capture/
 │   ├── bugs/                   # Bug documentation
 │   ├── sanitization/           # Sanitization docs
 │   └── test-coverage-analysis.md
-└── log/                        # Output files
+└── log/                        # Output files (gitignored)
 ```
 
 ## Examples
@@ -196,8 +231,12 @@ network-tools/capture/
 ### Sanitized Output
 ```bash
 # Create sanitized version for public sharing
-./sanitize-analysis-ipmask.py log/analysis.txt -o log/analysis.sanitized.txt
+./sanitize-analysis-ipmask.py log/record-tcpdump_2025-12-12_104608_analysis.txt
+
+# Output saved to: log/record-tcpdump_2025-12-12_104608_analysis.ipmasked.txt
 ```
+
+**See:** [`examples/record-tcpdump_2025-12-12_104608_analysis.ipmasked.txt`](examples/record-tcpdump_2025-12-12_104608_analysis.ipmasked.txt) for a complete real-world example of sanitized output with masked private IPs.
 
 ## Requirements
 
