@@ -1,16 +1,10 @@
-## December 12, 2025
-
-**Status:** ⏳ Publication pending - LinkedIn URL will be added after posting
-
----
-
 A Basic Tool for Analyzing tcpdump Output
 
 Built a simple Python tool to parse tcpdump output and extract basic statistics. Nothing fancy, but it solves a common problem. 🛠️
 
 𝐖𝐡𝐚𝐭 𝐢𝐭 𝐝𝐨𝐞𝐬:  
 
-`analyze-tcpdump​.py` - A basic parser that extracts:  
+analyze-tcpdump​.py - A basic parser that extracts:  
 ▶ IP addresses (source, destination, unique counts)  
 ▶ Connection pairs  
 ▶ Port usage statistics  
@@ -23,7 +17,7 @@ It's essentially a structured way to get summary statistics from tcpdump text ou
 
 Sometimes you just need a quick summary of what's in a tcpdump file—top IPs, protocol distribution, port usage. Instead of manually parsing or writing one-off scripts, this provides a reusable tool with consistent output.
 
-The `sanitize-analysis-ipmask​.py` script masks private IPs when sharing examples publicly. It replaces the 2nd and 3rd octets with random two-letter combinations (G-Z, uppercase) while preserving relationships—useful for documentation or blog posts. It can auto-discover the latest analysis file, so you can just run it without specifying input.
+The sanitize-analysis-ipmask​.py script masks private IPs when sharing examples publicly. It replaces the 2nd and 3rd octets with random two-letter combinations (G-Z, uppercase) while preserving relationships—useful for documentation or blog posts. It can auto-discover the latest analysis file, so you can just run it without specifying input.
 
 𝐓𝐡𝐞 𝐭𝐞𝐜𝐡𝐧𝐢𝐜𝐚𝐥 𝐬𝐢𝐝𝐞:  
 
@@ -37,10 +31,10 @@ It's a basic tool, but built with attention to quality: good test coverage, type
 
 𝐔𝐬𝐚𝐠𝐞:  
 
-▶ Capture: `./record-tcpdump​.sh` (saves to log/record-tcpdump_YYYY-MM-DD_HHMMSS.txt)  
-▶ Analyze: `./analyze-tcpdump​.py` (auto-saves analysis file)  
-▶ Filter: `./analyze-tcpdump​.py -p tcp -l` (TCP only, exclude local IPs)  
-▶ Sanitize: `./sanitize-analysis-ipmask​.py` (auto-finds latest analysis file)  
+▶ Capture: ./record-tcpdump​.sh (saves to log/record-tcpdump_YYYY-MM-DD_HHMMSS.txt)  
+▶ Analyze: ./analyze-tcpdump​.py (auto-saves analysis file)  
+▶ Filter: ./analyze-tcpdump​.py -p tcp -l (TCP only, exclude local IPs)  
+▶ Sanitize: ./sanitize-analysis-ipmask​.py (auto-finds latest analysis file)  
 
 The tools automatically save output files while still displaying results, making it easy to review output immediately and keep a record for later. The sanitize script can auto-discover the latest analysis file, so the workflow is: capture → analyze → sanitize, all with minimal typing.
 

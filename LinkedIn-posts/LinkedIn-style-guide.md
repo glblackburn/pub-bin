@@ -1,8 +1,29 @@
 # LinkedIn Post Style Guide
 
-**Related:** [LinkedIn Posts Archive](LinkedIn-posts.md)
+**Related:** [LinkedIn Posts Archive](LinkedIn-posts.md)  
+**Examples:** 
+- [`examples/2025-12-12-network-capture-analysis-tools.txt`](examples/2025-12-12-network-capture-analysis-tools.txt) - LinkedIn-ready plain text format
+- [`examples/2025-12-12-network-capture-analysis-tools.md`](examples/2025-12-12-network-capture-analysis-tools.md) - Markdown format for post history in git repo
 
 This guide documents the formatting rules, workflow, and style guidelines for creating LinkedIn posts.
+
+## Example Posts
+
+See the example files in `examples/` for complete, properly formatted LinkedIn posts:
+
+- **Plain Text Format** ([`2025-12-12-network-capture-analysis-tools.txt`](examples/2025-12-12-network-capture-analysis-tools.txt)) - Ready for copy-paste to LinkedIn, demonstrates:
+- Unicode bold section headings with trailing spaces
+- Bullet points with trailing spaces and no blank lines between them
+- Zero-width spaces in file names
+- Clean URLs
+- Proper paragraph spacing
+- Character count under 3,000 limit
+
+- **Markdown Format** ([`2025-12-12-network-capture-analysis-tools.md`](examples/2025-12-12-network-capture-analysis-tools.md)) - Format for post history in git repo, demonstrates:
+- Draft post structure with status message (no placeholder URLs)
+- Proper markdown formatting for archive
+- Date heading format for unpublished posts
+- How to structure posts before adding LinkedIn URL
 
 ## Formatting Reference for LinkedIn Posts
 
@@ -25,13 +46,17 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
 - This ensures each item renders on its own line, matching LinkedIn's format
 
 **Post Structure:**
-- **Date Heading Format**: `## [Month Day, Year](LinkedIn-URL)`
-- **LinkedIn Link**: `[LinkedIn](LinkedIn-URL)` on the line immediately after the date heading
+- **Date Heading Format**: 
+  - **For Draft Posts**: `## December 12, 2025` (no URL placeholder)
+  - **For Published Posts**: `## [December 12, 2025](LinkedIn-URL)` (with real URL)
+- **Status for Draft Posts**: Use `**Status:** ⏳ Publication pending - LinkedIn URL will be added after posting` instead of placeholder URLs
+- **LinkedIn Link**: `[LinkedIn](LinkedIn-URL)` on the line immediately after the date heading (only for published posts)
 - **Separator**: Use `---` between posts
 - **Paragraph Spacing**: 
   - Blank line after section headings
   - Blank line between major sections
-  - No blank lines between consecutive bullet points (they use trailing spaces instead)
+  - **No blank lines between consecutive bullet points** - Bullet points must appear consecutively without blank lines between them (they use trailing spaces instead)
+  - Example: See `examples/2025-12-12-network-capture-analysis-tools.txt` for correct formatting
 
 **Section Heading Format:**
 - Use Unicode bold characters
@@ -42,7 +67,9 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
 **Bullet Point Format:**
 - Use `▶` character
 - Add two trailing spaces after each bullet line
+- **No blank lines between consecutive bullet points** - They must appear consecutively
 - Example: `▶ Converted all 8 Ruby scripts to Python  `
+- See `examples/2025-12-12-network-capture-analysis-tools.txt` for complete example
 
 **URL Handling:**
 - **In Markdown File**: GitHub URLs should NOT have zero-width spaces (for clean, clickable links)
@@ -58,10 +85,14 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
 
 **Workflow:**
 1. **Draft Post**: Write post content in markdown format
+   - Use `## December 12, 2025` (no URL) for date heading
+   - Add `**Status:** ⏳ Publication pending - LinkedIn URL will be added after posting` below date heading
+   - **Do NOT use placeholder URLs** like `activity-XXXXX` - use status message instead
 2. **Format for LinkedIn**: 
    - Convert `**text**` to Unicode bold characters
    - Replace bullet points with ▶
    - Add two trailing spaces to all section headings and bullet points
+   - **Remove all blank lines between consecutive bullet points** - They must appear consecutively
    - Add zero-width spaces to file names (e.g., `script​.sh`) to prevent LinkedIn auto-linking
    - Keep URLs clean (no zero-width spaces) so they remain clickable
 3. **Check Content Length**: Always verify the character count of the LinkedIn-formatted post text before finalizing. LinkedIn's character limit for regular posts is **3,000 characters**. Posts should be trimmed if they exceed this limit. Count characters in the plain text version (the .txt file content).
@@ -70,22 +101,25 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
 6. **Get LinkedIn URL**: After posting, copy the direct LinkedIn post URL
 7. **Convert to Markdown**: 
    - Add the post to `LinkedIn-posts.md` with proper markdown formatting
-   - Use date heading format: `## [Month Day, Year](LinkedIn-URL)`
+   - Use date heading format: `## [Month Day, Year](LinkedIn-URL)` (replace status message with real URL)
    - Add `[LinkedIn](LinkedIn-URL)` link below the heading
    - Remove zero-width spaces from GitHub URLs (keep markdown file URLs clean)
    - Ensure all section headings and bullet points have trailing spaces for proper markdown rendering
+   - Ensure no blank lines between consecutive bullet points
 8. **Clean Up**: Delete the temporary .txt file after the post is added to `LinkedIn-posts.md`
 
 **Verification Checklist:**
 - ✅ Content length has been checked and is within LinkedIn's character limit (3,000 characters)
 - ✅ All section headings have trailing spaces
 - ✅ All bullet points have trailing spaces
+- ✅ **No blank lines between consecutive bullet points**
 - ✅ Rendered markdown matches LinkedIn format (each item on its own line)
 - ✅ File names in LinkedIn post text have zero-width spaces (e.g., `script​.sh`) to prevent auto-linking
 - ✅ File names in markdown archive index use backticks (e.g., `` `script.sh` ``, `` `README.md` ``) to prevent auto-linking
 - ✅ URLs are clean (no zero-width spaces) and remain clickable
-- ✅ Date format is consistent: `[Month Day, Year]`
-- ✅ LinkedIn link appears immediately after date heading
+- ✅ Date format is consistent: `[Month Day, Year]` for published, `December 12, 2025` for drafts
+- ✅ Draft posts use status message instead of placeholder URLs
+- ✅ LinkedIn link appears immediately after date heading (published posts only)
 
 **Tone and Writing Style Rules:**
 
