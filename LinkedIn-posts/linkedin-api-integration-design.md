@@ -137,41 +137,290 @@ This document outlines requirements, solution options, and recommendations for c
 
 ### Security
 
-#### Credential Management Pattern (Based on JIRA Script Pattern)
+#### Credential Management Pattern (Based on JIRA Script Pattern - Python Implementation)
 
-The credential management should follow a three-tier priority system, matching the pattern used in `create-jira-ticket.sh`:
+**User Experience: Automatic Setup Flow**
+
+The credential management system automatically guides users through setup if credentials are missing:
+
+1. **First-time user runs the script:**
+   - Script checks for credentials in CLI args → environment variables → secure file
+   - If secure file doesn't exist, automatically runs interactive setup script
+   - Setup script opens LinkedIn Developer Portal and prompts for all credentials
+   - Credentials are saved to `~/.secure/linkedin-set-api-key.sh` with proper permissions
+   - Script automatically reloads credentials and continues
+
+2. **Subsequent runs:**
+   - Script loads credentials from secure file automatically
+   - No user interaction needed (unless credentials expire)
+
+3. **Incomplete credentials:**
+   - If credentials file exists but is missing values, script detects this
+   - Automatically prompts to run setup again to complete configuration
+   - Provides clear error messages and guidance
+
+**The credential management follows a three-tier priority system, matching the pattern used in `create-jira-ticket.sh`, but implemented in Python:**
 
 **Priority Order (Highest to Lowest):**
 1. **Command-line arguments** - `--client-id`, `--client-secret`, `--access-token`, `--refresh-token`
 2. **Environment variables** - `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_REFRESH_TOKEN`
 3. **Secure credentials file** - `~/.secure/linkedin-set-api-key.sh` (auto-created if missing)
 
-**Credential Setup Script Pattern:**
-- **Setup script:** `create-set-linkedin-credentials.sh` (interactive one-time setup)
+**Credential Setup Script Pattern (Python):**
+
+- **Setup script:** `create-set-linkedin-credentials.py` (interactive one-time setup)
   - Prompts for Client ID, Client Secret, Access Token, Refresh Token
-  - Creates `~/.secure/linkedin-set-api-key.sh` with `export` statements
+  - Creates `~/.secure/linkedin-set-api-key.sh` with `export` statements (bash format for consistency)
   - Sets proper permissions: `chmod 700 ~/.secure`, `chmod 400 ~/.secure/linkedin-set-api-key.sh`
   - Provides helpful URLs and instructions during setup
+  - Uses `getpass` for secure token input (hidden input)
+  - Validates inputs before writing
 
-- **Environment loader:** `set-linkedin-env.sh` (sources credentials)
+- **Credential loader module:** `linkedin_credentials.py` (Python module to load credentials)
   - Auto-creates credentials file if missing (calls setup script)
-  - Sources `~/.secure/linkedin-set-api-key.sh` to load credentials
-  - Can be sourced or called from main script
+  - Parses `~/.secure/linkedin-set-api-key.sh` to extract export statements
+  - Returns credentials as dictionary
+  - Handles file permissions and security checks
 
-- **Main script pattern:**
+- **Main script credential loading pattern (with auto-setup):**
   ```python
-  # Check command-line args first
-  # If not provided, load from environment
-  # If still not found, source set-linkedin-env.sh
-  # Validate all required credentials are present
+  import os
+  import argparse
+  import sys
+  from pathlib import Path
+  from linkedin_credentials import load_linkedin_credentials
+  
+  def get_credentials():
+      """
+      Load credentials using three-tier priority system.
+      Automatically guides user through setup if credentials are missing.
+      """
+      parser = argparse.ArgumentParser()
+      parser.add_argument('--client-id', help='LinkedIn Client ID')
+      parser.add_argument('--client-secret', help='LinkedIn Client Secret')
+      parser.add_argument('--access-token', help='LinkedIn Access Token')
+      parser.add_argument('--refresh-token', help='LinkedIn Refresh Token')
+      args = parser.parse_args()
+      
+      # Tier 1: Command-line arguments (highest priority)
+      client_id = args.client_id
+      client_secret = args.client_secret
+      access_token = args.access_token
+      refresh_token = args.refresh_token
+      
+      # Tier 2: Environment variables
+      if not client_id:
+          client_id = os.getenv('LINKEDIN_CLIENT_ID')
+      if not client_secret:
+          client_secret = os.getenv('LINKEDIN_CLIENT_SECRET')
+      if not access_token:
+          access_token = os.getenv('LINKEDIN_ACCESS_TOKEN')
+      if not refresh_token:
+          refresh_token = os.getenv('LINKEDIN_REFRESH_TOKEN')
+      
+      # Tier 3: Secure credentials file (lowest priority)
+      # This will automatically run setup script if file doesn't exist
+      if not all([client_id, client_secret, access_token, refresh_token]):
+          print("Loading credentials from secure file...")
+          creds = load_linkedin_credentials()  # Auto-runs setup if file missing
+          if not client_id:
+              client_id = creds.get('LINKEDIN_CLIENT_ID')
+          if not client_secret:
+              client_secret = creds.get('LINKEDIN_CLIENT_SECRET')
+          if not access_token:
+              access_token = creds.get('LINKEDIN_ACCESS_TOKEN')
+          if not refresh_token:
+              refresh_token = creds.get('LINKEDIN_REFRESH_TOKEN')
+      
+      # If still missing after all tiers, prompt for interactive setup
+      if not all([client_id, client_secret, access_token, refresh_token]):
+          print("\n" + "=" * 80)
+          print("LinkedIn API credentials are missing or incomplete.")
+          print("=" * 80)
+          print("\nThe setup script will guide you through:")
+          print("  1. Creating a LinkedIn Developer app")
+          print("  2. Getting OAuth credentials (Client ID, Client Secret)")
+          print("  3. Completing OAuth flow to get Access Token and Refresh Token")
+          print("\nStarting interactive setup...\n")
+          
+          from create_set_linkedin_credentials import main as setup_main
+          exit_code = setup_main()
+          if exit_code != 0:
+              print("\nERROR: Setup was cancelled or failed.")
+              sys.exit(1)
+          
+          # Reload credentials after setup
+          print("\nReloading credentials...")
+          creds = load_linkedin_credentials()
+          client_id = client_id or creds.get('LINKEDIN_CLIENT_ID')
+          client_secret = client_secret or creds.get('LINKEDIN_CLIENT_SECRET')
+          access_token = access_token or creds.get('LINKEDIN_ACCESS_TOKEN')
+          refresh_token = refresh_token or creds.get('LINKEDIN_REFRESH_TOKEN')
+          
+          # Final validation
+          if not all([client_id, client_secret, access_token, refresh_token]):
+              print("\nERROR: Setup completed but credentials are still incomplete.")
+              print("Please run create-set-linkedin-credentials.py manually to fix.")
+              sys.exit(1)
+      
+      return {
+          'client_id': client_id,
+          'client_secret': client_secret,
+          'access_token': access_token,
+          'refresh_token': refresh_token
+      }
+  ```
+
+- **Credential loader implementation (`linkedin_credentials.py`):**
+  ```python
+  import os
+  import re
+  import subprocess
+  import sys
+  from pathlib import Path
+  from typing import Dict, Optional
+  
+  SECURE_DIR = Path.home() / '.secure'
+  CREDENTIALS_FILE = SECURE_DIR / 'linkedin-set-api-key.sh'
+  SETUP_SCRIPT = Path(__file__).parent / 'create-set-linkedin-credentials.py'
+  
+  def load_linkedin_credentials() -> Dict[str, str]:
+      """
+      Load credentials from secure file, automatically running setup if missing.
+      
+      This function will:
+      1. Check if credentials file exists
+      2. If missing, automatically run the interactive setup script
+      3. Parse and return credentials from the file
+      
+      Returns:
+          Dictionary with credential keys (LINKEDIN_CLIENT_ID, etc.)
+      """
+      # Auto-create credentials file if missing
+      if not CREDENTIALS_FILE.exists():
+          print("\n" + "=" * 80)
+          print("LinkedIn API credentials not found.")
+          print("=" * 80)
+          print(f"\nRunning interactive setup script: {SETUP_SCRIPT}")
+          print("This will guide you through setting up your LinkedIn API credentials.\n")
+          try:
+              subprocess.run([sys.executable, str(SETUP_SCRIPT)], check=True)
+          except subprocess.CalledProcessError:
+              print("\nERROR: Setup script failed. Please run it manually:")
+              print(f"  {SETUP_SCRIPT}")
+              return {}
+          except FileNotFoundError:
+              print(f"\nERROR: Setup script not found: {SETUP_SCRIPT}")
+              print("Please create the setup script or run it manually.")
+              return {}
+      
+      # Parse bash export file
+      credentials = {}
+      if CREDENTIALS_FILE.exists():
+          with open(CREDENTIALS_FILE, 'r') as f:
+              for line in f:
+                  # Match: export VARIABLE_NAME="value" or export VARIABLE_NAME=value
+                  match = re.match(r'export\s+(\w+)="?([^"]+)"?', line.strip())
+                  if match:
+                      var_name, var_value = match.groups()
+                      credentials[var_name] = var_value
+      
+      return credentials
+  ```
+
+- **Setup script implementation (`create-set-linkedin-credentials.py`):**
+  ```python
+  #!/usr/bin/env python3
+  """Interactive setup script for LinkedIn API credentials."""
+  
+  import getpass
+  import os
+  import stat
+  from pathlib import Path
+  
+  SECURE_DIR = Path.home() / '.secure'
+  CREDENTIALS_FILE = SECURE_DIR / 'linkedin-set-api-key.sh'
+  CREATE_API_KEY_URL = "https://www.linkedin.com/developers/apps"
+  
+  def main():
+      # Check if credentials file already exists
+      if CREDENTIALS_FILE.exists():
+          print(f"WARNING: {CREDENTIALS_FILE} already exists.")
+          response = input("Overwrite? (y/N): ")
+          if response.lower() != 'y':
+              print("Exiting without changes.")
+              return
+      
+      print("=" * 80)
+      print(f"Credentials file: {CREDENTIALS_FILE}")
+      print(f"LinkedIn Developer Portal: {CREATE_API_KEY_URL}")
+      print("=" * 80)
+      print()
+      print("Go get your LinkedIn API credentials from the link above.")
+      print("Press Enter to open the URL (or 'N' to skip and enter manually).")
+      response = input()
+      
+      if response.lower() != 'n':
+          import webbrowser
+          webbrowser.open(CREATE_API_KEY_URL)
+      
+      # Collect credentials
+      print("\nEnter your LinkedIn API credentials:")
+      client_id = input("Client ID: ").strip()
+      if not client_id:
+          print("ERROR: Client ID is required")
+          return 1
+      
+      client_secret = getpass.getpass("Client Secret (hidden): ").strip()
+      if not client_secret:
+          print("ERROR: Client Secret is required")
+          return 1
+      
+      access_token = getpass.getpass("Access Token (hidden): ").strip()
+      if not access_token:
+          print("ERROR: Access Token is required")
+          return 1
+      
+      refresh_token = getpass.getpass("Refresh Token (hidden): ").strip()
+      if not refresh_token:
+          print("ERROR: Refresh Token is required")
+          return 1
+      
+      # Create secure directory
+      print(f"\nCreating secure directory: {SECURE_DIR}")
+      SECURE_DIR.mkdir(mode=0o700, exist_ok=True)
+      
+      # Write credentials file
+      print(f"Creating credentials file: {CREDENTIALS_FILE}")
+      with open(CREDENTIALS_FILE, 'w') as f:
+          f.write(f'export LINKEDIN_CLIENT_ID="{client_id}"\n')
+          f.write(f'export LINKEDIN_CLIENT_SECRET="{client_secret}"\n')
+          f.write(f'export LINKEDIN_ACCESS_TOKEN="{access_token}"\n')
+          f.write(f'export LINKEDIN_REFRESH_TOKEN="{refresh_token}"\n')
+      
+      # Set permissions: 400 (read-only for owner)
+      os.chmod(CREDENTIALS_FILE, stat.S_IRUSR)
+      
+      print("=" * 80)
+      print("Credentials file created successfully!")
+      print(f"File: {CREDENTIALS_FILE}")
+      print(f"Permissions: {oct(CREDENTIALS_FILE.stat().st_mode)[-3:]}")
+      print("=" * 80)
+      
+      return 0
+  
+  if __name__ == '__main__':
+      exit(main())
   ```
 
 **Security Requirements:**
-- **Credential Storage:** Store in `~/.secure/linkedin-set-api-key.sh` with restricted permissions
+- **Credential Storage:** Store in `~/.secure/linkedin-set-api-key.sh` with restricted permissions (bash format for consistency with existing patterns)
 - **Git Safety:** Never commit tokens to git (add to `.gitignore`)
 - **Token Management:** Use refresh tokens for long-term access with automatic refresh
 - **File Permissions:** `chmod 700 ~/.secure`, `chmod 400` for credential files
 - **Directory Structure:** Use `~/.secure/` directory (consistent with existing patterns)
+- **Input Security:** Use `getpass.getpass()` for sensitive input in setup script
+- **File Parsing:** Parse bash export file using regex to extract values safely
 
 ### Error Handling
 
