@@ -8,6 +8,8 @@
 
 ### December 2025
 
+- ⏳ [December 13, 2025](LinkedIn-posts/2025/12/2025-12-13-linkedin-posting-process.md) - What happens when you want an AI coding assistant to help craft LinkedIn posts about your code, but it needs context and consistency? (Draft)
+- ✅ [December 12, 2025](LinkedIn-posts/2025/12/2025-12-12-network-capture-analysis-tools.md) - A Basic Tool for Analyzing tcpdump Output
 - ✅ [December 9, 2025](LinkedIn-posts/2025/12/2025-12-09-monitor-ai-agent-progress.md) - `monitor-ai-agent-progress.sh`: Major updates with new features
 - ✅ [December 9, 2025](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part1.md) - React2Shell Server: Building a Security Testing Testbed
 - ⏳ [December 9, 2025 - Part 2](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part2.txt) - Framework-Aware Architecture (Draft)
@@ -37,6 +39,8 @@
 
 | Date | Title | Status |
 |------|-------|--------|
+| [December 13, 2025](LinkedIn-posts/2025/12/2025-12-13-linkedin-posting-process.md) | What happens when you want an AI coding assistant to help craft LinkedIn posts... | ⏳ Draft |
+| [December 12, 2025](LinkedIn-posts/2025/12/2025-12-12-network-capture-analysis-tools.md) | A Basic Tool for Analyzing tcpdump Output | ✅ Published |
 | [December 9, 2025](LinkedIn-posts/2025/12/2025-12-09-monitor-ai-agent-progress.md) | `monitor-ai-agent-progress.sh`: Major updates with new features | ✅ Published |
 | [December 9, 2025](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part1.md) | React2Shell Server: Building a Security Testing Testbed | ✅ Published |
 | [December 9, 2025 - Part 2](LinkedIn-posts/2025/12/2025-12-09-react2shell-server-part2.txt) | Framework-Aware Architecture | ⏳ Draft |
