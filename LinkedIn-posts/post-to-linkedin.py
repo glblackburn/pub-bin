@@ -1139,16 +1139,30 @@ Examples:
         elif isinstance(activity, dict):
             post_url = activity.get('url') or activity.get('shareUrl')
     
-    # If no direct URL, construct from post ID
-    if not post_url:
-        post_url = get_post_url(post_id)
+    # Note: We don't construct URLs from post IDs because LinkedIn post URLs require
+    # a suffix (e.g., -7wgj) that is not available via the API. The constructed URL
+    # format (https://www.linkedin.com/feed/update/{ID}) does not work.
     
     print(f"\nSUCCESS: Post created successfully!")
     print(f"Post ID: {post_id}")
-    print(f"Post URL: {post_url}")
-    print()
-    print("Note: If the URL doesn't work immediately, the post may still be processing.")
-    print("You can also find the post in your LinkedIn feed.")
+    if post_url:
+        print(f"Post URL (from API): {post_url}")
+    else:
+        print()
+        print("Note: Post URL not available from API.")
+        print("To get the post URL, go to your LinkedIn feed and find the post.")
+        print("Click on the post timestamp or '...' menu to copy the URL.")
+    
+    # TODO: Figure out how to get the username (vanity name) from the LinkedIn API
+    # to dynamically construct the activity URL instead of hardcoding it.
+    # For now, hardcoding the URL to open the user's recent activity page.
+    activity_url = "https://www.linkedin.com/in/glblackburn/recent-activity/all/"
+    try:
+        print(f"\nOpening your LinkedIn recent activity page...")
+        webbrowser.open(activity_url)
+        print(f"Opened: {activity_url}")
+    except Exception as e:
+        print(f"Could not open browser: {e}")
     
     # Show response structure for debugging
     if hasattr(args, 'verbose') and args.verbose:
@@ -1158,13 +1172,13 @@ Examples:
         if 'activity' in post_response:
             print(f"Activity field: {post_response.get('activity')}")
 
-    # Update archive
-    if not args.no_archive:
-        archive_file = Path(__file__).parent / 'LinkedIn-posts.md'
-        if update_markdown_archive(post_url, args.post_file, archive_file):
-            print(f"Archive updated: {archive_file}")
-        else:
-            print(f"WARNING: Failed to update archive: {archive_file}", file=sys.stderr)
+    # Update archive - DISABLED: Keeping archive updates as manual process for now
+    # if not args.no_archive:
+    #     archive_file = Path(__file__).parent / 'LinkedIn-posts.md'
+    #     if update_markdown_archive(post_url, args.post_file, archive_file):
+    #         print(f"Archive updated: {archive_file}")
+    #     else:
+    #         print(f"WARNING: Failed to update archive: {archive_file}", file=sys.stderr)
 
     return 0
 
