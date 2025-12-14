@@ -3,8 +3,9 @@
 post-to-linkedin.py - Post .txt files to LinkedIn
 
 Reads a .txt file containing LinkedIn post content and posts it to LinkedIn
-using the LinkedIn API v2 UGC Posts API. Automatically updates the markdown
-archive with the post URL after successful posting.
+using the LinkedIn API v2 UGC Posts API. Opens your LinkedIn activity page
+after successful posting. Archive updates are currently manual (see root
+LinkedIn-posts.md file).
 """
 
 import argparse
@@ -1174,7 +1175,8 @@ Examples:
 
     # Update archive - DISABLED: Keeping archive updates as manual process for now
     # if not args.no_archive:
-    #     archive_file = Path(__file__).parent / 'LinkedIn-posts.md'
+    #     # Archive file is in the root directory, not in LinkedIn-posts/ subdirectory
+    #     archive_file = Path(__file__).parent.parent / 'LinkedIn-posts.md'
     #     if update_markdown_archive(post_url, args.post_file, archive_file):
     #         print(f"Archive updated: {archive_file}")
     #     else:

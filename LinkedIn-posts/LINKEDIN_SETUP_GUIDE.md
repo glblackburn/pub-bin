@@ -239,8 +239,8 @@ If the dry run passes, post to LinkedIn:
 2. Validates content
 3. Gets your LinkedIn person URN (may refresh token if needed)
 4. Posts to LinkedIn via API
-5. Displays the post URL
-6. Updates `LinkedIn-posts.md` archive automatically
+5. Displays the post ID and opens your LinkedIn activity page
+6. Archive updates are currently manual (see root `LinkedIn-posts.md`)
 
 **Expected output:**
 ```
@@ -250,8 +250,13 @@ Authenticated as: urn:li:person:XXXXX
 Posting to LinkedIn...
 
 SUCCESS: Post created successfully!
-Post URL: https://www.linkedin.com/feed/update/XXXXX
-Archive updated: LinkedIn-posts/LinkedIn-posts.md
+Post ID: urn:li:share:XXXXX
+Note: Post URL not available from API.
+To get the post URL, go to your LinkedIn feed and find the post.
+Click on the post timestamp or '...' menu to copy the URL.
+
+Opening your LinkedIn recent activity page...
+Opened: https://www.linkedin.com/in/glblackburn/recent-activity/all/
 ```
 
 ## Troubleshooting
