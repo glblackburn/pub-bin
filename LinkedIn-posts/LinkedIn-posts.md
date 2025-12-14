@@ -1,3 +1,17 @@
+
+## [December 13, 2025](https://www.linkedin.com/feed/update/7405772766588706816)
+
+**LinkedIn:** [https://www.linkedin.com/feed/update/7405772766588706816](https://www.linkedin.com/feed/update/7405772766588706816)
+
+---
+
+
+## [December 13, 2025](https://www.linkedin.com/feed/update/7405771738514432001)
+
+**LinkedIn:** [https://www.linkedin.com/feed/update/7405771738514432001](https://www.linkedin.com/feed/update/7405771738514432001)
+
+---
+
 # LinkedIn Posts
 
 **Style Guide:** [LinkedIn Style Guide](LinkedIn-style-guide.md)

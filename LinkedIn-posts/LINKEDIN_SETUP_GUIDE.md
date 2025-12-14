@@ -75,10 +75,11 @@ This guide walks you through setting up LinkedIn API credentials for automated p
      - Click **"Request access"** button
      - This is required for getting user profile information (person URN)
      - Approval is usually instant for basic access
-   - Find and click on **"Marketing Developer Platform"**:
+   - Find and click on **"Share on LinkedIn"** (Default Tier):
+     - Description: "Amplify your content by sharing it on LinkedIn"
      - Click **"Request access"** button
      - This is required for creating posts via the UGC Posts API
-     - Approval may take a few minutes or require additional verification
+     - Approval is usually instant for Default Tier products
    - Wait for both products to show **"Approved"** status
      - You may need to refresh the page to see updated status
      - If approval is pending, wait a few minutes and refresh
@@ -281,10 +282,10 @@ Archive updated: LinkedIn-posts/LinkedIn-posts.md
 - **Error**: "Insufficient permissions to access: POST /ugcPosts"
 - **Solution**:
   - Go to the **Products** tab in your app
-  - Make sure you've requested access to **"Marketing Developer Platform"**
+  - Make sure you've requested access to **"Share on LinkedIn"** (Default Tier)
   - Wait for approval if status shows "Pending"
   - Refresh the page to check approval status
-  - You may need to wait a few minutes for approval
+  - Approval is usually instant for Default Tier products
 
 ### "Token expired" or "Invalid access token"
 - **Error**: "The token used in the request has expired"

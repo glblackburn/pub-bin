@@ -44,9 +44,12 @@ def load_linkedin_credentials() -> Dict[str, str]:
         with open(CREDENTIALS_FILE, 'r') as f:
             for line in f:
                 # Match: export VARIABLE_NAME="value" or export VARIABLE_NAME=value
-                match = re.match(r'export\s+(\w+)="?([^"]+)"?', line.strip())
+                # Also handle empty values: export VARIABLE_NAME=""
+                match = re.match(r'export\s+(\w+)="?([^"]*)"?', line.strip())
                 if match:
                     var_name, var_value = match.groups()
-                    credentials[var_name] = var_value
+                    # Only add non-empty values
+                    if var_value:
+                        credentials[var_name] = var_value
 
     return credentials

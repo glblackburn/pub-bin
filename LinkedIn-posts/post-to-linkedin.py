@@ -101,6 +101,8 @@ def complete_oauth_flow(client_id: str, client_secret: str, redirect_uri: str) -
     print("After authorizing, you'll be redirected. Copy the ENTIRE redirect URL")
     print("from your browser's address bar and paste it below.")
     print()
+    print("If you see an error page, copy that URL too - it contains error information.")
+    print()
     redirect_url = input("Paste the redirect URL here: ").strip()
 
     if not redirect_url:
@@ -116,9 +118,43 @@ def complete_oauth_flow(client_id: str, client_secret: str, redirect_uri: str) -
         if 'error' in params:
             error = params['error'][0]
             error_desc = params.get('error_description', [''])[0]
-            print(f"\nERROR: Authorization failed: {error}", file=sys.stderr)
+            print(f"\n" + "=" * 80, file=sys.stderr)
+            print(f"ERROR: Authorization failed: {error}", file=sys.stderr)
+            print("=" * 80, file=sys.stderr)
             if error_desc:
-                print(f"Description: {error_desc}", file=sys.stderr)
+                print(f"\nDescription: {error_desc}", file=sys.stderr)
+            
+            # Provide helpful guidance based on common errors
+            if error == 'redirect_uri_mismatch':
+                print("\n" + "=" * 80, file=sys.stderr)
+                print("TROUBLESHOOTING: Redirect URI Mismatch", file=sys.stderr)
+                print("=" * 80, file=sys.stderr)
+                print(f"\nThe redirect URI in your OAuth request ({redirect_uri})", file=sys.stderr)
+                print("does not match what's configured in your LinkedIn app.", file=sys.stderr)
+                print("\nTo fix:", file=sys.stderr)
+                print("1. Go to your LinkedIn app's 'Auth' tab", file=sys.stderr)
+                print(f"2. Make sure '{redirect_uri}' is added in 'Redirect URLs'", file=sys.stderr)
+                print("3. The redirect URI must match EXACTLY (including http vs https)", file=sys.stderr)
+                print("4. Click 'Update' or 'Save' after adding it", file=sys.stderr)
+            elif error == 'invalid_client':
+                print("\n" + "=" * 80, file=sys.stderr)
+                print("TROUBLESHOOTING: Invalid Client", file=sys.stderr)
+                print("=" * 80, file=sys.stderr)
+                print("\nYour Client ID or Client Secret may be incorrect.", file=sys.stderr)
+                print("Please verify them in your LinkedIn app's 'Auth' tab.", file=sys.stderr)
+            elif error == 'access_denied':
+                print("\n" + "=" * 80, file=sys.stderr)
+                print("TROUBLESHOOTING: Access Denied", file=sys.stderr)
+                print("=" * 80, file=sys.stderr)
+                print("\nYou may have cancelled the authorization or the app", file=sys.stderr)
+                print("doesn't have the required permissions.", file=sys.stderr)
+                print("\nMake sure you:", file=sys.stderr)
+                print("1. Click 'Allow' when asked to authorize the app", file=sys.stderr)
+                print("2. Have requested access to required products in your app", file=sys.stderr)
+            else:
+                print(f"\nError code: {error}", file=sys.stderr)
+                print("Please check your LinkedIn app configuration.", file=sys.stderr)
+            
             return None
 
         # Verify state
@@ -166,169 +202,419 @@ def complete_oauth_flow(client_id: str, client_secret: str, redirect_uri: str) -
         print("ERROR: No access token in response", file=sys.stderr)
         return None
 
+    access_token = token_data.get('access_token')
+    refresh_token = token_data.get('refresh_token')
+
+    # Save tokens immediately
+    print("\nSaving Access Token and Refresh Token...")
+    save_credentials_partial(access_token=access_token, refresh_token=refresh_token)
+    print("✓ Saved")
+
     return {
-        'access_token': token_data.get('access_token'),
-        'refresh_token': token_data.get('refresh_token'),
+        'access_token': access_token,
+        'refresh_token': refresh_token,
         'expires_in': token_data.get('expires_in')
     }
 
 
-def setup_credentials_interactive() -> Optional[Dict[str, str]]:
+def save_credentials_partial(
+    client_id: Optional[str] = None,
+    client_secret: Optional[str] = None,
+    redirect_uri: Optional[str] = None,
+    access_token: Optional[str] = None,
+    refresh_token: Optional[str] = None
+) -> None:
+    """
+    Save credentials incrementally to preserve progress.
+
+    Args:
+        client_id: Client ID to save (or None to keep existing)
+        client_secret: Client Secret to save (or None to keep existing)
+        redirect_uri: Redirect URI to save (or None to keep existing)
+        access_token: Access Token to save (or None to keep existing)
+        refresh_token: Refresh Token to save (or None to keep existing)
+    """
+    SECURE_DIR = Path.home() / '.secure'
+    CREDENTIALS_FILE = SECURE_DIR / 'linkedin-set-api-key.sh'
+
+    # Load existing credentials if file exists
+    existing = {}
+    if CREDENTIALS_FILE.exists():
+        creds = load_linkedin_credentials()
+        existing = {
+            'client_id': creds.get('LINKEDIN_CLIENT_ID', ''),
+            'client_secret': creds.get('LINKEDIN_CLIENT_SECRET', ''),
+            'redirect_uri': creds.get('LINKEDIN_REDIRECT_URI', ''),
+            'access_token': creds.get('LINKEDIN_ACCESS_TOKEN', ''),
+            'refresh_token': creds.get('LINKEDIN_REFRESH_TOKEN', '')
+        }
+
+    # Use new values or keep existing
+    client_id = client_id if client_id is not None else existing.get('client_id', '')
+    client_secret = client_secret if client_secret is not None else existing.get('client_secret', '')
+    redirect_uri = redirect_uri if redirect_uri is not None else existing.get('redirect_uri', DEFAULT_REDIRECT_URI)
+    access_token = access_token if access_token is not None else existing.get('access_token', '')
+    refresh_token = refresh_token if refresh_token is not None else existing.get('refresh_token', '')
+
+    # Create secure directory
+    SECURE_DIR.mkdir(mode=0o700, exist_ok=True)
+
+    # If file exists with restricted permissions, temporarily make it writable
+    original_mode = None
+    if CREDENTIALS_FILE.exists():
+        try:
+            original_mode = CREDENTIALS_FILE.stat().st_mode
+            # Make file writable temporarily (add write permission for owner)
+            os.chmod(CREDENTIALS_FILE, stat.S_IRUSR | stat.S_IWUSR)
+        except OSError as e:
+            print(f"WARNING: Could not change file permissions: {e}", file=sys.stderr)
+            # Try to remove and recreate
+            try:
+                CREDENTIALS_FILE.unlink()
+            except OSError:
+                raise PermissionError(f"Cannot write to credentials file: {CREDENTIALS_FILE}") from e
+
+    # Write credentials file
+    try:
+        with open(CREDENTIALS_FILE, 'w') as f:
+            if client_id:
+                f.write(f'export LINKEDIN_CLIENT_ID="{client_id}"\n')
+            if client_secret:
+                f.write(f'export LINKEDIN_CLIENT_SECRET="{client_secret}"\n')
+            if redirect_uri:
+                f.write(f'export LINKEDIN_REDIRECT_URI="{redirect_uri}"\n')
+            if access_token:
+                f.write(f'export LINKEDIN_ACCESS_TOKEN="{access_token}"\n')
+            if refresh_token:
+                f.write(f'export LINKEDIN_REFRESH_TOKEN="{refresh_token}"\n')
+    except PermissionError as e:
+        raise PermissionError(f"Cannot write to credentials file: {CREDENTIALS_FILE}. Check file permissions.") from e
+
+    # Set permissions: 400 (read-only for owner)
+    try:
+        os.chmod(CREDENTIALS_FILE, stat.S_IRUSR)
+    except OSError as e:
+        print(f"WARNING: Could not set file permissions to read-only: {e}", file=sys.stderr)
+
+
+def setup_credentials_interactive(skip_completed: bool = True) -> Optional[Dict[str, str]]:
     """
     Interactive setup for LinkedIn API credentials including OAuth flow.
+    Saves progress incrementally so setup can be resumed.
 
     Returns:
         Dictionary with all credentials, or None if setup failed/cancelled
     """
-    print("\n" + "=" * 80)
-    print("LinkedIn API Credential Setup")
-    print("=" * 80)
-    print()
-    print("This will guide you through setting up your LinkedIn API credentials.")
-    print("You'll need:")
-    print("  1. A LinkedIn Developer app (we'll help you create one)")
-    print("  2. Client ID and Client Secret from your app")
-    print("  3. Complete OAuth flow to get Access Token and Refresh Token")
-    print()
-    response = input("Press Enter to continue, or 'q' to quit: ").strip()
-    if response.lower() == 'q':
-        return None
+    SECURE_DIR = Path.home() / '.secure'
+    CREDENTIALS_FILE = SECURE_DIR / 'linkedin-set-api-key.sh'
+
+    # Check for existing partial credentials
+    existing_creds = {}
+    if CREDENTIALS_FILE.exists():
+        existing_creds = load_linkedin_credentials()
+        has_client_id = bool(existing_creds.get('LINKEDIN_CLIENT_ID'))
+        has_client_secret = bool(existing_creds.get('LINKEDIN_CLIENT_SECRET'))
+        has_redirect_uri = bool(existing_creds.get('LINKEDIN_REDIRECT_URI'))
+        has_access_token = bool(existing_creds.get('LINKEDIN_ACCESS_TOKEN'))
+        has_refresh_token = bool(existing_creds.get('LINKEDIN_REFRESH_TOKEN'))
+        
+        # Check if setup is complete
+        all_complete = all([has_client_id, has_client_secret, has_redirect_uri, has_access_token])
+        
+        if all_complete:
+            print("\n" + "=" * 80)
+            print("LinkedIn API Credential Setup")
+            print("=" * 80)
+            print()
+            print("All credentials are already configured!")
+            print(f"  Client ID: ✓")
+            print(f"  Client Secret: ✓")
+            print(f"  Redirect URI: ✓")
+            print(f"  Access Token: ✓")
+            print(f"  Refresh Token: {'✓' if has_refresh_token else '✗ (optional)'}")
+            print()
+            return {
+                'client_id': existing_creds.get('LINKEDIN_CLIENT_ID'),
+                'client_secret': existing_creds.get('LINKEDIN_CLIENT_SECRET'),
+                'access_token': existing_creds.get('LINKEDIN_ACCESS_TOKEN'),
+                'refresh_token': existing_creds.get('LINKEDIN_REFRESH_TOKEN', '')
+            }
+        
+        # Partial credentials found
+        print("\n" + "=" * 80)
+        print("LinkedIn API Credential Setup")
+        print("=" * 80)
+        print()
+        print("Found existing partial credentials. Current status:")
+        print(f"  Client ID: {'✓' if has_client_id else '✗'}")
+        print(f"  Client Secret: {'✓' if has_client_secret else '✗'}")
+        print(f"  Redirect URI: {'✓' if has_redirect_uri else '✗'}")
+        print(f"  Access Token: {'✓' if has_access_token else '✗'}")
+        print(f"  Refresh Token: {'✓' if has_refresh_token else '✗'}")
+        print()
+        if skip_completed:
+            print("Will skip steps that are already completed.")
+            response = input("Resume setup? (Y/n) or 'q' to quit: ").strip()
+        else:
+            response = input("Resume setup? (y/N) or 'q' to quit: ").strip()
+        if response.lower() == 'q':
+            return None
+        if response.lower() == 'n':
+            # Start fresh
+            existing_creds = {}
+    else:
+        print("\n" + "=" * 80)
+        print("LinkedIn API Credential Setup")
+        print("=" * 80)
+        print()
+        print("This will guide you through setting up your LinkedIn API credentials.")
+        print("You'll need:")
+        print("  1. A LinkedIn Developer app (we'll help you create one)")
+        print("  2. Client ID and Client Secret from your app")
+        print("  3. Complete OAuth flow to get Access Token and Refresh Token")
+        print()
+        print("Note: Progress is saved as you go, so you can stop and resume later.")
+        print()
+        response = input("Press Enter to continue, or 'q' to quit: ").strip()
+        if response.lower() == 'q':
+            return None
 
     # Step 1: Get Client ID and Secret
-    print("\n" + "=" * 80)
-    print("Step 1: Create LinkedIn Developer App")
-    print("=" * 80)
-    print()
-    print("Opening LinkedIn Developer Portal in your browser...")
-    try:
-        webbrowser.open(CREATE_API_KEY_URL)
-        print(f"Opened: {CREATE_API_KEY_URL}")
-    except Exception as e:
-        print(f"Could not open browser: {e}")
-        print(f"Please open manually: {CREATE_API_KEY_URL}")
-    print()
-    print("In the browser:")
-    print("1. Click 'Create app'")
-    print("2. Fill in app details:")
-    print("   - App name: Choose a name (e.g., 'My LinkedIn Posts')")
-    print("   - LinkedIn Page: Select your page or profile")
-    print("   - App use case: Select 'Other'")
-    print("   - User agreement URL: (optional, can leave blank)")
-    print("   - Privacy policy URL: (optional, can leave blank)")
-    print("3. Click 'Create app'")
-    print()
-    input("Press Enter after you have created the app and are on the app dashboard...")
+    has_client_id = bool(existing_creds.get('LINKEDIN_CLIENT_ID'))
+    has_client_secret = bool(existing_creds.get('LINKEDIN_CLIENT_SECRET'))
+    
+    if has_client_id and has_client_secret and skip_completed:
+        print("\n" + "=" * 80)
+        print("Step 1: Client ID and Client Secret")
+        print("=" * 80)
+        print()
+        print("✓ Already configured - skipping")
+        client_id = existing_creds.get('LINKEDIN_CLIENT_ID')
+        client_secret = existing_creds.get('LINKEDIN_CLIENT_SECRET')
+    else:
+        if not has_client_id or not has_client_secret:
+            print("\n" + "=" * 80)
+            print("Step 1: Create LinkedIn Developer App")
+            print("=" * 80)
+            print()
+            print("Opening LinkedIn Developer Portal in your browser...")
+            try:
+                webbrowser.open(CREATE_API_KEY_URL)
+                print(f"Opened: {CREATE_API_KEY_URL}")
+            except Exception as e:
+                print(f"Could not open browser: {e}")
+                print(f"Please open manually: {CREATE_API_KEY_URL}")
+            print()
+            print("In the browser:")
+            print("1. Click 'Create app'")
+            print("2. Fill in app details:")
+            print("   - App name: Choose a name (e.g., 'My LinkedIn Posts')")
+            print("   - LinkedIn Page: Select your page or profile")
+            print("   - App use case: Select 'Other'")
+            print("   - User agreement URL: (optional, can leave blank)")
+            print("   - Privacy policy URL: (optional, can leave blank)")
+            print("3. Click 'Create app'")
+            print()
+            input("Press Enter after you have created the app and are on the app dashboard...")
 
-    print("\n" + "=" * 80)
-    print("Step 1b: Get Client ID and Client Secret")
-    print("=" * 80)
-    print()
-    print("In your LinkedIn app dashboard:")
-    print("1. Go to the 'Auth' tab")
-    print("2. Find your Client ID (copy it)")
-    print("3. Find your Client Secret (click 'Show' to reveal it, then copy it)")
-    print()
-    input("Press Enter when you have copied your Client ID and Client Secret...")
+            print("\n" + "=" * 80)
+            print("Step 1b: Get Client ID and Client Secret")
+            print("=" * 80)
+            print()
+            print("In your LinkedIn app dashboard:")
+            print("1. Go to the 'Auth' tab")
+            print("2. Find your Client ID (copy it)")
+            print("3. Find your Client Secret (click 'Show' to reveal it, then copy it)")
+            print()
+            input("Press Enter when you have copied your Client ID and Client Secret...")
 
-    client_id = input("\nEnter your Client ID: ").strip()
-    if not client_id:
-        print("ERROR: Client ID is required", file=sys.stderr)
-        return None
+        # Check if we already have these
+        existing_client_id = existing_creds.get('LINKEDIN_CLIENT_ID', '')
+        existing_client_secret = existing_creds.get('LINKEDIN_CLIENT_SECRET', '')
+        
+        if existing_client_id:
+            print(f"\nFound existing Client ID: {existing_client_id[:10]}...")
+            use_existing = input("Use existing Client ID? (Y/n): ").strip().lower()
+            if use_existing != 'n':
+                client_id = existing_client_id
+            else:
+                client_id = input("Enter your Client ID: ").strip()
+        else:
+            client_id = input("\nEnter your Client ID: ").strip()
+        
+        if not client_id:
+            print("ERROR: Client ID is required", file=sys.stderr)
+            return None
 
-    client_secret = getpass.getpass("Enter your Client Secret (hidden): ").strip()
-    if not client_secret:
-        print("ERROR: Client Secret is required", file=sys.stderr)
-        return None
+        if existing_client_secret:
+            print(f"\nFound existing Client Secret: {'*' * 10}...")
+            use_existing = input("Use existing Client Secret? (Y/n): ").strip().lower()
+            if use_existing != 'n':
+                client_secret = existing_client_secret
+            else:
+                client_secret = getpass.getpass("Enter your Client Secret (hidden): ").strip()
+        else:
+            client_secret = getpass.getpass("Enter your Client Secret (hidden): ").strip()
+        
+        if not client_secret:
+            print("ERROR: Client Secret is required", file=sys.stderr)
+            return None
+
+        # Save Client ID and Secret immediately
+        print("\nSaving Client ID and Client Secret...")
+        save_credentials_partial(client_id=client_id, client_secret=client_secret)
+        print("✓ Saved")
 
     # Step 2: Configure redirect URI
-    print("\n" + "=" * 80)
-    print("Step 2: Configure Redirect URI")
-    print("=" * 80)
-    print()
-    print("In your LinkedIn app's 'Auth' tab (should still be open in browser):")
-    print("1. Scroll to 'Redirect URLs' section")
-    print("2. Click 'Add redirect URL' or '+' button")
-    print(f"3. Enter: {DEFAULT_REDIRECT_URI}")
-    print("4. Click 'Update' or 'Save'")
-    print()
-    input("Press Enter after you have added the redirect URI...")
+    has_redirect_uri = bool(existing_creds.get('LINKEDIN_REDIRECT_URI'))
     
-    redirect_uri = input(f"\nEnter redirect URI (or press Enter for default [{DEFAULT_REDIRECT_URI}]): ").strip()
-    if not redirect_uri:
-        redirect_uri = DEFAULT_REDIRECT_URI
+    if has_redirect_uri and skip_completed:
+        print("\n" + "=" * 80)
+        print("Step 2: Configure Redirect URI")
+        print("=" * 80)
+        print()
+        print(f"✓ Already configured: {existing_creds.get('LINKEDIN_REDIRECT_URI')}")
+        redirect_uri = existing_creds.get('LINKEDIN_REDIRECT_URI')
+    else:
+        print("\n" + "=" * 80)
+        print("Step 2: Configure Redirect URI")
+        print("=" * 80)
+        print()
+        print("IMPORTANT: The redirect URI must be configured in your LinkedIn app")
+        print("BEFORE starting the OAuth flow.")
+        print()
+        print("In your LinkedIn app's 'Auth' tab (should still be open in browser):")
+        print("1. Scroll to 'Redirect URLs' section")
+        print("2. Click 'Add redirect URL' or '+' button")
+        print(f"3. Enter EXACTLY: {DEFAULT_REDIRECT_URI}")
+        print("   (Must match exactly - no trailing slashes, correct protocol)")
+        print("4. Click 'Update' or 'Save'")
+        print("5. Verify it appears in the list of redirect URLs")
+        print()
+        input("Press Enter after you have added and saved the redirect URI...")
+        
+        # Check if we already have redirect URI
+        existing_redirect_uri = existing_creds.get('LINKEDIN_REDIRECT_URI', '')
+        if existing_redirect_uri:
+            print(f"\nFound existing Redirect URI: {existing_redirect_uri}")
+            use_existing = input("Use existing Redirect URI? (Y/n): ").strip().lower()
+            if use_existing != 'n':
+                redirect_uri = existing_redirect_uri
+            else:
+                redirect_uri = input(f"Enter redirect URI (or press Enter for default [{DEFAULT_REDIRECT_URI}]): ").strip()
+                if not redirect_uri:
+                    redirect_uri = DEFAULT_REDIRECT_URI
+        else:
+            redirect_uri = input(f"\nEnter redirect URI (or press Enter for default [{DEFAULT_REDIRECT_URI}]): ").strip()
+            if not redirect_uri:
+                redirect_uri = DEFAULT_REDIRECT_URI
+
+        # Validate redirect URI format
+        if not redirect_uri.startswith('http://') and not redirect_uri.startswith('https://'):
+            print(f"WARNING: Redirect URI should start with http:// or https://", file=sys.stderr)
+            print(f"Using: {redirect_uri}", file=sys.stderr)
+
+        # Save redirect URI immediately
+        print("\nSaving Redirect URI...")
+        save_credentials_partial(redirect_uri=redirect_uri)
+        print("✓ Saved")
+        print(f"\nMake sure '{redirect_uri}' is configured in your LinkedIn app's Redirect URLs!")
 
     # Step 3: Request product access
+    # Note: We can't check if products are approved via API, so we always show this step
+    # but allow user to skip if they've already done it
     print("\n" + "=" * 80)
     print("Step 3: Request Product Access")
     print("=" * 80)
     print()
-    print("In your LinkedIn app (should still be open in browser):")
-    print("1. Go to the 'Products' tab")
-    print("2. Find 'Sign In with LinkedIn using OpenID Connect'")
-    print("   - Click 'Request access' button")
-    print("3. Find 'Marketing Developer Platform'")
-    print("   - Click 'Request access' button")
-    print("4. Wait for both to show 'Approved' status")
-    print("   (You may need to refresh the page to see updated status)")
-    print()
-    input("Press Enter when both products show 'Approved' status...")
+    if skip_completed and (has_client_id and has_redirect_uri):
+        print("If you've already requested access to these products, you can skip this step.")
+        skip_products = input("Skip product access step? (y/N): ").strip().lower()
+        if skip_products == 'y':
+            print("✓ Skipping product access step")
+        else:
+            print("\nIn your LinkedIn app (should still be open in browser):")
+            print("1. Go to the 'Products' tab")
+            print("2. Find 'Sign In with LinkedIn using OpenID Connect'")
+            print("   - If not already added, click 'Request access' button")
+            print("   - Wait for 'Approved' status (may be instant)")
+            print("3. Find 'Share on LinkedIn' (Default Tier)")
+            print("   - Description: 'Amplify your content by sharing it on LinkedIn'")
+            print("   - Click 'Request access' button")
+            print("   - This is required for posting content to LinkedIn")
+            print("4. Wait for both to show 'Approved' status")
+            print("   (You may need to refresh the page to see updated status)")
+            print()
+            print("Note: 'Share on LinkedIn' is the product needed for posting content.")
+            print("If you don't see it, make sure you're on the 'Available products' section.")
+            print()
+            input("Press Enter when both products show 'Approved' status...")
+    else:
+        print("In your LinkedIn app (should still be open in browser):")
+        print("1. Go to the 'Products' tab")
+        print("2. Find 'Sign In with LinkedIn using OpenID Connect'")
+        print("   - If not already added, click 'Request access' button")
+        print("   - Wait for 'Approved' status (may be instant)")
+        print("3. Find 'Share on LinkedIn' (Default Tier)")
+        print("   - Description: 'Amplify your content by sharing it on LinkedIn'")
+        print("   - Click 'Request access' button")
+        print("   - This is required for posting content to LinkedIn")
+        print("4. Wait for both to show 'Approved' status")
+        print("   (You may need to refresh the page to see updated status)")
+        print()
+        print("Note: 'Share on LinkedIn' is the product needed for posting content.")
+        print("If you don't see it, make sure you're on the 'Available products' section.")
+        print()
+        input("Press Enter when both products show 'Approved' status...")
 
     # Step 4: Complete OAuth flow
-    print("\n" + "=" * 80)
-    print("Step 4: Complete OAuth Flow")
-    print("=" * 80)
-    print()
-    token_data = complete_oauth_flow(client_id, client_secret, redirect_uri)
-    if not token_data:
-        return None
-
-    access_token = token_data.get('access_token')
-    refresh_token = token_data.get('refresh_token')
-
-    if not access_token:
-        print("ERROR: Failed to get access token", file=sys.stderr)
-        return None
-
-    print()
-    print("=" * 80)
-    print("SUCCESS: Tokens Obtained")
-    print("=" * 80)
-    print()
-    print(f"Access Token: {access_token[:20]}...")
-    if refresh_token:
-        print(f"Refresh Token: {refresh_token[:20]}...")
-    print()
-
-    # Step 5: Save credentials
-    print("=" * 80)
-    print("Step 5: Save Credentials")
-    print("=" * 80)
-    print()
-
-    SECURE_DIR = Path.home() / '.secure'
-    CREDENTIALS_FILE = SECURE_DIR / 'linkedin-set-api-key.sh'
-
-    # Create secure directory
-    print(f"Creating secure directory: {SECURE_DIR}")
-    SECURE_DIR.mkdir(mode=0o700, exist_ok=True)
-
-    # Write credentials file
-    print(f"Creating credentials file: {CREDENTIALS_FILE}")
-    with open(CREDENTIALS_FILE, 'w') as f:
-        f.write(f'export LINKEDIN_CLIENT_ID="{client_id}"\n')
-        f.write(f'export LINKEDIN_CLIENT_SECRET="{client_secret}"\n')
-        f.write(f'export LINKEDIN_ACCESS_TOKEN="{access_token}"\n')
+    has_access_token = bool(existing_creds.get('LINKEDIN_ACCESS_TOKEN'))
+    has_refresh_token = bool(existing_creds.get('LINKEDIN_REFRESH_TOKEN'))
+    
+    if has_access_token and skip_completed:
+        print("\n" + "=" * 80)
+        print("Step 4: Complete OAuth Flow")
+        print("=" * 80)
+        print()
+        print("✓ Access Token already configured - skipping OAuth flow")
+        access_token = existing_creds.get('LINKEDIN_ACCESS_TOKEN')
+        refresh_token = existing_creds.get('LINKEDIN_REFRESH_TOKEN', '')
+        print(f"Access Token: {access_token[:20]}...")
         if refresh_token:
-            f.write(f'export LINKEDIN_REFRESH_TOKEN="{refresh_token}"\n')
-        else:
-            f.write(f'export LINKEDIN_REFRESH_TOKEN=""\n')
+            print(f"Refresh Token: {refresh_token[:20]}...")
+    else:
+        print("\n" + "=" * 80)
+        print("Step 4: Complete OAuth Flow")
+        print("=" * 80)
+        print()
+        token_data = complete_oauth_flow(client_id, client_secret, redirect_uri)
+        if not token_data:
+            return None
 
-    # Set permissions: 400 (read-only for owner)
-    os.chmod(CREDENTIALS_FILE, stat.S_IRUSR)
+        access_token = token_data.get('access_token')
+        refresh_token = token_data.get('refresh_token')
 
+        if not access_token:
+            print("ERROR: Failed to get access token", file=sys.stderr)
+            return None
+
+        print()
+        print("=" * 80)
+        print("SUCCESS: Tokens Obtained")
+        print("=" * 80)
+        print()
+        print(f"Access Token: {access_token[:20]}...")
+        if refresh_token:
+            print(f"Refresh Token: {refresh_token[:20]}...")
+        print()
+
+    # Step 5: Verify all credentials saved
     print("=" * 80)
-    print("Credentials saved successfully!")
-    print(f"File: {CREDENTIALS_FILE}")
+    print("Step 5: Setup Complete")
+    print("=" * 80)
+    print()
+    print("All credentials have been saved incrementally.")
+    print(f"Credentials file: {CREDENTIALS_FILE}")
     print(f"Permissions: {oct(CREDENTIALS_FILE.stat().st_mode)[-3:]}")
     print("=" * 80)
     print()
@@ -341,7 +627,7 @@ def setup_credentials_interactive() -> Optional[Dict[str, str]]:
     }
 
 
-def get_credentials(cli_args: Optional[argparse.Namespace] = None) -> Dict[str, str]:
+def get_credentials(cli_args: Optional[argparse.Namespace] = None, skip_completed: bool = True) -> Dict[str, str]:
     """
     Load credentials using three-tier priority system.
     Automatically guides user through setup if credentials are missing.
@@ -364,6 +650,9 @@ def get_credentials(cli_args: Optional[argparse.Namespace] = None) -> Dict[str, 
         access_token = os.getenv('LINKEDIN_ACCESS_TOKEN')
     if not refresh_token:
         refresh_token = os.getenv('LINKEDIN_REFRESH_TOKEN')
+    
+    # Also check for redirect URI in environment
+    redirect_uri = os.getenv('LINKEDIN_REDIRECT_URI', DEFAULT_REDIRECT_URI)
 
     # Tier 3: Secure credentials file (lowest priority)
     # This will automatically run setup script if file doesn't exist
@@ -378,6 +667,10 @@ def get_credentials(cli_args: Optional[argparse.Namespace] = None) -> Dict[str, 
             access_token = creds.get('LINKEDIN_ACCESS_TOKEN')
         if not refresh_token:
             refresh_token = creds.get('LINKEDIN_REFRESH_TOKEN')
+        # Get redirect URI from credentials if available
+        saved_redirect_uri = creds.get('LINKEDIN_REDIRECT_URI')
+        if saved_redirect_uri:
+            redirect_uri = saved_redirect_uri
 
     # If still missing after all tiers, run interactive setup
     if not all([client_id, client_secret, access_token, refresh_token]):
@@ -385,10 +678,11 @@ def get_credentials(cli_args: Optional[argparse.Namespace] = None) -> Dict[str, 
         print("LinkedIn API credentials are missing or incomplete.")
         print("=" * 80)
         print("\nStarting interactive setup...")
-        print("This will guide you through the complete setup process.\n")
+        print("This will guide you through the complete setup process.")
+        print("Completed steps will be skipped automatically.\n")
 
         try:
-            setup_result = setup_credentials_interactive()
+            setup_result = setup_credentials_interactive(skip_completed=skip_completed)
             if not setup_result:
                 print("\nERROR: Setup was cancelled or failed.", file=sys.stderr)
                 sys.exit(1)
@@ -560,9 +854,38 @@ def create_ugc_post(access_token: str, person_urn: str, content: str) -> Optiona
         response.raise_for_status()
         return response.json()
     except requests.RequestException as e:
-        print(f"ERROR: Failed to create LinkedIn post: {e}", file=sys.stderr)
+        # Check for duplicate post error (422)
         if hasattr(e, 'response') and e.response is not None:
+            if e.response.status_code == 422:
+                try:
+                    error_data = e.response.json()
+                    error_message = error_data.get('message', '')
+                    
+                    # Check if it's a duplicate post error
+                    if 'duplicate' in error_message.lower() or 'DUPLICATE_POST' in str(error_data):
+                        # Try to extract the existing share URN from the error message
+                        # Format: "Content is a duplicate of urn:li:share:1234567890"
+                        share_match = re.search(r'urn:li:share:(\d+)', error_message)
+                        if share_match:
+                            share_id = share_match.group(1)
+                            print(f"\nWARNING: Post is a duplicate of existing post.", file=sys.stderr)
+                            print(f"Existing post ID: urn:li:share:{share_id}", file=sys.stderr)
+                            # Return the existing post info
+                            return {
+                                'id': f'urn:li:share:{share_id}',
+                                'duplicate': True,
+                                'existing_share_id': share_id
+                            }
+                        else:
+                            print(f"WARNING: Duplicate post detected but couldn't extract share ID.", file=sys.stderr)
+                            print(f"Error message: {error_message}", file=sys.stderr)
+                except (json.JSONDecodeError, KeyError):
+                    pass
+            
+            print(f"ERROR: Failed to create LinkedIn post: {e}", file=sys.stderr)
             print(f"Response: {e.response.text}", file=sys.stderr)
+        else:
+            print(f"ERROR: Failed to create LinkedIn post: {e}", file=sys.stderr)
         return None
 
 
@@ -571,17 +894,22 @@ def get_post_url(post_id: str) -> str:
     Construct LinkedIn post URL from post ID.
 
     Args:
-        post_id: Post ID from API response (e.g., "urn:li:ugcPost:123456")
+        post_id: Post ID from API response (e.g., "urn:li:ugcPost:123456" or "urn:li:share:123456")
 
     Returns:
         LinkedIn post URL
     """
     # Extract numeric ID from URN
+    # URN formats: 
+    # - urn:li:ugcPost:1234567890 (UGC Posts API)
+    # - urn:li:share:1234567890 (Shares API / existing posts)
     match = re.search(r':(\d+)$', post_id)
     if match:
         numeric_id = match.group(1)
+        # LinkedIn post URLs use the numeric ID
+        # Format: https://www.linkedin.com/feed/update/NUMERIC_ID
         return f"https://www.linkedin.com/feed/update/{numeric_id}"
-    # Fallback: return a generic URL
+    # Fallback: use the post_id as-is (might be numeric already)
     return f"https://www.linkedin.com/feed/update/{post_id}"
 
 
@@ -674,6 +1002,16 @@ Examples:
         help='Do not update LinkedIn-posts.md archive'
     )
     parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Show verbose output including API responses'
+    )
+    parser.add_argument(
+        '--allow-duplicate',
+        action='store_true',
+        help='Allow posting duplicate content (by default, duplicates are detected and existing post URL is used)'
+    )
+    parser.add_argument(
         '--client-id',
         help='LinkedIn Client ID (overrides env/config)'
     )
@@ -689,12 +1027,28 @@ Examples:
         '--refresh-token',
         help='LinkedIn Refresh Token (overrides env/config)'
     )
+    parser.add_argument(
+        '--skip-completed',
+        action='store_true',
+        help='Skip setup steps that are already completed (default: auto-detect)'
+    )
+    parser.add_argument(
+        '--no-skip-completed',
+        action='store_true',
+        help='Do not skip completed steps, re-enter all credentials'
+    )
 
     args = parser.parse_args()
 
     # Load credentials
     try:
-        creds = get_credentials(args)
+        # Check for CLI flags for skip behavior
+        skip_completed = True
+        if hasattr(args, 'no_skip_completed') and args.no_skip_completed:
+            skip_completed = False
+        elif hasattr(args, 'skip_completed') and args.skip_completed:
+            skip_completed = True
+        creds = get_credentials(args, skip_completed=skip_completed)
     except KeyboardInterrupt:
         print("\n\nSetup cancelled by user.", file=sys.stderr)
         return 1
@@ -755,16 +1109,54 @@ Examples:
         print("ERROR: Failed to create LinkedIn post.", file=sys.stderr)
         return 1
 
-    # Extract post URL
+    # Check if this is a duplicate post
+    is_duplicate = post_response.get('duplicate', False)
+    if is_duplicate:
+        print("\nNOTE: This post already exists (duplicate detected).")
+        print("Using the existing post URL.")
+
+    # Extract post information
     post_id = post_response.get('id', '')
     if not post_id:
         print("ERROR: Post created but no post ID in response.", file=sys.stderr)
         print(f"Response: {json.dumps(post_response, indent=2)}", file=sys.stderr)
         return 1
 
-    post_url = get_post_url(post_id)
+    # Debug: Show full response in verbose mode
+    if hasattr(args, 'verbose') and args.verbose:
+        print(f"\nAPI Response: {json.dumps(post_response, indent=2)}")
+
+    # Try to get the share URL from the response if available
+    # LinkedIn UGC Posts API may return shareUrl or activity in the response
+    post_url = None
+    if 'shareUrl' in post_response:
+        post_url = post_response['shareUrl']
+    elif 'activity' in post_response:
+        # Sometimes the URL is in an activity field
+        activity = post_response.get('activity', {})
+        if isinstance(activity, str):
+            post_url = activity
+        elif isinstance(activity, dict):
+            post_url = activity.get('url') or activity.get('shareUrl')
+    
+    # If no direct URL, construct from post ID
+    if not post_url:
+        post_url = get_post_url(post_id)
+    
     print(f"\nSUCCESS: Post created successfully!")
+    print(f"Post ID: {post_id}")
     print(f"Post URL: {post_url}")
+    print()
+    print("Note: If the URL doesn't work immediately, the post may still be processing.")
+    print("You can also find the post in your LinkedIn feed.")
+    
+    # Show response structure for debugging
+    if hasattr(args, 'verbose') and args.verbose:
+        print(f"\nFull API response: {json.dumps(post_response, indent=2)}")
+    else:
+        print(f"\nAPI response keys: {list(post_response.keys())}")
+        if 'activity' in post_response:
+            print(f"Activity field: {post_response.get('activity')}")
 
     # Update archive
     if not args.no_archive:
