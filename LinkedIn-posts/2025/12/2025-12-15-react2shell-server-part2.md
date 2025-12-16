@@ -1,0 +1,34 @@
+# December 15, 2025
+
+**LinkedIn:** [https://www.linkedin.com/posts/activity-7406536011251568641-Uwnk/](https://www.linkedin.com/posts/activity-7406536011251568641-Uwnk/)
+
+---
+
+Sometimes you need a flexible tool that supports multiple scenarios, not just one.  
+
+I wanted React2Shell Server to support testing scanners for both React (standalone) and Next.js (which uses React). The scanner I'm testing (react2shell-scanner) only works with Next.js applications that use React Server Components. But I started building with a standalone React app using Vite.  
+
+So I had to build dual-framework support where the same codebase can run in either mode.  
+
+𝐓𝐡𝐞 𝐜𝐡𝐚𝐥𝐥𝐞𝐧𝐠𝐞:  
+
+Making it work with both Vite and Next.js required a framework-aware architecture. The Express server detects which framework is active and adapts its behavior. In Next.js mode, it correctly reads version info from the framework-specific package.json.  
+
+Version switching is simple - just run make targets like:
+▶ make use-nextjs (switch to Next.js mode)  
+▶ make nextjs-14.0.0 (switch to Next.js 14.0.0 - vulnerable)  
+▶ make nextjs-14.0.1 (switch to Next.js 14.0.1 - fixed)  
+▶ make nextjs-15.0.4 (switch to Next.js 15.0.4 - vulnerable)  
+▶ make start (start both frontend and backend servers)  
+▶ make stop (stop both servers)  
+
+Note: After switching frameworks (use-vite or use-nextjs), restart the server with make stop && make start for the changes to take effect.
+
+The framework-aware server was key - it adapts to context rather than assuming a single mode.  
+
+This is a good reminder: framework-specific tools require framework-specific testbeds. Sometimes you have to pivot the architecture to match the tool's requirements.  
+
+Project: https://github.com/glblackburn/react2shell-server  
+Full development narrative: https://github.com/glblackburn/react2shell-server/blob/main/DEVELOPMENT_NARRATIVE.md  
+
+#React #NextJS #Architecture #SoftwareDevelopment
