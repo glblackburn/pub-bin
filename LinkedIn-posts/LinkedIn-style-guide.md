@@ -36,10 +36,8 @@ LinkedIn-posts/
 │
 ├── examples/                            # Example posts for reference
 │   ├── 2025-12-12-network-capture-analysis-tools.md
-│   └── 2025-12-12-network-capture-analysis-tools.txt
-│
-├── test/                                # Test files
-│   └── test-post.txt
+│   ├── 2025-12-12-network-capture-analysis-tools.txt
+│   └── test-post.txt                   # Manual testing example
 │
 └── 2025/                                # Year directories for posts
     ├── 11/                              # Month directories

@@ -17,10 +17,11 @@
 
 #### December 2025
 
+- ✅ [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) - React2Shell Server Part 2: Framework-Aware Architecture
+- ✅ [December 14, 2025](2025/12/2025-12-14-test-post.md) - Test Post: LinkedIn API Integration
 - ✅ [December 12, 2025](2025/12/2025-12-12-network-capture-analysis-tools.md) - A Basic Tool for Analyzing tcpdump Output
 - ✅ [December 9, 2025](2025/12/2025-12-09-monitor-ai-agent-progress.md) - `monitor-ai-agent-progress.sh`: Major updates with new features
 - ✅ [December 9, 2025](2025/12/2025-12-09-react2shell-server-part1.md) - React2Shell Server: Building a Security Testing Testbed
-- ✅ [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) - React2Shell Server Part 2: Framework-Aware Architecture
 - ✅ [December 7, 2025](2025/12/2025-12-07.md) - What happens when you ask an AI coding assistant to review another assistant's work?
 - ✅ [December 7, 2025](2025/12/2025-12-07-what-is-left.md) - From bash to Python: Migrating a migration tracker
 - ✅ [December 6, 2025](2025/12/2025-12-06.md) - Just finished building a bash script to automate Trufflehog security scans acros
@@ -55,10 +56,11 @@
 
 | Date | Title | Status |
 |------|-------|--------|
+| [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) | React2Shell Server Part 2: Framework-Aware Architecture | ✅ Published |
+| [December 14, 2025](2025/12/2025-12-14-test-post.md) | Test Post: LinkedIn API Integration | ✅ Published |
 | [December 12, 2025](2025/12/2025-12-12-network-capture-analysis-tools.md) | A Basic Tool for Analyzing tcpdump Output | ✅ Published |
 | [December 9, 2025](2025/12/2025-12-09-monitor-ai-agent-progress.md) | `monitor-ai-agent-progress.sh`: Major updates with new features | ✅ Published |
 | [December 9, 2025](2025/12/2025-12-09-react2shell-server-part1.md) | React2Shell Server: Building a Security Testing Testbed | ✅ Published |
-| [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) | React2Shell Server Part 2: Framework-Aware Architecture | ✅ Published |
 | [December 7, 2025](2025/12/2025-12-07-what-is-left.md) | From bash to Python: Migrating a migration tracker | ✅ Published |
 | [December 7, 2025](2025/12/2025-12-07.md) | What happens when you ask an AI coding assistant to review ... | ✅ Published |
 | [December 6, 2025](2025/12/2025-12-06.md) | Just finished building a bash script to automate Trufflehog ... | ✅ Published |

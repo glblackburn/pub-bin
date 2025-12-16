@@ -204,7 +204,7 @@ Once you have all credentials (Client ID, Client Secret, Access Token, Refresh T
 Before posting to LinkedIn, validate your setup with a dry run:
 
 ```bash
-./LinkedIn-posts/scripts/post-to-linkedin.py --dry-run LinkedIn-posts/test/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py --dry-run LinkedIn-posts/examples/test-post.txt
 ```
 
 **What the dry run does:**
@@ -231,7 +231,7 @@ First 200 characters:
 If the dry run passes, post to LinkedIn:
 
 ```bash
-./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/examples/test-post.txt
 ```
 
 **What happens:**
