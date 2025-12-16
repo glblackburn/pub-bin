@@ -9,7 +9,7 @@
 
 ### Draft Posts
 
-- ⏳ [LinkedIn Posting Process](2025/12/2025-12-13-linkedin-posting-process.md) - What happens when you want an AI coding assistant to help craft LinkedIn posts about your code, but it needs context and consistency?
+- ⏳ [LinkedIn Posting Automation: Building a Test Suite and Workflow](2025/12/2025-12-13-linkedin-posting-process.md) - What happens when you want an AI coding assistant to help craft LinkedIn posts about your code, but it needs context and consistency?
 - ⏳ [React2Shell Server Part 3: Performance Optimization](2025/12/2025-12-09-react2shell-server-part3.txt)
 - ⏳ [React2Shell Server Part 4: Lessons Learned](2025/12/2025-12-09-react2shell-server-part4.txt)
 
@@ -48,7 +48,7 @@
 
 | Title | Status |
 |-------|--------|
-| [LinkedIn Posting Process](2025/12/2025-12-13-linkedin-posting-process.md) | ⏳ Draft |
+| [LinkedIn Posting Automation: Building a Test Suite and Workflow](2025/12/2025-12-13-linkedin-posting-process.md) | ⏳ Draft |
 | [React2Shell Server Part 3: Performance Optimization](2025/12/2025-12-09-react2shell-server-part3.txt) | ⏳ Draft |
 | [React2Shell Server Part 4: Lessons Learned](2025/12/2025-12-09-react2shell-server-part4.txt) | ⏳ Draft |
 
