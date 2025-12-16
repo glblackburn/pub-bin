@@ -334,7 +334,7 @@ The credential management system is fully integrated into the main script. Users
 ### Integration Points
 
 - **Input:** Read from `LinkedIn-posts/examples/*.txt` or similar
-- **Output:** Update `LinkedIn-posts.md` with post URL
+- **Output:** Update `LinkedIn-posts/LinkedIn-posts.md` with post URL
 - **Style Guide:** Follow existing `LinkedIn-style-guide.md` formatting rules
 
 ## Language Recommendation
@@ -506,5 +506,5 @@ Based on analysis of the codebase patterns and LinkedIn API requirements, **Pyth
 2. **Token Refresh:** Automatic refresh or manual re-authentication?
 3. **Error Handling:** How should we handle API failures?
 4. **Content Validation:** Should we validate against style guide before posting?
-5. **Archive Integration:** Should script automatically update `LinkedIn-posts.md`?
+5. **Archive Integration:** Should script automatically update `LinkedIn-posts/LinkedIn-posts.md`?
 6. **Dry Run Mode:** Should we support a test mode that doesn't actually post?

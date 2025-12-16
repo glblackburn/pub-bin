@@ -54,7 +54,7 @@ A collection of useful tips and tricks for common development tasks.
 
 Refer to [tips-and-tricks.md](tips-and-tricks.md) for detailed instructions on each topic.
 
-### [LinkedIn-posts.md](LinkedIn-posts.md)
+### [LinkedIn-posts/LinkedIn-posts.md](LinkedIn-posts/LinkedIn-posts.md)
 
 Archive of LinkedIn posts documenting project updates, lessons learned, and technical insights.
 

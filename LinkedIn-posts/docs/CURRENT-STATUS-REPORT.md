@@ -221,7 +221,7 @@
 
 ### Master Index File
 
-1. **LinkedIn-posts.md** (at repository root)
+1. **LinkedIn-posts/LinkedIn-posts.md**
    - **Status:** ⚠️ **INCOMPLETE** - Missing 2 posts
    - **Content:** Table of Contents and Quick Index table
    - **Missing Posts:**
@@ -267,7 +267,7 @@
 4. **Clear workflow:** Style guide and examples available
 
 ### ⚠️ Issues Identified
-1. **Master index incomplete:** `LinkedIn-posts.md` is missing 2 posts:
+1. **Master index incomplete:** `LinkedIn-posts/LinkedIn-posts.md` is missing 2 posts:
    - December 12, 2025 - Network Capture Analysis Tools (published)
    - December 13, 2025 - LinkedIn Posting Process (draft)
 2. **Review document outdated:** LINKEDIN-POSTS-REVIEW.md shows only 7 published posts, but 17 are actually published
@@ -276,7 +276,7 @@
 
 ### 📋 Recommendations
 
-1. **Update master index:** `LinkedIn-posts.md` needs to include:
+1. **Update master index:** `LinkedIn-posts/LinkedIn-posts.md` needs to include:
    - December 12, 2025 - Network Capture Analysis Tools (published)
    - December 13, 2025 - LinkedIn Posting Process (draft)
 2. **Update review document:** LINKEDIN-POSTS-REVIEW.md should be updated to reflect all 17 published posts
@@ -289,7 +289,7 @@
 ## Next Steps
 
 1. ✅ **Post React2Shell Parts 2-4** - All three are ready and formatted correctly
-2. ⏳ **Update master index** - Add missing December 12 and December 13 posts to `LinkedIn-posts.md`
+2. ⏳ **Update master index** - Add missing December 12 and December 13 posts to `LinkedIn-posts/LinkedIn-posts.md`
 3. ⏳ **Update review document** - Reflect all published posts
 4. ⏳ **Update reorganization plan** - Reflect current state
 

@@ -84,12 +84,18 @@ Posts are organized by year and month in the `LinkedIn-posts/` directory:
 
 ```
 LinkedIn-posts/
-  ├── LinkedIn-style-guide.md
-  ├── LinkedIn-posts-reorganization-plan.md
-  ├── 2025/
-  │   ├── 11/  (November posts)
-  │   └── 12/  (December posts)
-  └── ...
+  ├── LinkedIn-posts.md                    # Main archive/index (this file)
+  ├── LinkedIn-style-guide.md              # Style guide and formatting rules
+  ├── scripts/                              # Python scripts for posting
+  ├── docs/                                # Documentation and guides
+  ├── images/                               # Screenshot/image files
+  ├── examples/                             # Example posts for reference
+  ├── test/                                 # Test files
+  └── 2025/                                 # Year directories
+      ├── 11/  (November posts)
+      └── 12/  (December posts)
 ```
 
-Each post is stored as a separate markdown file named `YYYY-MM-DD.md` in the appropriate year/month directory.
+Each post is stored as a separate markdown file named `YYYY-MM-DD.md` (or `YYYY-MM-DD-description.md`) in the appropriate year/month directory. Draft posts may be stored as `.txt` files until published.
+
+For complete directory structure details, see the [Directory Structure](LinkedIn-style-guide.md#directory-structure) section in the style guide.

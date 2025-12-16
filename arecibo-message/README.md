@@ -217,7 +217,7 @@ This project was featured in a LinkedIn post discussing AI transparency and firs
 
 **[View LinkedIn Post: Decoding the Arecibo Message from First Principles](https://www.linkedin.com/posts/activity-7400238848703614976-BxDO)**
 
-See [LinkedIn-posts.md](../LinkedIn-posts.md#november-28-2024) for the full post content and other LinkedIn posts.
+See [LinkedIn-posts/LinkedIn-posts.md](../LinkedIn-posts/LinkedIn-posts.md#november-28-2024) for the full post content and other LinkedIn posts.
 
 ## References
 

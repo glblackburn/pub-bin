@@ -1175,7 +1175,7 @@ Examples:
 
     # Update archive - DISABLED: Keeping archive updates as manual process for now
     # if not args.no_archive:
-    #     # Archive file is in the root directory, not in LinkedIn-posts/ subdirectory
+    #     # Archive file is in the LinkedIn-posts/ directory
     #     archive_file = Path(__file__).parent.parent / 'LinkedIn-posts.md'
     #     if update_markdown_archive(post_url, args.post_file, archive_file):
     #         print(f"Archive updated: {archive_file}")

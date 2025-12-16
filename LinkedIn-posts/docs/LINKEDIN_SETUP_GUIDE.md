@@ -168,7 +168,7 @@ This script will:
 Once you have all credentials (Client ID, Client Secret, Access Token, Refresh Token):
 
 ```bash
-./LinkedIn-posts/create-set-linkedin-credentials.py
+./LinkedIn-posts/scripts/create-set-linkedin-credentials.py
 ```
 
 **What to expect:**
@@ -240,7 +240,7 @@ If the dry run passes, post to LinkedIn:
 3. Gets your LinkedIn person URN (may refresh token if needed)
 4. Posts to LinkedIn via API
 5. Displays the post ID and opens your LinkedIn activity page
-6. Archive updates are currently manual (see root `LinkedIn-posts.md`)
+6. Archive updates are currently manual (see `LinkedIn-posts/LinkedIn-posts.md`)
 
 **Expected output:**
 ```
