@@ -11,7 +11,7 @@ This guide documents the formatting rules, workflow, and style guidelines for cr
 
 See the example files in `examples/` for complete, properly formatted LinkedIn posts:
 
-- **Plain Text Format** ([`2025-12-12-network-capture-analysis-tools.txt`](examples/2025-12-12-network-capture-analysis-tools.txt)) - Ready for copy-paste to LinkedIn, demonstrates:
+- **Plain Text Format** ([`2025-12-12-network-capture-analysis-tools.txt`](examples/2025-12-12-network-capture-analysis-tools.txt)) - Ready to post with `post-to-linkedin.py`, demonstrates:
 - Unicode bold section headings with trailing spaces
 - Bullet points with trailing spaces and no blank lines between them
 - Zero-width spaces in file names
@@ -96,17 +96,29 @@ See the example files in `examples/` for complete, properly formatted LinkedIn p
    - Add zero-width spaces to file names (e.g., `script​.sh`) to prevent LinkedIn auto-linking
    - Keep URLs clean (no zero-width spaces) so they remain clickable
 3. **Check Content Length**: Always verify the character count of the LinkedIn-formatted post text before finalizing. LinkedIn's character limit for regular posts is **3,000 characters**. Posts should be trimmed if they exceed this limit. Count characters in the plain text version (the .txt file content).
-4. **Save Temporary File**: Save as plain text file (e.g., `linkedin-post-topic.txt`) for clean copy-paste into LinkedIn
-5. **Post to LinkedIn**: Copy-paste from the temporary .txt file and publish on LinkedIn
-6. **Get LinkedIn URL**: After posting, copy the direct LinkedIn post URL
-7. **Convert to Markdown**: 
-   - Add the post to `LinkedIn-posts.md` with proper markdown formatting
-   - Use date heading format: `## [Month Day, Year](LinkedIn-URL)` (replace status message with real URL)
+4. **Save as .txt File**: Save as plain text file (e.g., `2025-12-13-linkedin-posting-process.txt`) in the appropriate date directory
+5. **Post to LinkedIn**: Use the posting script to post automatically:
+   ```bash
+   cd LinkedIn-posts
+   python3 post-to-linkedin.py 2025/12/2025-12-13-linkedin-posting-process.txt
+   ```
+   - The script validates content length automatically
+   - Posts to LinkedIn via API
+   - Opens your LinkedIn activity page after successful posting
+   - Shows post ID and any available URL information
+6. **Get LinkedIn URL**: 
+   - The script opens your LinkedIn activity page automatically
+   - Find your post in the activity feed
+   - Click on the post timestamp or '...' menu to copy the post URL
+   - Alternatively, the script may show the post URL if available from the API
+7. **Update Markdown File**: 
+   - Update the markdown version of the post (e.g., `2025-12-13-linkedin-posting-process.md`)
+   - Replace status message with date heading format: `## [December 13, 2025](LinkedIn-URL)`
    - Add `[LinkedIn](LinkedIn-URL)` link below the heading
    - Remove zero-width spaces from GitHub URLs (keep markdown file URLs clean)
    - Ensure all section headings and bullet points have trailing spaces for proper markdown rendering
    - Ensure no blank lines between consecutive bullet points
-8. **Clean Up**: Delete the temporary .txt file after the post is added to `LinkedIn-posts.md`
+8. **Optional Clean Up**: The .txt file can be kept for reference or deleted if desired
 
 **Verification Checklist:**
 - ✅ Content length has been checked and is within LinkedIn's character limit (3,000 characters)
