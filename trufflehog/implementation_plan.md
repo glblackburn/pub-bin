@@ -13,7 +13,7 @@ Create a Bash script `trufflehog-local-git-repos.sh` to recursively find and sca
 ## Proposed Changes
 
 ### Trufflehog Directory
-#### [NEW] [trufflehog-local-git-repos.sh](file:///Users/lblackb/data/lblackb/git/pub-bin/trufflehog/trufflehog-local-git-repos.sh)
+#### [NEW] [trufflehog-local-git-repos.sh](file:///path/to/trufflehog/trufflehog-local-git-repos.sh)
 - **Language**: Bash
 - **CLI Parameters**:
     - `-d <directory>`: Target directory to scan (Required).
@@ -33,7 +33,7 @@ Create a Bash script `trufflehog-local-git-repos.sh` to recursively find and sca
 ### Manual Verification
 1.  **Test Run**:
     ```bash
-    ./trufflehog/trufflehog-local-git-repos.sh -d /Users/lblackb/data/lblackb/git/pub-bin
+    ./trufflehog/trufflehog-local-git-repos.sh -d /path/to/target/directory
     ```
 2.  **Verify**: Check that multiple `trufflehog-*.txt` files appear in the target directory, one for each repo found.
 
