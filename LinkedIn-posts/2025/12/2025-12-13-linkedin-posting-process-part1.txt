@@ -1,0 +1,39 @@
+LinkedIn Posting Automation Part 1: Building a Style Guide for AI-Assisted Content
+
+What happens when you want an AI coding assistant to help craft LinkedIn posts about your code, but it needs context and consistency?
+
+I've been using Cursor to help write LinkedIn posts about my open-source projects. The challenge: Cursor needs to understand the codebase, commit history, and project context to craft meaningful posts. But without clear guidelines, each post came out differently—inconsistent formatting, varying tone, different structures.
+
+So I built a style guide that lets Cursor leverage the codebase and commit history to create consistent, context-aware posts.
+
+𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:  
+
+▶ Comprehensive style guide covering formatting rules, workflow, and tone  
+▶ Example posts (both .txt and .md formats) demonstrating proper formatting  
+▶ Verification checklist to ensure posts meet all requirements  
+▶ Workflow documentation from draft to published post  
+▶ Rules for handling file names, URLs, Unicode characters, and spacing  
+
+The style guide covers formatting rules, tone guidelines, workflow documentation, and example posts that Cursor can reference.
+
+𝐖𝐡𝐲 𝐈 𝐛𝐮𝐢𝐥𝐭 𝐢𝐭:  
+
+I started using Cursor for posts back in November. It could read scripts, understand commit messages, and pull context from the codebase—perfect for technical posts. But without standards, Cursor formatted things differently each time.
+
+I needed a contract: clear rules so Cursor could craft consistent, properly formatted posts that leverage codebase context. The style guide became that contract.
+
+𝐓𝐡𝐞 𝐩𝐫𝐨𝐜𝐞𝐬𝐬:  
+
+The style guide evolved over a dozen posts, starting with basic formatting rules in early December, then expanding to include tone and writing style. Each post revealed new requirements: Unicode bold headers work, markdown code blocks don't. LinkedIn auto-links file names, so zero-width spaces prevent that.
+
+The December 12 post went through full validation—that's when I realized Cursor needed example files. So I created both .txt (for LinkedIn) and .md (for git history) examples. Now Cursor can reference actual working examples and leverage commit history to craft context-aware posts.
+
+𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
+
+When you want AI to help with content creation, give it clear contracts. The style guide lets Cursor read codebase and commit history, follow consistent formatting rules, and reference working examples when crafting posts.
+
+It's the same principle I use for code: document standards, provide examples, verify compliance. But here, the "developer" is Cursor, and the "code" is LinkedIn posts.
+
+The style guide: https://github.com/glblackburn/pub-bin/blob/main/LinkedIn-posts/LinkedIn-style-guide.md
+
+#ContentCreation #Documentation #Workflow #LinkedIn #OpenSource #TechnicalWriting #AI
