@@ -28,7 +28,7 @@ create a script, I will specificly note that.
 ### Documentation
 
 - **[tips-and-tricks.md](tips-and-tricks.md)** - Collection of useful tips and tricks for common development tasks
-- **[LinkedIn-posts.md](LinkedIn-posts.md)** - Archive of LinkedIn posts documenting project updates and insights
+- **[LinkedIn-posts/LinkedIn-posts.md](LinkedIn-posts/LinkedIn-posts.md)** - Archive of LinkedIn posts documenting project updates and insights
 - **[LinkedIn-posts/LinkedIn-style-guide.md](LinkedIn-posts/LinkedIn-style-guide.md)** - Style guide and formatting rules for LinkedIn posts
 - **[README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md)** - AI coding standards and guidelines
 
@@ -64,7 +64,7 @@ Archive of LinkedIn posts documenting project updates, lessons learned, and tech
 - Technical project updates and conversions
 - Workflow improvements and tooling decisions
 
-Posts are organized by year and month in the `LinkedIn-posts/` directory. See [LinkedIn-posts.md](LinkedIn-posts.md) for the complete post archive with table of contents and quick index.
+Posts are organized by year and month in the `LinkedIn-posts/` directory. See [LinkedIn-posts/LinkedIn-posts.md](LinkedIn-posts/LinkedIn-posts.md) for the complete post archive with table of contents and quick index.
 
 ### [LinkedIn-posts/LinkedIn-style-guide.md](LinkedIn-posts/LinkedIn-style-guide.md)
 

@@ -2,6 +2,7 @@
 
 **Purpose:** Automate posting of `.txt` files as LinkedIn posts  
 **Example File:** `LinkedIn-posts/examples/2025-12-12-network-capture-analysis-tools.txt`  
+**Script Location:** `LinkedIn-posts/scripts/post-to-linkedin.py`  
 **Date:** December 2025
 
 ## Implementation Decisions
@@ -145,7 +146,7 @@ The implementation uses a **single script** (`post-to-linkedin.py`) that handles
 
 **First-time user:**
 ```bash
-./LinkedIn-posts/post-to-linkedin.py LinkedIn-posts/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
 ```
 - Script detects missing credentials
 - Automatically starts interactive setup
@@ -155,7 +156,7 @@ The implementation uses a **single script** (`post-to-linkedin.py`) that handles
 
 **Returning user:**
 ```bash
-./LinkedIn-posts/post-to-linkedin.py LinkedIn-posts/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
 ```
 - Script loads credentials automatically
 - Posts immediately
@@ -173,7 +174,7 @@ The credential management system is fully integrated into the main script. Users
 
 1. **First-time user runs the script:**
    ```bash
-   ./LinkedIn-posts/post-to-linkedin.py LinkedIn-posts/test-post.txt
+   ./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
    ```
    - Script checks for credentials in CLI args → environment variables → secure file
    - If credentials are missing, automatically starts integrated interactive setup
@@ -189,7 +190,7 @@ The credential management system is fully integrated into the main script. Users
 
 2. **Subsequent runs:**
    ```bash
-   ./LinkedIn-posts/post-to-linkedin.py LinkedIn-posts/test-post.txt
+   ./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
    ```
    - Script loads credentials from secure file automatically
    - Posts immediately - no user interaction needed (unless credentials expire)
@@ -208,7 +209,7 @@ The credential management system is fully integrated into the main script. Users
 
 **Credential Management Implementation:**
 
-- **Integrated setup:** All setup is integrated into `post-to-linkedin.py`
+- **Integrated setup:** All setup is integrated into `scripts/post-to-linkedin.py`
   - No separate setup script needed
   - Interactive setup runs automatically when credentials are missing
   - Guides user through:
@@ -291,7 +292,7 @@ The credential management system is fully integrated into the main script. Users
       return credentials
   ```
 
-- **Integrated setup in main script (`post-to-linkedin.py`):**
+- **Integrated setup in main script (`scripts/post-to-linkedin.py`):**
   - `setup_credentials_interactive()` function handles complete setup:
     - Step 1: Instructions for creating LinkedIn Developer app
     - Step 2: Get Client ID and Client Secret
@@ -437,7 +438,7 @@ Based on analysis of the codebase patterns and LinkedIn API requirements, **Pyth
 
 ### Script Structure
 
-**Single Script Implementation (`post-to-linkedin.py`):**
+**Single Script Implementation (`scripts/post-to-linkedin.py`):**
 
 1. **Credential Management:**
    - Three-tier loading (CLI args → env vars → secure file)
@@ -472,7 +473,7 @@ Based on analysis of the codebase patterns and LinkedIn API requirements, **Pyth
 
 ✅ **Completed:**
 
-1. **Single Script Implementation** - `post-to-linkedin.py` handles everything
+1. **Single Script Implementation** - `scripts/post-to-linkedin.py` handles everything
 2. **Integrated Setup** - Automatic interactive setup when credentials missing
 3. **OAuth Flow Integration** - Browser-based OAuth flow built-in
 4. **Credential Management** - Three-tier priority system with secure storage
@@ -484,13 +485,13 @@ Based on analysis of the codebase patterns and LinkedIn API requirements, **Pyth
 **Usage:**
 ```bash
 # First time (will run setup automatically)
-./LinkedIn-posts/post-to-linkedin.py LinkedIn-posts/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
 
 # Subsequent runs (loads credentials automatically)
-./LinkedIn-posts/post-to-linkedin.py LinkedIn-posts/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
 
 # Dry run (validate without posting)
-./LinkedIn-posts/post-to-linkedin.py --dry-run LinkedIn-posts/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py --dry-run LinkedIn-posts/test/test-post.txt
 ```
 
 ## Additional Resources

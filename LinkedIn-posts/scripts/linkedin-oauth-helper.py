@@ -199,7 +199,7 @@ def main() -> int:
     print()
     print("Next steps:")
     print("1. Run the credential setup script:")
-    print("   ./LinkedIn-posts/create-set-linkedin-credentials.py")
+    print("   ./LinkedIn-posts/scripts/create-set-linkedin-credentials.py")
     print()
     print("2. When prompted, enter:")
     print(f"   Client ID: {client_id}")

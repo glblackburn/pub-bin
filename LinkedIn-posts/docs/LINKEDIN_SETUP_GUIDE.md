@@ -123,7 +123,7 @@ The OAuth flow requires browser interaction. You have two options:
 We provide a helper script to guide you through the OAuth flow:
 
 ```bash
-./LinkedIn-posts/linkedin-oauth-helper.py
+./LinkedIn-posts/scripts/linkedin-oauth-helper.py
 ```
 
 This script will:
@@ -204,7 +204,7 @@ Once you have all credentials (Client ID, Client Secret, Access Token, Refresh T
 Before posting to LinkedIn, validate your setup with a dry run:
 
 ```bash
-./LinkedIn-posts/post-to-linkedin.py --dry-run LinkedIn-posts/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py --dry-run LinkedIn-posts/test/test-post.txt
 ```
 
 **What the dry run does:**
@@ -231,7 +231,7 @@ First 200 characters:
 If the dry run passes, post to LinkedIn:
 
 ```bash
-./LinkedIn-posts/post-to-linkedin.py LinkedIn-posts/test-post.txt
+./LinkedIn-posts/scripts/post-to-linkedin.py LinkedIn-posts/test/test-post.txt
 ```
 
 **What happens:**
@@ -319,7 +319,7 @@ Opened: https://www.linkedin.com/in/glblackburn/recent-activity/all/
 - **Error**: "Credentials file not found" or permission errors
 - **Solution**:
   - Make sure `~/.secure/` directory exists and has proper permissions (700)
-  - Run the setup script again: `./LinkedIn-posts/create-set-linkedin-credentials.py`
+  - Run the setup script again: `./LinkedIn-posts/scripts/create-set-linkedin-credentials.py`
   - The script will create the directory and file automatically
 
 ## Security Notes

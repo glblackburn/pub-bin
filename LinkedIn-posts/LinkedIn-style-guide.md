@@ -7,6 +7,58 @@
 
 This guide documents the formatting rules, workflow, and style guidelines for creating LinkedIn posts.
 
+## Directory Structure
+
+The `LinkedIn-posts/` directory is organized as follows:
+
+```
+LinkedIn-posts/
+├── LinkedIn-posts.md                    # Main archive/index of all posts
+├── LinkedIn-style-guide.md              # This file - primary style guide
+│
+├── scripts/                             # Python scripts for posting
+│   ├── post-to-linkedin.py              # Main posting script
+│   ├── linkedin_credentials.py          # Credentials management
+│   ├── linkedin-oauth-helper.py         # OAuth helper utilities
+│   └── create-set-linkedin-credentials.py
+│
+├── docs/                                # Documentation and guides
+│   ├── LINKEDIN_SETUP_GUIDE.md          # API setup instructions
+│   ├── linkedin-api-integration-design.md
+│   ├── linkedin-post-topics-recommendations.md
+│   ├── LINKEDIN-POSTS-REVIEW.md
+│   ├── LinkedIn-posts-reorganization-plan.md
+│   ├── trufflehog-post-review.md
+│   └── CURRENT-STATUS-REPORT.md
+│
+├── images/                              # Screenshot/image files
+│   └── 2025-11-12_cursor_readme_update_*.png
+│
+├── examples/                            # Example posts for reference
+│   ├── 2025-12-12-network-capture-analysis-tools.md
+│   └── 2025-12-12-network-capture-analysis-tools.txt
+│
+├── test/                                # Test files
+│   └── test-post.txt
+│
+└── 2025/                                # Year directories for posts
+    ├── 11/                              # Month directories
+    │   └── 2025-11-*.md                 # Individual post files
+    └── 12/
+        ├── 2025-12-*.md                 # Published posts
+        ├── 2025-12-*.txt                # Draft posts (ready to post)
+        └── 2025-12-*_*.png              # Post-related images
+```
+
+**Key Directories:**
+- **Top level:** Main archive (`LinkedIn-posts.md`) and style guide (`LinkedIn-style-guide.md`) are kept at the top for easy access
+- **`scripts/`:** All Python scripts for posting and API management
+- **`docs/`:** Documentation, guides, reviews, and status reports
+- **`images/`:** Screenshot and image files used in posts
+- **`examples/`:** Reference examples of properly formatted posts
+- **`test/`:** Test files for development
+- **`YYYY/`:** Year directories containing monthly subdirectories with individual post files
+
 ## Example Posts
 
 See the example files in `examples/` for complete, properly formatted LinkedIn posts:
@@ -100,7 +152,7 @@ See the example files in `examples/` for complete, properly formatted LinkedIn p
 5. **Post to LinkedIn**: Use the posting script to post automatically:
    ```bash
    cd LinkedIn-posts
-   python3 post-to-linkedin.py 2025/12/2025-12-13-linkedin-posting-process.txt
+   python3 scripts/post-to-linkedin.py 2025/12/2025-12-13-linkedin-posting-process.txt
    ```
    - The script validates content length automatically
    - Posts to LinkedIn via API
