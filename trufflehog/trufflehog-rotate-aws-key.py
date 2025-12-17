@@ -22,7 +22,9 @@ from typing import Dict, List, Optional, Tuple
 try:
     from git import Repo, GitCommandError
 except ImportError:
-    print("ERROR: GitPython is required. Install with: pip install GitPython", file=sys.stderr)
+    print("ERROR: GitPython is required.", file=sys.stderr)
+    print("Install with: make install-deps", file=sys.stderr)
+    print("Or manually: pip install GitPython", file=sys.stderr)
     sys.exit(1)
 
 
@@ -34,12 +36,12 @@ def setup_secure_directories() -> Tuple[Path, Path, Path]:
     secure_dir = Path.home() / '.secure'
     trufflehog_rotate_dir = secure_dir / 'trufflehog-rotate'
     backup_dir = trufflehog_rotate_dir / 'backups'
-    
+
     # Create directories with restrictive permissions
     secure_dir.mkdir(mode=0o700, exist_ok=True)
     trufflehog_rotate_dir.mkdir(mode=0o700, exist_ok=True)
     backup_dir.mkdir(mode=0o700, exist_ok=True)
-    
+
     return secure_dir, trufflehog_rotate_dir, backup_dir
 
 
@@ -82,18 +84,18 @@ def parse_report(report_path: Path) -> Dict:
     """
     with open(report_path, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     identifiers = {}
-    
+
     # Find all identifier sections
     identifier_pattern = r'^### <a id="[^"]+"></a>(TOKEN_|RAW_)(\S+) \((Tokenized|Raw)\)'
-    
+
     for match in re.finditer(identifier_pattern, content, re.MULTILINE):
         prefix = match.group(1)
         identifier_suffix = match.group(2)
         identifier = f"{prefix}{identifier_suffix}"
         type_label = match.group(3)
-        
+
         # Find the section content
         section_start = match.end()
         next_section = content.find('### <a id="', section_start)
@@ -101,24 +103,24 @@ def parse_report(report_path: Path) -> Dict:
             section_content = content[section_start:]
         else:
             section_content = content[section_start:next_section]
-        
+
         # Extract raw secret value for RAW_ identifiers
         secret_value = None
         if identifier.startswith('RAW_'):
             secret_match = re.search(r'\*\*Raw Secret Value:\*\* `([^`]+)`', section_content)
             if secret_match:
                 secret_value = secret_match.group(1)
-        
+
         # Extract occurrences
         occurrences = []
         location_pattern = r'(\d+)\. \*\*Repository:\*\* (\S+)\s+.*?\*\*File:\*\* \[([^\]]+)\]\((https://github\.com/[^\)]+)\)\s+\*\*Detector:\*\* (\S+)'
-        
+
         for loc_match in re.finditer(location_pattern, section_content, re.DOTALL):
             repo_name = loc_match.group(2)
             file_display = loc_match.group(3)
             file_url = loc_match.group(4)
             detector = loc_match.group(5)
-            
+
             url_parts = extract_url_parts(file_url)
             if url_parts:
                 ssh_url = convert_to_ssh_url(file_url)
@@ -133,7 +135,7 @@ def parse_report(report_path: Path) -> Dict:
                         'file_url': file_url,
                         'detector_type': detector
                     })
-        
+
         if occurrences:
             identifiers[identifier] = {
                 'identifier': identifier,
@@ -141,7 +143,7 @@ def parse_report(report_path: Path) -> Dict:
                 'detector_type': 'AWS',  # Default, could extract from first occurrence
                 'occurrences': occurrences
             }
-    
+
     return identifiers
 
 
@@ -157,11 +159,11 @@ def generate_branch_name(identifier: str, timestamp: str) -> str:
         short_id = identifier[4:12]  # After RAW_
     else:
         short_id = identifier[:8]
-    
+
     # Format timestamp: 20251217-143000
     dt = datetime.fromisoformat(timestamp.replace('T', ' '))
     timestamp_str = dt.strftime('%Y%m%d-%H%M%S')
-    
+
     return f"rotate-aws-key-{short_id}-{timestamp_str}"
 
 
@@ -181,7 +183,7 @@ def clone_repository(repo_url: str, local_path: Path, reuse: bool = False, verbo
             if verbose:
                 print(f"  Failed to update existing clone: {e}", file=sys.stderr)
             return False
-    
+
     # Verify SSH access first
     try:
         result = subprocess.run(
@@ -198,7 +200,7 @@ def clone_repository(repo_url: str, local_path: Path, reuse: bool = False, verbo
         if verbose:
             print(f"  SSH access verification error: {e}", file=sys.stderr)
         return False
-    
+
     # Clone repository
     try:
         local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -218,14 +220,14 @@ def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         # Create backup if requested
         if backup_path:
             backup_path.parent.mkdir(parents=True, exist_ok=True)
             with open(backup_path, 'w', encoding='utf-8') as f:
                 f.write(content)
             backup_path.chmod(0o600)
-        
+
         # Common AWS key patterns
         patterns = [
             (r'(AWS_ACCESS_KEY_ID\s*[=:]\s*["\']?)' + re.escape(old_key) + r'(["\']?)', r'\1' + new_key + r'\2'),
@@ -234,7 +236,7 @@ def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number
             (r'(access_key\s*[=:]\s*["\']?)' + re.escape(old_key) + r'(["\']?)', r'\1' + new_key + r'\2'),
             (re.escape(old_key), new_key)  # Fallback: exact match
         ]
-        
+
         modified = False
         for pattern, replacement in patterns:
             new_content = re.sub(pattern, replacement, content)
@@ -242,19 +244,19 @@ def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number
                 modified = True
                 content = new_content
                 break
-        
+
         if modified:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
             return True
-        
+
         return False
     except Exception as e:
         print(f"ERROR: Failed to replace key in {file_path}: {e}", file=sys.stderr)
         return False
 
 
-def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Path, 
+def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Path,
                       backup_dir: Path, branch_prefix: str, timestamp: str,
                       mode: str, verbose: bool = False) -> Dict:
     """
@@ -264,10 +266,10 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
     repo_url = repo_info['repository_url']
     repo_name = repo_info['repository_name']
     org = repo_info['organization']
-    
+
     # Determine local clone path
     local_path = work_dir / 'repos' / f"{org}-{repo_name}"
-    
+
     status = {
         'repository_url': repo_url,
         'repository_name': repo_name,
@@ -279,29 +281,29 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
         'commit_hash': None,
         'backup_files': []
     }
-    
+
     try:
         # Clone repository
         if verbose:
             print(f"  Cloning repository: {repo_url}", file=sys.stderr)
-        
+
         if not clone_repository(repo_url, local_path, reuse=False, verbose=verbose):
             status['status'] = 'failed'
             status['error'] = 'Clone failed'
             return status
-        
+
         # Open repository
         repo = Repo(str(local_path))
-        
+
         # Check if clean
         if repo.is_dirty():
             status['status'] = 'failed'
             status['error'] = 'Repository not clean'
             return status
-        
+
         # Fetch latest
         repo.remotes.origin.fetch()
-        
+
         # Checkout base branch (get from first occurrence)
         base_branch = 'main'
         if repo_info.get('occurrences'):
@@ -320,7 +322,7 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
                     status['status'] = 'failed'
                     status['error'] = f'Cannot checkout branch: {base_branch} or main'
                     return status
-        
+
         # Create new branch
         identifier = repo_info.get('identifier', 'unknown')
         # Extract short identifier for branch name
@@ -330,26 +332,26 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
             short_id = identifier[4:12]  # After RAW_
         else:
             short_id = identifier[:8]
-        
+
         # Format timestamp: 20251217-143000
         dt = datetime.fromisoformat(timestamp.replace('T', ' '))
         timestamp_str = dt.strftime('%Y%m%d-%H%M%S')
-        
+
         branch_name = f"{branch_prefix}-{short_id}-{timestamp_str}"
-        
+
         try:
             repo.git.checkout('-b', branch_name)
         except GitCommandError:
             # Branch exists, use it
             repo.git.checkout(branch_name)
-        
+
         status['branch_name'] = branch_name
         status['base_branch'] = base_branch
-        
+
         # Process files
         files_modified = []
         backup_files = []
-        
+
         # Find all occurrences for this repository
         for occ in repo_info.get('occurrences', []):
             if occ['repository_name'] == repo_name:
@@ -359,33 +361,33 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
                     if replace_key_in_file(file_path, old_key, new_key, occ['line_number'], backup_path):
                         files_modified.append(occ['file_path'])
                         backup_files.append(str(backup_path))
-        
+
         status['files_modified'] = files_modified
         status['backup_files'] = backup_files
-        
+
         if not files_modified:
             status['status'] = 'skipped'
             status['error'] = 'No files modified'
             return status
-        
+
         # Stage changes
         repo.git.add('-A')
-        
+
         # Commit if in commit mode
         if mode == 'commit':
             commit_message = repo_info.get('commit_message', f"Rotate AWS key: {identifier}")
             repo.git.commit('-m', commit_message)
             status['changes_committed'] = True
             status['commit_hash'] = repo.head.commit.hexsha
-        
+
         status['status'] = 'completed'
-        
+
     except Exception as e:
         status['status'] = 'failed'
         status['error'] = str(e)
         if verbose:
             print(f"  Error processing repository: {e}", file=sys.stderr)
-    
+
     return status
 
 
@@ -408,7 +410,7 @@ def main():
         description='Rotate AWS keys found in trufflehog analysis reports',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    
+
     parser.add_argument('-r', '--report', required=True, help='Path to trufflehog-analyze-results.py markdown report')
     parser.add_argument('-i', '--identifier', required=True, help='Identifier to rotate (TOKEN_* or RAW_*)')
     parser.add_argument('-k', '--new-key', help='New AWS key value (or use -p for prompt)')
@@ -416,7 +418,7 @@ def main():
     parser.add_argument('-p', '--prompt-key', action='store_true', help='Prompt for new key interactively (masked input)')
     parser.add_argument('-q', '--quiet', action='store_true', help='Quiet mode. Output as little as possible.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output (may contain sensitive data)')
-    
+
     parser.add_argument('--lookup-table', help='Path to secrets lookup table (required for TOKEN_ identifiers)')
     parser.add_argument('--mode', choices=['dry-run', 'commit'], default='dry-run', help='Operation mode (Default: dry-run)')
     parser.add_argument('--resume', action='store_true', help='Resume a previous rotation operation')
@@ -428,13 +430,13 @@ def main():
     parser.add_argument('--work-dir', default='/tmp/trufflehog-rotate', help='Working directory for cloning repositories')
     parser.add_argument('--reuse-clones', action='store_true', help='Reuse existing clones if found')
     parser.add_argument('--backup-dir', help='Directory to store backup copies of modified files')
-    
+
     args = parser.parse_args()
-    
+
     # Setup secure directories
     secure_dir, trufflehog_rotate_dir, default_backup_dir = setup_secure_directories()
     backup_dir = Path(args.backup_dir) if args.backup_dir else default_backup_dir
-    
+
     # Get new key
     if args.prompt_key:
         new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
@@ -445,11 +447,11 @@ def main():
         if not new_key:
             print("ERROR: New key required. Use -k, -p, or set TRUFFLEHOG_NEW_AWS_KEY", file=sys.stderr)
             sys.exit(1)
-    
+
     if not new_key:
         print("ERROR: New key cannot be empty", file=sys.stderr)
         sys.exit(1)
-    
+
     # Resume mode
     if args.resume:
         if args.state_file:
@@ -461,12 +463,12 @@ def main():
                 print(f"ERROR: No state file found for identifier: {args.identifier}", file=sys.stderr)
                 sys.exit(1)
             state_file = state_files[0]
-        
+
         if not args.quiet:
             print(f"Resuming from state file: {state_file}", file=sys.stderr)
-        
+
         state = load_state(state_file)
-        
+
         # Get new key (should be same as before, but verify hash)
         if args.prompt_key:
             new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
@@ -477,40 +479,40 @@ def main():
             if not new_key:
                 print("ERROR: New key required for resume. Use -k, -p, or set TRUFFLEHOG_NEW_AWS_KEY", file=sys.stderr)
                 sys.exit(1)
-        
+
         # Verify key hash matches
         new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()
         if state.get('new_key_hash') != f'sha256:{new_key_hash}':
             print("WARNING: New key hash does not match state file. Continuing anyway...", file=sys.stderr)
-        
+
         # Process pending repositories
         pending_repos = [r for r in state['repositories'] if r['status'] in ('pending', 'completed') and not r.get('changes_committed', False)]
-        
+
         # Apply limit
         if args.limit > 0:
             pending_repos = pending_repos[:args.limit]
-        
+
         if not args.quiet:
             print(f"Found {len(pending_repos)} repositories with pending changes", file=sys.stderr)
-        
+
         work_dir = Path(state['work_dir'])
         old_key = state['old_key']
-        
+
         for i, repo_status in enumerate(pending_repos, 1):
             org = repo_status.get('organization', 'unknown')
             repo_name = repo_status.get('repository_name', 'unknown')
             if not args.quiet:
                 print(f"\n[{i}/{len(pending_repos)}] Processing {org}/{repo_name}...", file=sys.stderr)
-            
+
             local_path = Path(repo_status['local_clone_path'])
             if not local_path.exists():
                 repo_status['status'] = 'failed'
                 repo_status['error'] = 'Local clone path does not exist'
                 continue
-            
+
             try:
                 repo = Repo(str(local_path))
-                
+
                 # Check if branch exists
                 branch_name = repo_status.get('branch_name')
                 if branch_name:
@@ -520,7 +522,7 @@ def main():
                         repo_status['status'] = 'failed'
                         repo_status['error'] = 'Branch does not exist'
                         continue
-                
+
                 # Check if there are uncommitted changes
                 if repo.is_dirty() or len(list(repo.index.diff('HEAD'))) > 0:
                     # Commit if in commit mode
@@ -537,42 +539,42 @@ def main():
                     repo_status['status'] = 'completed'
                     if not args.quiet:
                         print(f"  No uncommitted changes found", file=sys.stderr)
-                
+
             except Exception as e:
                 repo_status['status'] = 'failed'
                 repo_status['error'] = str(e)
                 if args.verbose:
                     print(f"  Error: {e}", file=sys.stderr)
-        
+
         # Update state file
         state['mode'] = args.mode
         save_state(state, state_file)
-        
+
         if not args.quiet:
             completed = sum(1 for r in state['repositories'] if r.get('changes_committed', False))
             print(f"\nCompleted: {completed} repositories committed", file=sys.stderr)
             print(f"State updated: {state_file}", file=sys.stderr)
-        
+
         sys.exit(0)
-    
+
     # Parse report
     report_path = Path(args.report)
     if not report_path.exists():
         print(f"ERROR: Report file not found: {report_path}", file=sys.stderr)
         sys.exit(1)
-    
+
     if not args.quiet:
         print(f"Parsing report: {report_path}", file=sys.stderr)
-    
+
     identifiers = parse_report(report_path)
-    
+
     if args.identifier not in identifiers:
         print(f"ERROR: Identifier not found in report: {args.identifier}", file=sys.stderr)
         print(f"Available identifiers: {', '.join(identifiers.keys())}", file=sys.stderr)
         sys.exit(1)
-    
+
     identifier_data = identifiers[args.identifier]
-    
+
     # Get old key
     if args.identifier.startswith('RAW_'):
         old_key = identifier_data['secret_value']
@@ -593,24 +595,24 @@ def main():
     else:
         print(f"ERROR: Unknown identifier format: {args.identifier}", file=sys.stderr)
         sys.exit(1)
-    
+
     # Group occurrences by repository
     repos = defaultdict(list)
     for occ in identifier_data['occurrences']:
         repo_key = (occ['repository_url'], occ['repository_name'], occ['organization'])
         repos[repo_key].append(occ)
-    
+
     # Apply filters
     skip_repos = set(args.skip_repos.split(',')) if args.skip_repos else set()
     only_repos = set(args.only_repos.split(',')) if args.only_repos else set()
-    
+
     repo_list = []
     for (repo_url, repo_name, org), occs in repos.items():
         if repo_name in skip_repos:
             continue
         if only_repos and repo_name not in only_repos:
             continue
-        
+
         repo_list.append({
             'repository_url': repo_url,
             'repository_name': repo_name,
@@ -618,37 +620,37 @@ def main():
             'identifier': args.identifier,
             'occurrences': occs
         })
-    
+
     # Apply limit
     if args.limit > 0:
         repo_list = repo_list[:args.limit]
-    
+
     if not args.quiet:
         print(f"Processing AWS key rotation for identifier: {args.identifier}", file=sys.stderr)
         print(f"Old key: {old_key[:8]}... (hidden)", file=sys.stderr)
         print(f"New key: ******** (hidden)", file=sys.stderr)
         print(f"Repositories to process: {len(repo_list)}", file=sys.stderr)
         print("─" * 70, file=sys.stderr)
-    
+
     # Process repositories
     work_dir = Path(args.work_dir)
     timestamp = datetime.now().isoformat()
-    
+
     repositories_status = []
     for i, repo_info in enumerate(repo_list, 1):
         if not args.quiet:
             print(f"\n[{i}/{len(repo_list)}] Processing {repo_info['organization']}/{repo_info['repository_name']}...", file=sys.stderr)
-        
+
         # Add commit message to repo_info if provided
         if args.commit_message:
             repo_info['commit_message'] = args.commit_message
-        
+
         status = process_repository(
             repo_info, old_key, new_key, work_dir, backup_dir,
             args.branch_prefix, timestamp, args.mode, args.verbose
         )
         repositories_status.append(status)
-        
+
         if not args.quiet:
             if status['status'] == 'completed':
                 print(f"  ✓ Status: {status['status']}", file=sys.stderr)
@@ -659,7 +661,7 @@ def main():
                 print(f"  ✗ Status: {status['status']}", file=sys.stderr)
                 if 'error' in status:
                     print(f"  ✗ Error: {status['error']}", file=sys.stderr)
-    
+
     # Create state file
     new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()
     state = {
@@ -679,10 +681,10 @@ def main():
             'skipped': sum(1 for r in repositories_status if r['status'] == 'skipped')
         }
     }
-    
+
     state_file = trufflehog_rotate_dir / f"{args.identifier}-{timestamp.replace(':', '-').replace(' ', '_')}.json"
     save_state(state, state_file)
-    
+
     if not args.quiet:
         print("\n" + "─" * 70, file=sys.stderr)
         print("Summary:", file=sys.stderr)
@@ -691,7 +693,7 @@ def main():
         print(f"  Failed: {state['summary']['failed']}", file=sys.stderr)
         print(f"  Skipped: {state['summary']['skipped']}", file=sys.stderr)
         print(f"\nState saved to: {state_file}", file=sys.stderr)
-        
+
         if args.mode == 'dry-run':
             print("\nTo commit changes, run:", file=sys.stderr)
             print(f"  ./trufflehog-rotate-aws-key.py --resume --mode commit", file=sys.stderr)
