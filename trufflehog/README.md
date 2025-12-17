@@ -217,6 +217,89 @@ A Python script that restores original secret values from tokenized trufflehog o
 
 ---
 
+## trufflehog-analyze-results.py
+
+A Python script that analyzes trufflehog output files (both tokenized and raw) to generate comprehensive markdown reports. The script supports dual-mode operation, automatically detecting whether files contain tokenized secrets (with `TOKEN_*` placeholders) or raw secrets (actual secret values).
+
+**What it does:**
+- Analyzes trufflehog output files (tokenized or raw)
+- Auto-detects file types (tokenized vs raw)
+- Generates hash-based identifiers for raw secrets (no lookup table needed)
+- Counts unique identifiers and their occurrences
+- Identifies where each identifier appears (repositories, files, line numbers)
+- Generates GitHub URLs for easy navigation
+- Creates comprehensive markdown reports with statistics and detailed location information
+
+**Usage:**
+```bash
+./trufflehog-analyze-results.py [-h] [-v] [-q] [--no-browser]
+    -d <directory>
+    --org <organization>
+    [-o <output_file>]
+    [-p <file_pattern>]
+    [--mode {auto,tokenized,raw}]
+    [--include-raw-secrets]
+    [--skip-raw-confirmation]
+    [--branch <branch>]
+    [--repo-map <json_file>]
+    [--github-base <url>]
+```
+
+**Options:**
+- `-d, --directory` : Directory containing trufflehog output files (Required)
+- `--org` : GitHub organization/user name (Required)
+- `-o, --output` : Output markdown file path (Default: `/tmp/tokenized_analysis_<timestamp>.md`)
+- `-p, --pattern` : File pattern to match (Default: `trufflehog-*.txt`)
+- `--mode` : Analysis mode: `auto` (detect), `tokenized` (only tokenized files), or `raw` (only raw files) (Default: `auto`)
+- `--include-raw-secrets` : Include actual secret values in report (WARNING: Only use if report will be kept secure)
+- `--skip-raw-confirmation` : Skip confirmation prompt when raw files are detected (use with caution)
+- `--branch` : Default git branch to use in URLs (Default: `main`)
+- `--repo-map` : JSON file for repo-specific org/branch overrides
+- `--github-base` : Base GitHub URL (Default: `https://github.com/`)
+- `--no-browser` : Do not open report in browser
+- `-v, --verbose` : Verbose output
+- `-q, --quiet` : Quiet mode
+- `-h, --help` : Show help message
+
+**Details:**
+- **Auto-Detection**: Automatically detects whether files contain tokenized or raw results
+- **Dual Parsing**: Parses both tokenized (`TOKEN_*`) and raw (actual secrets) formats
+- **Identifier Generation**: For raw files, generates consistent hash-based identifiers (`RAW_<hash>_<suffix>`)
+- **Security**: Raw secrets are never stored in memory or reports (only hash-based identifiers)
+- **Confirmation Prompt**: Prompts user when raw files are detected (can be skipped with `--skip-raw-confirmation`)
+- **Backward Compatible**: Existing tokenized file workflows continue to work unchanged
+
+**Examples:**
+```bash
+# Analyze tokenized files (auto-detect)
+./trufflehog-analyze-results.py -d ./tokenized_results --org example-org
+
+# Analyze raw files (with confirmation prompt)
+./trufflehog-analyze-results.py -d ./raw_results --org example-org --mode raw
+
+# Analyze mixed directory (auto-detect both types)
+./trufflehog-analyze-results.py -d ./mixed_results --org example-org --mode auto
+
+# Analyze raw files without confirmation (for automation)
+./trufflehog-analyze-results.py -d ./raw_results --org example-org \
+    --mode raw --skip-raw-confirmation
+
+# Custom output location and branch
+./trufflehog-analyze-results.py -d ./results --org example-org \
+    -o ./analysis_report.md --branch develop
+```
+
+**Dependencies:**
+- Python 3.6+ (uses standard library only: argparse, json, hashlib, pathlib, re, subprocess, sys, urllib.parse)
+
+**Security:**
+- Raw secrets are never included in reports by default
+- Hash-based identifiers are generated for raw secrets (no lookup table needed)
+- Raw files already contain secrets - no additional storage required
+- Use `--include-raw-secrets` only if report will be kept secure
+
+---
+
 ## Complete Workflow Example
 
 ```bash
@@ -228,11 +311,21 @@ A Python script that restores original secret values from tokenized trufflehog o
     -o ./tokenized_results \
     -l ./secrets_lookup.json
 
-# 3. Process tokenized files with AI agent or other tools
+# 3. Analyze the results (works with both tokenized and raw files)
+# Option A: Analyze tokenized files
+./trufflehog-analyze-results.py -d ./tokenized_results --org example-org
+
+# Option B: Analyze raw files directly (with confirmation)
+./trufflehog-analyze-results.py -d ./scan_results --org example-org --mode raw
+
+# Option C: Analyze mixed directory (auto-detects both types)
+./trufflehog-analyze-results.py -d ./scan_results --org example-org --mode auto
+
+# 4. Process tokenized files with AI agent or other tools
 # (secrets are masked as tokens, safe for external processing)
 # ... AI processing happens here ...
 
-# 4. Restore secrets when needed (auto-detects lookup table)
+# 5. Restore secrets when needed (auto-detects lookup table)
 ./trufflehog-detokenize-secrets.py -d ./tokenized_results \
     -o ./restored_results
 ```

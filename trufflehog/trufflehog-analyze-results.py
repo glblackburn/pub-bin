@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Trufflehog Tokenized Results Analyzer
+Trufflehog Results Analyzer
 
-Processes tokenized trufflehog output files to generate a summary report.
-Counts unique tokens, identifies where each token appears, and generates GitHub URLs.
+Processes tokenized or raw trufflehog output files to generate a summary report.
+Counts unique identifiers (tokens or raw secret hashes), identifies where each appears, and generates GitHub URLs.
+Supports both tokenized files (with TOKEN_* placeholders) and raw files (with actual secrets).
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -33,10 +35,127 @@ def extract_repository_name(repo_path: str) -> str:
     return Path(repo_path).name
 
 
+def detect_file_type(file_path: Path) -> str:
+    """
+    Detect if file contains tokenized or raw results.
+    Returns: 'tokenized', 'raw', or 'unknown'
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
+        
+        # Sample first few result blocks
+        result_blocks = re.split(r'✅ Found verified result', content)
+        
+        # Check first few blocks (up to 5) for pattern
+        checked = 0
+        for block in result_blocks[1:6]:  # Check up to 5 blocks
+            # Look for "Raw result:" line
+            raw_match = re.search(r'^Raw result:\s*(.+)$', block, re.MULTILINE)
+            if raw_match:
+                raw_value = raw_match.group(1).strip()
+                # Check if it's a token pattern
+                if re.match(r'^TOKEN_\S+$', raw_value):
+                    return 'tokenized'
+                else:
+                    # Has raw result but not token pattern -> raw file
+                    return 'raw'
+            checked += 1
+            if checked >= 5:
+                break
+        
+        # If we found result blocks but no "Raw result:" lines, it's unknown
+        if len(result_blocks) > 1:
+            return 'unknown'
+        
+        # No result blocks found
+        return 'unknown'
+    except Exception:
+        return 'unknown'
+
+
+def detect_directory_type(directory: Path, pattern: str = 'trufflehog-*.txt') -> Tuple[str, int, int]:
+    """
+    Detect file types in a directory.
+    Returns: (mode, tokenized_count, raw_count)
+    - mode: 'tokenized', 'raw', 'mixed', or 'unknown'
+    - tokenized_count: Number of tokenized files found
+    - raw_count: Number of raw files found
+    """
+    files = sorted(directory.glob(pattern))
+    tokenized_count = 0
+    raw_count = 0
+    
+    for file_path in files:
+        file_type = detect_file_type(file_path)
+        if file_type == 'tokenized':
+            tokenized_count += 1
+        elif file_type == 'raw':
+            raw_count += 1
+    
+    # Determine mode
+    if tokenized_count > 0 and raw_count > 0:
+        mode = 'mixed'
+    elif tokenized_count > 0:
+        mode = 'tokenized'
+    elif raw_count > 0:
+        mode = 'raw'
+    else:
+        mode = 'unknown'
+    
+    return mode, tokenized_count, raw_count
+
+
+def confirm_raw_file_processing(raw_count: int, skip_prompt: bool = False) -> bool:
+    """
+    Prompt user to confirm processing raw files.
+    
+    Args:
+        raw_count: Number of raw files detected
+        skip_prompt: If True, skip prompt and return True
+    
+    Returns:
+        True if processing should continue, False otherwise
+    """
+    if skip_prompt:
+        return True
+    
+    print(f"\n{'='*70}", file=sys.stderr)
+    print(f"WARNING: {raw_count} raw trufflehog file(s) detected", file=sys.stderr)
+    print(f"{'='*70}", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Raw files contain ACTUAL SECRETS (not tokenized).", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Processing raw files will:", file=sys.stderr)
+    print("  - Generate hash-based identifiers from secrets", file=sys.stderr)
+    print("  - Create analysis report (secrets NOT included by default)", file=sys.stderr)
+    print("  - Potentially expose secret patterns in report metadata", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Continue? [y/N]: ", end='', file=sys.stderr)
+    
+    try:
+        response = input().strip().lower()
+        return response in ('y', 'yes')
+    except (EOFError, KeyboardInterrupt):
+        print("", file=sys.stderr)
+        return False
+
+
+def generate_raw_identifier(raw_secret: str) -> str:
+    """
+    Generate hash-based identifier for raw secret.
+    Format: RAW_<hash_prefix>_<suffix>
+    Example: RAW_a3f2b1c4_9e8d7f6a
+    """
+    secret_hash = hashlib.sha256(raw_secret.encode('utf-8')).hexdigest()
+    identifier = f"RAW_{secret_hash[:8]}_{secret_hash[8:16]}"
+    return identifier
+
+
 def parse_tokenized_file(file_path: Path) -> List[Dict]:
     """
     Parse a single tokenized file and extract token occurrences.
-    Returns list of token occurrences with context.
+    Returns list of occurrences with unified structure (identifier field).
     """
     occurrences = []
     
@@ -62,7 +181,9 @@ def parse_tokenized_file(file_path: Path) -> List[Dict]:
             token_match = re.search(r'^Raw result:\s*(TOKEN_\S+)$', block, re.MULTILINE)
             if not token_match:
                 continue  # Skip if no token found
-            occurrence['token'] = token_match.group(1).strip()
+            token = token_match.group(1).strip()
+            occurrence['identifier'] = token
+            occurrence['is_tokenized'] = True
             
             # Extract File
             file_match = re.search(r'^File:\s*(.+)$', block, re.MULTILINE)
@@ -92,7 +213,7 @@ def parse_tokenized_file(file_path: Path) -> List[Dict]:
                 occurrence['repository_name'] = None
             
             # Only add if we have essential fields
-            if occurrence.get('token') and occurrence.get('repository_name'):
+            if occurrence.get('identifier') and occurrence.get('repository_name'):
                 occurrences.append(occurrence)
     
     except Exception as e:
@@ -100,6 +221,113 @@ def parse_tokenized_file(file_path: Path) -> List[Dict]:
         return []
     
     return occurrences
+
+
+def parse_raw_file(file_path: Path) -> List[Dict]:
+    """
+    Parse a raw trufflehog output file.
+    Generates hash-based identifiers for raw secrets.
+    
+    Note: No lookup table is generated for raw files because:
+    - The original secrets are already in the source files
+    - If you need the secrets, you can re-parse the raw files
+    - Lookup tables are only needed for tokenized files (where secrets are replaced)
+    """
+    occurrences = []
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
+        
+        # Split into result blocks (each starts with "✅ Found verified result")
+        result_blocks = re.split(r'✅ Found verified result', content)
+        
+        for block in result_blocks[1:]:  # Skip first empty split
+            occurrence = {}
+            
+            # Extract Detector Type
+            detector_match = re.search(r'^Detector Type:\s*(.+)$', block, re.MULTILINE)
+            if detector_match:
+                occurrence['detector_type'] = detector_match.group(1).strip()
+            else:
+                occurrence['detector_type'] = None
+            
+            # Extract Raw result (actual secret)
+            raw_match = re.search(r'^Raw result:\s*(.+)$', block, re.MULTILINE)
+            if not raw_match:
+                continue  # Skip if no raw result found
+            
+            raw_secret = raw_match.group(1).strip()
+            
+            # Skip if it looks like a token (shouldn't happen in raw files, but be safe)
+            if re.match(r'^TOKEN_\S+$', raw_secret):
+                continue
+            
+            # Generate identifier from hash
+            identifier = generate_raw_identifier(raw_secret)
+            occurrence['identifier'] = identifier
+            occurrence['is_tokenized'] = False
+            # Do NOT store raw_secret - it's not needed for analysis
+            # The raw files themselves contain the secrets if needed
+            
+            # Extract File
+            file_match = re.search(r'^File:\s*(.+)$', block, re.MULTILINE)
+            if file_match:
+                occurrence['file_path'] = file_match.group(1).strip()
+            else:
+                occurrence['file_path'] = None
+            
+            # Extract Line
+            line_match = re.search(r'^Line:\s*(\d+)$', block, re.MULTILINE)
+            if line_match:
+                occurrence['line_number'] = int(line_match.group(1))
+            else:
+                occurrence['line_number'] = None
+            
+            # Extract Repository (prefer file:// format, but handle both)
+            repo_match = re.search(r'^Repository:\s*(.+)$', block, re.MULTILINE)
+            if repo_match:
+                repo_path = repo_match.group(1).strip()
+                # If it doesn't start with file://, add it for consistency
+                if not repo_path.startswith('file://'):
+                    repo_path = f'file://{repo_path}'
+                occurrence['repository_path'] = repo_path
+                occurrence['repository_name'] = extract_repository_name(repo_path)
+            else:
+                occurrence['repository_path'] = None
+                occurrence['repository_name'] = None
+            
+            # Only add if we have essential fields
+            if occurrence.get('identifier') and occurrence.get('repository_name'):
+                occurrences.append(occurrence)
+    
+    except Exception as e:
+        print(f"ERROR: Failed to parse {file_path}: {e}", file=sys.stderr)
+        return []
+    
+    return occurrences
+
+
+def parse_file(file_path: Path, file_type: str = None) -> List[Dict]:
+    """
+    Parse a trufflehog output file (tokenized or raw).
+    
+    Args:
+        file_path: Path to the file
+        file_type: 'tokenized', 'raw', or None (auto-detect)
+    
+    Returns:
+        List of occurrences with 'identifier' field (token or raw identifier)
+    """
+    if file_type is None:
+        file_type = detect_file_type(file_path)
+    
+    if file_type == 'tokenized':
+        return parse_tokenized_file(file_path)
+    elif file_type == 'raw':
+        return parse_raw_file(file_path)
+    else:
+        return []
 
 
 def get_repo_config(repo_name: str, repo_map: Dict, default_org: str, default_branch: str) -> Tuple[str, str]:
@@ -177,7 +405,8 @@ def build_github_file_url(base_url: str, org: str, repo_name: str, branch: str,
 
 def build_token_index(occurrences: List[Dict]) -> Dict:
     """
-    Build token → locations mapping.
+    Build identifier → locations mapping.
+    Works with both tokenized (TOKEN_*) and raw (RAW_*) identifiers.
     """
     token_index = defaultdict(lambda: {
         'occurrences': [],
@@ -187,14 +416,16 @@ def build_token_index(occurrences: List[Dict]) -> Dict:
     })
     
     for occ in occurrences:
-        token = occ['token']
-        token_index[token]['occurrences'].append(occ)
+        identifier = occ.get('identifier')
+        if not identifier:
+            continue
+        token_index[identifier]['occurrences'].append(occ)
         if occ.get('detector_type'):
-            token_index[token]['detector_types'].add(occ['detector_type'])
+            token_index[identifier]['detector_types'].add(occ['detector_type'])
         if occ.get('repository_name'):
-            token_index[token]['repositories'].add(occ['repository_name'])
+            token_index[identifier]['repositories'].add(occ['repository_name'])
         if occ.get('file_path'):
-            token_index[token]['files'].add(occ['file_path'])
+            token_index[identifier]['files'].add(occ['file_path'])
     
     return token_index
 
@@ -202,12 +433,13 @@ def build_token_index(occurrences: List[Dict]) -> Dict:
 def calculate_token_counts(token_index: Dict, repo_map: Dict, default_org: str, 
                            default_branch: str, base_url: str, branch_cache: Dict) -> Dict:
     """
-    Calculate occurrence, repository, file counts, and detector types per token.
+    Calculate occurrence, repository, file counts, and detector types per identifier.
     Also validates detector types and builds URLs.
+    Works with both tokenized and raw identifiers.
     """
     result = {}
     
-    for token, data in token_index.items():
+    for identifier, data in token_index.items():
         # Validate detector type (should be only one)
         detector_types = list(data['detector_types'])
         if len(detector_types) > 1:
@@ -245,7 +477,7 @@ def calculate_token_counts(token_index: Dict, repo_map: Dict, default_org: str,
             
             occurrences_with_urls.append(occ)
         
-        result[token] = {
+        result[identifier] = {
             'occurrences': occurrences_with_urls,
             'occurrence_count': len(occurrences_with_urls),
             'repository_count': len(data['repositories']),
@@ -259,72 +491,101 @@ def calculate_token_counts(token_index: Dict, repo_map: Dict, default_org: str,
     return result
 
 
-def create_token_anchor_id(token: str) -> str:
+def create_token_anchor_id(identifier: str) -> str:
     """
-    Generate anchor ID from token.
+    Generate anchor ID from identifier.
     Converts TOKEN_abc123_def456 → token-abc123-def456
+    Converts RAW_a3f2b1c4_9e8d7f6a → raw-a3f2b1c4-9e8d7f6a
     """
-    # Remove TOKEN_ prefix and convert to lowercase
-    anchor = token.replace('TOKEN_', '').lower()
+    # Remove prefix and convert to lowercase
+    if identifier.startswith('TOKEN_'):
+        anchor = identifier.replace('TOKEN_', '').lower()
+        prefix = 'token'
+    elif identifier.startswith('RAW_'):
+        anchor = identifier.replace('RAW_', '').lower()
+        prefix = 'raw'
+    else:
+        # Fallback for unknown formats
+        anchor = identifier.lower()
+        prefix = 'id'
     # Replace underscores with hyphens
     anchor = anchor.replace('_', '-')
-    return f"token-{anchor}"
+    return f"{prefix}-{anchor}"
 
 
 def format_tokens_summary_table(token_data: Dict) -> str:
     """
-    Format clean tokens summary table with clickable links.
+    Format clean identifiers summary table with clickable links.
+    Shows both tokenized and raw identifiers.
     """
     lines = [
-        "## Tokens Summary",
+        "## Identifiers Summary",
         "",
-        "A clean summary table with clickable links to detailed token sections below.",
+        "A clean summary table with clickable links to detailed identifier sections below.",
         "",
-        "| Token | Occurrences | Repositories | Files | Detector Type |",
-        "|-------|-------------|--------------|-------|---------------|"
+        "| Identifier | Type | Occurrences | Repositories | Files | Detector Type |",
+        "|------------|------|-------------|--------------|-------|---------------|"
     ]
     
     # Sort by occurrence count (descending)
-    sorted_tokens = sorted(
+    sorted_identifiers = sorted(
         token_data.items(),
         key=lambda x: x[1]['occurrence_count'],
         reverse=True
     )
     
-    for token, data in sorted_tokens:
-        anchor_id = create_token_anchor_id(token)
+    for identifier, data in sorted_identifiers:
+        anchor_id = create_token_anchor_id(identifier)
         detector_type = data['detector_type']
         if data['detector_type_error']:
             detector_type += " ⚠️ ERROR: Multiple types"
         
+        # Determine type label
+        if identifier.startswith('TOKEN_'):
+            type_label = 'Token'
+        elif identifier.startswith('RAW_'):
+            type_label = 'Raw'
+        else:
+            type_label = 'Unknown'
+        
         lines.append(
-            f"| [{token}](#{anchor_id}) | {data['occurrence_count']} | "
+            f"| [{identifier}](#{anchor_id}) | {type_label} | {data['occurrence_count']} | "
             f"{data['repository_count']} | {data['file_count']} | {detector_type} |"
         )
     
     lines.append("")
-    lines.append("*Click token names to jump to detailed information. Sorted by occurrence count (descending).*")
+    lines.append("*Click identifier names to jump to detailed information. Sorted by occurrence count (descending).*")
     if any(data['detector_type_error'] for data in token_data.values()):
-        lines.append("*⚠️ Some tokens have multiple detector types - this is an error condition.*")
+        lines.append("*⚠️ Some identifiers have multiple detector types - this is an error condition.*")
     
     return '\n'.join(lines)
 
 
-def format_token_section(token: str, data: Dict) -> str:
+def format_token_section(identifier: str, data: Dict) -> str:
     """
-    Format token details section with anchor ID.
+    Format identifier details section with anchor ID.
+    Works with both tokenized and raw identifiers.
     """
-    anchor_id = create_token_anchor_id(token)
+    anchor_id = create_token_anchor_id(identifier)
+    
+    # Determine type label
+    if identifier.startswith('TOKEN_'):
+        type_label = 'Tokenized'
+    elif identifier.startswith('RAW_'):
+        type_label = 'Raw'
+    else:
+        type_label = 'Unknown'
+    
     lines = [
-        f"### <a id=\"{anchor_id}\"></a>{token}",
-        f"**Occurrences:** {data['occurrence_count']} (total times this token appears)",
-        f"**Repositories:** {data['repository_count']} (number of unique repositories containing this token)",
-        f"**Files:** {data['file_count']} (number of unique files containing this token)",
+        f"### <a id=\"{anchor_id}\"></a>{identifier} ({type_label})",
+        f"**Occurrences:** {data['occurrence_count']} (total times this identifier appears)",
+        f"**Repositories:** {data['repository_count']} (number of unique repositories containing this identifier)",
+        f"**Files:** {data['file_count']} (number of unique files containing this identifier)",
         f"**Detector Type:** {data['detector_type']}"
     ]
     
     if data['detector_type_error']:
-        lines.append("⚠️ **ERROR:** This token appears with multiple detector types!")
+        lines.append("⚠️ **ERROR:** This identifier appears with multiple detector types!")
     
     lines.append("")
     lines.append("**Locations:**")
@@ -398,16 +659,16 @@ def build_repository_summary(token_data: Dict) -> Dict:
     Build repository summary data.
     """
     repo_summary = defaultdict(lambda: {
-        'tokens': set(),
+        'identifiers': set(),
         'files': set(),
         'occurrences': 0
     })
     
-    for token, data in token_data.items():
+    for identifier, data in token_data.items():
         for occ in data['occurrences']:
             repo_name = occ.get('repository_name')
             if repo_name:
-                repo_summary[repo_name]['tokens'].add(token)
+                repo_summary[repo_name]['identifiers'].add(identifier)
                 if occ.get('file_path'):
                     repo_summary[repo_name]['files'].add(occ['file_path'])
                 repo_summary[repo_name]['occurrences'] += 1
@@ -416,7 +677,7 @@ def build_repository_summary(token_data: Dict) -> Dict:
     result = {}
     for repo_name, data in repo_summary.items():
         result[repo_name] = {
-            'tokens': len(data['tokens']),
+            'tokens': len(data['identifiers']),  # Keep 'tokens' key for backward compatibility in table
             'files': len(data['files']),
             'occurrences': data['occurrences']
         }
@@ -426,23 +687,27 @@ def build_repository_summary(token_data: Dict) -> Dict:
 
 def generate_markdown_report(token_data: Dict, repo_summary: Dict, source_dir: Path,
                            base_url: str, org_map: Dict, default_org: str,
-                           output_path: Path) -> None:
+                           output_path: Path, tokenized_files: int = 0, raw_files: int = 0) -> None:
     """
     Generate markdown report file.
     """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     total_files = sum(1 for _ in source_dir.glob('trufflehog-*.txt'))
-    unique_tokens = len(token_data)
+    unique_identifiers = len(token_data)
     total_occurrences = sum(data['occurrence_count'] for data in token_data.values())
     total_repos = len(repo_summary)
     
+    # Count tokenized vs raw identifiers
+    tokenized_count = sum(1 for ident in token_data.keys() if ident.startswith('TOKEN_'))
+    raw_count = sum(1 for ident in token_data.keys() if ident.startswith('RAW_'))
+    
     lines = [
-        "# Trufflehog Tokenized Results Analysis",
+        "# Trufflehog Results Analysis",
         "",
         f"**Generated:** {timestamp}",
         f"**Source Directory:** {source_dir}",
         f"**Files Processed:** {total_files}",
-        f"**Unique Tokens:** {unique_tokens}",
+        f"**Unique Identifiers:** {unique_identifiers}",
         f"**Total Occurrences:** {total_occurrences}",
         "",
         "---",
@@ -451,13 +716,31 @@ def generate_markdown_report(token_data: Dict, repo_summary: Dict, source_dir: P
         "",
         f"- **Total Files Scanned:** {total_files}",
         f"- **Total Repositories:** {total_repos}",
-        f"- **Unique Tokens Found:** {unique_tokens}",
-        f"- **Total Token Occurrences:** {total_occurrences}",
+        f"- **Unique Identifiers Found:** {unique_identifiers}",
+        f"- **Total Identifier Occurrences:** {total_occurrences}",
     ]
     
-    if unique_tokens > 0:
-        avg_occurrences = total_occurrences / unique_tokens
-        lines.append(f"- **Average Occurrences per Token:** {avg_occurrences:.2f}")
+    # Add file type statistics if available
+    if tokenized_files > 0 or raw_files > 0:
+        lines.append("")
+        lines.append("**File Types:**")
+        if tokenized_files > 0:
+            lines.append(f"- **Tokenized Files:** {tokenized_files}")
+        if raw_files > 0:
+            lines.append(f"- **Raw Files:** {raw_files}")
+    
+    # Add identifier type statistics
+    if tokenized_count > 0 or raw_count > 0:
+        lines.append("")
+        lines.append("**Identifier Types:**")
+        if tokenized_count > 0:
+            lines.append(f"- **Tokenized Identifiers:** {tokenized_count}")
+        if raw_count > 0:
+            lines.append(f"- **Raw Identifiers:** {raw_count}")
+    
+    if unique_identifiers > 0:
+        avg_occurrences = total_occurrences / unique_identifiers
+        lines.append(f"- **Average Occurrences per Identifier:** {avg_occurrences:.2f}")
     
     lines.extend([
         "",
@@ -467,19 +750,19 @@ def generate_markdown_report(token_data: Dict, repo_summary: Dict, source_dir: P
         "",
         "---",
         "",
-        "## Token Details",
+        "## Identifier Details",
         ""
     ])
     
-    # Sort tokens by occurrence count for details
-    sorted_tokens = sorted(
+    # Sort identifiers by occurrence count for details
+    sorted_identifiers = sorted(
         token_data.items(),
         key=lambda x: x[1]['occurrence_count'],
         reverse=True
     )
     
-    for token, data in sorted_tokens:
-        lines.append(format_token_section(token, data))
+    for identifier, data in sorted_identifiers:
+        lines.append(format_token_section(identifier, data))
         lines.append("")
         lines.append("---")
         lines.append("")
@@ -510,16 +793,22 @@ def open_in_browser(file_path: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Analyze tokenized trufflehog output files and generate markdown report',
+        description='Analyze trufflehog output files (tokenized or raw) and generate markdown report',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
     parser.add_argument('-d', '--directory', required=True,
-                        help='Directory containing tokenized files')
+                        help='Directory containing trufflehog output files (tokenized or raw)')
     parser.add_argument('-o', '--output',
                         help='Output markdown file path (default: /tmp/tokenized_analysis_<timestamp>.md)')
     parser.add_argument('-p', '--pattern', default='trufflehog-*.txt',
                         help='File pattern to match (default: trufflehog-*.txt)')
+    parser.add_argument('--mode', choices=['auto', 'tokenized', 'raw'], default='auto',
+                        help='Analysis mode: auto (detect), tokenized (only tokenized files), or raw (only raw files) (default: auto)')
+    parser.add_argument('--include-raw-secrets', action='store_true',
+                        help='Include actual secret values in report (WARNING: Only use if report will be kept secure)')
+    parser.add_argument('--skip-raw-confirmation', action='store_true',
+                        help='Skip confirmation prompt when raw files are detected (use with caution)')
     parser.add_argument('--org', required=True,
                         help='GitHub organization/user name')
     parser.add_argument('--branch', default='main',
@@ -581,15 +870,66 @@ def main():
     if not args.quiet:
         print(f"Found {len(files)} file(s) to process", file=sys.stderr)
     
+    # Detect file types if mode is auto
+    tokenized_files = 0
+    raw_files = 0
+    if args.mode == 'auto':
+        mode, tokenized_count, raw_count = detect_directory_type(input_dir, args.pattern)
+        if not args.quiet:
+            if mode == 'mixed':
+                print(f"Detected mixed directory: {tokenized_count} tokenized, {raw_count} raw files", file=sys.stderr)
+            elif mode == 'tokenized':
+                print(f"Detected tokenized files: {tokenized_count} files", file=sys.stderr)
+            elif mode == 'raw':
+                print(f"Detected raw files: {raw_count} files", file=sys.stderr)
+            else:
+                print(f"Could not determine file types", file=sys.stderr)
+        
+        # Confirm raw file processing if needed
+        if raw_count > 0 and not confirm_raw_file_processing(raw_count, args.skip_raw_confirmation):
+            print("Aborted by user", file=sys.stderr)
+            sys.exit(1)
+    elif args.mode == 'tokenized':
+        mode = 'tokenized'
+    elif args.mode == 'raw':
+        mode = 'raw'
+        # Confirm raw file processing
+        raw_count = sum(1 for f in files if detect_file_type(f) == 'raw')
+        if raw_count > 0 and not confirm_raw_file_processing(raw_count, args.skip_raw_confirmation):
+            print("Aborted by user", file=sys.stderr)
+            sys.exit(1)
+    
     # Parse all files
     all_occurrences = []
     for file_path in files:
+        # Determine file type
+        if args.mode == 'auto':
+            file_type = detect_file_type(file_path)
+        elif args.mode == 'tokenized':
+            file_type = 'tokenized'
+        else:  # args.mode == 'raw'
+            file_type = 'raw'
+        
+        # Skip files that don't match the mode
+        if args.mode != 'auto' and detect_file_type(file_path) != file_type:
+            if args.verbose:
+                print(f"Skipping {file_path.name} (does not match mode {args.mode})", file=sys.stderr)
+            continue
+        
         if args.verbose:
-            print(f"Processing {file_path.name}...", file=sys.stderr)
-        occurrences = parse_tokenized_file(file_path)
+            print(f"Processing {file_path.name} ({file_type})...", file=sys.stderr)
+        
+        occurrences = parse_file(file_path, file_type)
         all_occurrences.extend(occurrences)
+        
+        # Track file counts
+        if file_type == 'tokenized':
+            tokenized_files += 1
+        elif file_type == 'raw':
+            raw_files += 1
+        
         if args.verbose:
-            print(f"  Found {len(occurrences)} token occurrence(s)", file=sys.stderr)
+            print(f"  Found {len(occurrences)} occurrence(s)", file=sys.stderr)
     
     if not args.quiet:
         print(f"Total occurrences found: {len(all_occurrences)}", file=sys.stderr)
@@ -605,9 +945,9 @@ def main():
     )
     
     # Check for detector type errors
-    errors = [token for token, data in token_data.items() if data['detector_type_error']]
+    errors = [identifier for identifier, data in token_data.items() if data['detector_type_error']]
     if errors and not args.quiet:
-        print(f"WARNING: {len(errors)} token(s) have multiple detector types (error condition)", file=sys.stderr)
+        print(f"WARNING: {len(errors)} identifier(s) have multiple detector types (error condition)", file=sys.stderr)
     
     # Build repository summary
     repo_summary = build_repository_summary(token_data)
@@ -619,7 +959,7 @@ def main():
     generate_markdown_report(
         token_data, repo_summary, input_dir,
         args.github_base, repo_map, args.org,
-        output_path
+        output_path, tokenized_files, raw_files
     )
     
     if not args.quiet:

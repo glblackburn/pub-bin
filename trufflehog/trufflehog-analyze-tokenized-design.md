@@ -37,11 +37,12 @@ For each token, the script will calculate and display:
 
 ### Components
 
-1. **Analysis Script** (`trufflehog-analyze-tokenized.py`)
-   - Scans tokenized files in a directory
-   - Extracts token, repository, and file information
-   - Builds data structure mapping tokens to locations
+1. **Analysis Script** (`trufflehog-analyze-results.py`)
+   - Scans tokenized or raw files in a directory
+   - Extracts identifier (token or raw hash), repository, and file information
+   - Builds data structure mapping identifiers to locations
    - Generates GitHub URLs
+   - Supports dual-mode: tokenized files (TOKEN_*) and raw files (actual secrets)
    - Outputs markdown report
 
 2. **Data Structure**
@@ -297,11 +298,14 @@ A clean summary table with clickable links to detailed token sections below.
 ### Script Command
 
 ```bash
-trufflehog-analyze-tokenized.py [-h] [-v] [-q] [-n]
+trufflehog-analyze-results.py [-h] [-v] [-q] [--no-browser]
     -d <directory>
     [-o <output_file>]
     [-p <file_pattern>]
     --org <org_name>
+    [--mode {auto,tokenized,raw}]
+    [--include-raw-secrets]
+    [--skip-raw-confirmation]
     [--branch <branch_name>]
     [--repo-map <mapping_file>]
     [--github-base <base_url>]
@@ -309,17 +313,20 @@ trufflehog-analyze-tokenized.py [-h] [-v] [-q] [-n]
 
 ### Options
 
-- `-d, --directory`: Directory containing tokenized files (Required)
-- `-o, --output`: Output markdown file path (Default: `tokenized_analysis_<timestamp>.md`)
+- `-d, --directory`: Directory containing trufflehog output files (tokenized or raw) (Required)
+- `-o, --output`: Output markdown file path (Default: `/tmp/tokenized_analysis_<timestamp>.md`)
 - `-p, --pattern`: File pattern to match (Default: `trufflehog-*.txt`)
-- `--org`: GitHub organization/user name (Required, unless all repos in repo-map)
+- `--org`: GitHub organization/user name (Required)
+- `--mode`: Analysis mode: `auto` (detect), `tokenized` (only tokenized files), or `raw` (only raw files) (Default: `auto`)
+- `--include-raw-secrets`: Include actual secret values in report (WARNING: Only use if report will be kept secure)
+- `--skip-raw-confirmation`: Skip confirmation prompt when raw files are detected (use with caution)
 - `--branch`: Default git branch to use in URLs (Default: auto-detect from local repo or 'main')
   - Note: URLs may be broken if repository state changed since scan
 - `--repo-map`: JSON file for repo-specific org/branch overrides (Optional)
 - `--github-base`: Base GitHub URL (Default: `https://github.com/`)
+- `--no-browser`: Do not open report in browser
 - `-v, --verbose`: Verbose output
 - `-q, --quiet`: Quiet mode
-- `-n, --dry-run`: Show what would be done without making changes
 - `-h, --help`: Show help message
 
 ### Repository Mapping File Format
@@ -347,27 +354,30 @@ JSON file for repo-specific organization and branch overrides:
 ### Examples
 
 ```bash
-# Basic usage (requires org name)
-./trufflehog-analyze-tokenized.py -d ./tokenized_results --org example-org
+# Basic usage with tokenized files (auto-detect)
+./trufflehog-analyze-results.py -d ./tokenized_results --org example-org
+
+# Analyze raw files (with confirmation prompt)
+./trufflehog-analyze-results.py -d ./raw_results --org example-org --mode raw
 
 # Custom output file and branch
-./trufflehog-analyze-tokenized.py -d ./tokenized_results \
+./trufflehog-analyze-results.py -d ./tokenized_results \
     --org example-org \
     --branch dev \
     -o ./analysis_report.md
 
 # Use repo mapping file for repo-specific overrides
-./trufflehog-analyze-tokenized.py -d ./tokenized_results \
+./trufflehog-analyze-results.py -d ./tokenized_results \
     --org example-org \
     --repo-map ./repo_mapping.json
 
 # Custom GitHub base URL (for GitHub Enterprise)
-./trufflehog-analyze-tokenized.py -d ./tokenized_results \
+./trufflehog-analyze-results.py -d ./tokenized_results \
     --org myOrg \
     --github-base https://github.company.com/
 
 # Verbose output
-./trufflehog-analyze-tokenized.py -d ./tokenized_results --org example-org -v
+./trufflehog-analyze-results.py -d ./tokenized_results --org example-org -v
 ```
 
 ## Implementation Details
