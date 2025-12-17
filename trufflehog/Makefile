@@ -2,7 +2,7 @@
 # Provides targets to check for and install trufflehog
 # Pattern follows: /Users/lblackb/data/lblackb/git/make-templates/make/Makefile_software.mk
 
-.PHONY: help trufflehog install-trufflehog check clean test uninstall update
+.PHONY: help trufflehog install-trufflehog check clean test uninstall update install-deps check-deps
 
 SHELL=/bin/bash
 UNAME := $(shell uname -s)
@@ -43,12 +43,14 @@ TRUFFLEHOG_VERSION := v3.91.2
 default: help
 
 help: ## show this help message
-	@echo "Trufflehog Local Git Repos - Makefile"
+	@echo "Trufflehog Scripts - Makefile"
 	@echo ""
 	@echo "Targets:"
 	@echo "  make trufflehog        - Install trufflehog (alias for install-trufflehog)"
 	@echo "  make install-trufflehog - Install trufflehog binary"
+	@echo "  make install-deps      - Install Python dependencies (GitPython)"
 	@echo "  make check             - Check if trufflehog is installed"
+	@echo "  make check-deps        - Check if Python dependencies are installed"
 	@echo "  make update            - Update trufflehog to latest version"
 	@echo "  make uninstall         - Remove trufflehog binary"
 	@echo "  make clean             - Remove downloaded trufflehog files"
@@ -61,6 +63,7 @@ help: ## show this help message
 	@echo ""
 	@echo "Examples:"
 	@echo "  make trufflehog                    # Install to ~/bin"
+	@echo "  make install-deps                  # Install Python dependencies"
 	@echo "  INSTALL_DIR=/usr/local/bin make install-trufflehog  # Install to custom location"
 
 trufflehog: install-trufflehog ## install trufflehog (alias)
@@ -154,6 +157,52 @@ test: check ## test the script (requires trufflehog)
 	@bash -n ./trufflehog-local-git-repos.sh && echo "✓ Syntax check passed" || exit 1
 	@./trufflehog-local-git-repos.sh -h >/dev/null && echo "✓ Help output works" || exit 1
 	@echo "✓ All tests passed"
+
+check-deps: ## check if Python dependencies are installed
+	@echo "Checking for Python dependencies..."
+	@if ! command -v python3 >/dev/null 2>&1; then \
+		echo "✗ python3 is not installed"; \
+		echo "  Install Python 3.8+ to use Python scripts"; \
+		exit 1; \
+	fi
+	@PYTHON_VERSION=$$(python3 --version 2>&1 | awk '{print $$2}'); \
+	echo "✓ Python version: $$PYTHON_VERSION"; \
+	if python3 -c "import git" 2>/dev/null; then \
+		GITPYTHON_VERSION=$$(python3 -c "import git; print(git.__version__)" 2>/dev/null || echo "unknown"); \
+		echo "✓ GitPython is installed (version: $$GITPYTHON_VERSION)"; \
+	else \
+		echo "✗ GitPython is not installed"; \
+		echo "  Run 'make install-deps' to install it"; \
+		exit 1; \
+	fi
+
+install-deps: ## install Python dependencies
+	@echo "Installing Python dependencies..."
+	@if ! command -v python3 >/dev/null 2>&1; then \
+		echo "ERROR: python3 is not installed"; \
+		echo "  Install Python 3.8+ first"; \
+		exit 1; \
+	fi
+	@PYTHON_VERSION=$$(python3 --version 2>&1 | awk '{print $$2}'); \
+	echo "Python version: $$PYTHON_VERSION"; \
+	if python3 -c "import git" 2>/dev/null; then \
+		GITPYTHON_VERSION=$$(python3 -c "import git; print(git.__version__)" 2>/dev/null || echo "unknown"); \
+		echo "✓ GitPython is already installed (version: $$GITPYTHON_VERSION)"; \
+		echo "  Run 'pip3 install --upgrade GitPython' to update"; \
+		exit 0; \
+	fi; \
+	echo "Installing GitPython..."; \
+	if python3 -m pip install --user GitPython>=3.1.0; then \
+		echo "✓ GitPython installed successfully"; \
+		echo ""; \
+		echo "Note: If you get 'command not found' errors, ensure pip's user bin directory is in your PATH:"; \
+		PIP_USER_BIN=$$(python3 -m site --user-base)/bin; \
+		echo "  export PATH=\"$$PIP_USER_BIN:\$$PATH\""; \
+	else \
+		echo "ERROR: Failed to install GitPython"; \
+		echo "  Try: pip3 install GitPython"; \
+		exit 1; \
+	fi
 
 # Internal targets
 .PHONY: check-install-dir do-install verify-install
