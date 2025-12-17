@@ -267,8 +267,8 @@ def parse_raw_file(file_path: Path) -> List[Dict]:
             identifier = generate_raw_identifier(raw_secret)
             occurrence['identifier'] = identifier
             occurrence['is_tokenized'] = False
-            # Do NOT store raw_secret - it's not needed for analysis
-            # The raw files themselves contain the secrets if needed
+            # Store raw secret for display in report
+            occurrence['raw_secret'] = raw_secret
             
             # Extract File
             file_match = re.search(r'^File:\s*(.+)$', block, re.MULTILINE)
@@ -561,10 +561,15 @@ def format_tokens_summary_table(token_data: Dict) -> str:
     return '\n'.join(lines)
 
 
-def format_token_section(identifier: str, data: Dict) -> str:
+def format_token_section(identifier: str, data: Dict, include_raw_secrets: bool = True) -> str:
     """
     Format identifier details section with anchor ID.
     Works with both tokenized and raw identifiers.
+    
+    Args:
+        identifier: The identifier (TOKEN_* or RAW_*)
+        data: The identifier data dictionary
+        include_raw_secrets: Whether to include raw secret values in the report
     """
     anchor_id = create_token_anchor_id(identifier)
     
@@ -583,6 +588,18 @@ def format_token_section(identifier: str, data: Dict) -> str:
         f"**Files:** {data['file_count']} (number of unique files containing this identifier)",
         f"**Detector Type:** {data['detector_type']}"
     ]
+    
+    # Show raw secret value for raw identifiers if available
+    if identifier.startswith('RAW_') and include_raw_secrets:
+        # Get the raw secret from the first occurrence (all should have the same secret for same identifier)
+        raw_secret = None
+        for occ in data['occurrences']:
+            if occ.get('raw_secret'):
+                raw_secret = occ['raw_secret']
+                break
+        
+        if raw_secret:
+            lines.append(f"**Raw Secret Value:** `{raw_secret}`")
     
     if data['detector_type_error']:
         lines.append("⚠️ **ERROR:** This identifier appears with multiple detector types!")
@@ -687,9 +704,13 @@ def build_repository_summary(token_data: Dict) -> Dict:
 
 def generate_markdown_report(token_data: Dict, repo_summary: Dict, source_dir: Path,
                            base_url: str, org_map: Dict, default_org: str,
-                           output_path: Path, tokenized_files: int = 0, raw_files: int = 0) -> None:
+                           output_path: Path, tokenized_files: int = 0, raw_files: int = 0,
+                           include_raw_secrets: bool = True) -> None:
     """
     Generate markdown report file.
+    
+    Args:
+        include_raw_secrets: Whether to include raw secret values in the report (default: True)
     """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     total_files = sum(1 for _ in source_dir.glob('trufflehog-*.txt'))
@@ -762,7 +783,7 @@ def generate_markdown_report(token_data: Dict, repo_summary: Dict, source_dir: P
     )
     
     for identifier, data in sorted_identifiers:
-        lines.append(format_token_section(identifier, data))
+        lines.append(format_token_section(identifier, data, include_raw_secrets))
         lines.append("")
         lines.append("---")
         lines.append("")
@@ -956,10 +977,13 @@ def main():
     if not args.quiet:
         print(f"Generating markdown report...", file=sys.stderr)
     
+    # Default to showing raw secrets (the whole point of processing raw files)
+    # Raw secrets are always shown in detail sections for raw identifiers
     generate_markdown_report(
         token_data, repo_summary, input_dir,
         args.github_base, repo_map, args.org,
-        output_path, tokenized_files, raw_files
+        output_path, tokenized_files, raw_files,
+        include_raw_secrets=True  # Always show raw secrets in detail sections
     )
     
     if not args.quiet:
