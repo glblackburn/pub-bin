@@ -144,11 +144,11 @@ This document tracks violations of AI coding standards to improve future adheren
 - Will check for trailing whitespace before presenting code
 - Will use automated checks: `grep -n '[[:space:]]$' <file>`
 
-#### 3. File Creation Without Explicit Permission (MODERATE)
+#### 3. File Creation Without Explicit Permission (MODERATE - POLICY UPDATED)
 **Date:** 2025-12-18
 
 **Rule Violated:**
-- "Always ask before creating new files"
+- "Always ask before creating new files" (old policy)
 
 **What Happened:**
 - Created multiple files without explicitly asking user first:
@@ -164,10 +164,16 @@ This document tracks violations of AI coding standards to improve future adheren
 - AI assistant assumed file creation was implied by task requirements
 - Did not explicitly ask "Should I create file X?" before creating
 
+**Policy Update (2025-12-18):**
+- **NEW POLICY:** AI assistants may create files freely within the repository source tree
+- Files must NOT be automatically committed (see Git Operations policy)
+- Files should NOT be created outside the source control tree unless they are temporary working files in `/tmp/`
+- This violation is now considered acceptable behavior for files within the repository
+
 **Corrective Action:**
-- Will explicitly ask before creating any new files
-- Will explain purpose and location before creating
-- Will wait for user confirmation
+- ~~Will explicitly ask before creating any new files~~ (No longer required for files in repository)
+- Will only ask before creating files outside the repository (except `/tmp/` temporary files)
+- Will explain purpose and location for files created outside repository
 
 #### 4. Dangerous Git Operations (CRITICAL)
 **Date:** 2025-12-18
@@ -237,9 +243,10 @@ This document tracks violations of AI coding standards to improve future adheren
    - Run quality checks before any commit attempt
 
 4. **File Creation Protocol:**
-   - Always ask: "Should I create file X at path Y for purpose Z?"
-   - Wait for explicit confirmation before creating
-   - Explain purpose and location clearly
+   - Files in repository: AI may create freely (no permission needed)
+   - Files outside repository: Must ask permission (except `/tmp/` temporary files)
+   - All files: Must NOT be automatically committed
+   - Explain purpose and location for files created outside repository
 
 5. **Destructive Operations Protocol:**
    - Warn extensively before `git filter-branch`, `git reset --hard`, etc.
@@ -252,7 +259,7 @@ This document tracks violations of AI coding standards to improve future adheren
 1. **Policy is Absolute:** The "NEVER commit" rule means NEVER, even when explicitly asked
 2. **Explain, Don't Execute:** When user requests forbidden operation, explain policy instead
 3. **Quality Checks:** Always verify code quality before presenting work
-4. **File Creation:** Always ask before creating files, even if task implies it
+4. **File Creation:** May create files freely in repository; must ask for files outside repository (except `/tmp/` temporary files)
 5. **Destructive Operations:** Provide extensive warnings and explain implications
 6. **Security First:** Test commits with sensitive data should use invalid/example patterns
 
@@ -264,6 +271,20 @@ This document tracks violations of AI coding standards to improve future adheren
 - ✅ Security vulnerability identified and documented
 - ⚠️ Git commits already in history (user decision on how to handle)
 - ⚠️ Repository history rewritten (all commit hashes changed)
+
+### TODO: Revisit Sensitive Data in .md Files
+
+**CRITICAL:** Sensitive data should NOT be committed in .md (markdown) files or any other files. This should not happen.
+
+**Action Required:**
+- Review all .md files in the repository for any sensitive data that may have been committed
+- Ensure git hooks properly scan .md files for sensitive data (no exceptions)
+- Verify that the security policy is clear: NO file types are exempt from sensitive data scanning
+- Document and enforce: Sensitive data must never be committed, regardless of file type or location
+- **Review git hooks setup and testing** - Verify hooks are correctly configured and test suite covers all file types including .md files
+  - See also: [TODO in git/README.md](../git/README.md#todo-review-git-hooks-setup-and-testing)
+
+**Date Added:** 2025-12-18
 
 ---
 

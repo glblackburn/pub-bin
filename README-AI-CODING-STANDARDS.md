@@ -63,9 +63,18 @@ When AI agents are used to modify or create files in any repository:
 
 ### 3. File Creation
 
-- **Always ask before creating new files**
-  - Confirm file creation with the user before proceeding
-  - Explain the purpose and location of any new files
+- **Files in Source Control Tree:**
+  - AI assistants may create files freely within the repository source tree
+  - Files must NOT be automatically committed (see Git Operations policy)
+  - No need to ask permission for files in the repository directory structure
+
+- **Files Outside Source Control Tree:**
+  - AI assistants should NEVER create files outside the repository unless:
+    - They are temporary working files
+    - They are created in a specific directory under `/tmp/` (e.g., `/tmp/<project-name>/`)
+    - They are clearly temporary and will be cleaned up
+  - Always ask before creating files outside the repository
+  - Explain the purpose and location of any files created outside the repository
 
 ### 4. Code Quality Verification
 
@@ -86,7 +95,63 @@ done
 find . -name "*~"
 ```
 
-### 5. Documentation Verification
+### 5. Security and Sensitive Data
+
+**CRITICAL: Never Commit Sensitive Data - ENFORCED BY GIT HOOKS**
+
+This rule is **MANDATORY** and is enforced by git hooks. Violations will block commits.
+
+**Policy:**
+- AI assistants must NEVER commit files containing sensitive data, including:
+  - API keys, access tokens, passwords
+  - AWS access keys (AKIA pattern)
+  - GitHub tokens (ghp_/gh[oprsu]_ pattern)
+  - Private keys, SSH keys, certificates
+  - Database credentials, connection strings
+  - Any credentials, secrets, or authentication tokens
+
+**NO EXCEPTIONS:**
+- **ALL file types are checked** (including `.md`, `.txt`, `.py`, `.sh`, `.json`, `.yaml`, etc.)
+- **ALL locations are checked** (including `docs/`, `test/`, `examples/`, root directory, etc.)
+- **ALL commits are checked** (including commit messages)
+- Only binary files (detected by git attributes) are skipped because they cannot be checked as text
+
+**Enforcement:**
+- Git hooks automatically scan ALL staged files before every commit
+- Git hooks scan commit messages for sensitive data patterns
+- Commits containing sensitive data will be **BLOCKED** by the pre-commit hook
+- This is why the git hooks system was developed - to enforce this critical security rule
+
+**If Sensitive Data is Found:**
+1. **DO NOT COMMIT** - The hook will block it automatically
+2. Alert the user immediately about the sensitive data
+3. Suggest alternatives:
+   - Use environment variables
+   - Use secret managers (AWS Secrets Manager, HashiCorp Vault, etc.)
+   - Use configuration files that are in `.gitignore`
+   - Use placeholder/example values for testing (clearly marked as examples)
+
+**For Testing/Examples:**
+- Use clearly invalid/example patterns:
+  - `AKIAEXAMPLE12345678` (invalid format)
+  - `ghp_EXAMPLE_TOKEN_123456789012345678901234567890` (invalid format)
+- Mark examples clearly in comments: `# EXAMPLE: Not a real key`
+- Never use real credentials, even in test files
+
+**Git Hooks Configuration:**
+- See `git/README.md` for hook installation and configuration
+- Hooks are installed via: `cd git/ && make install-hooks`
+- Test hooks via: `cd git/ && make test`
+- Hooks cannot be bypassed without explicit `--no-verify` flag (not recommended)
+
+**Related Documentation:**
+- `git/README.md` - Git hooks documentation and setup
+- `AI_STANDARDS_VIOLATIONS_LOG.md` - Security violations and lessons learned
+- `git/docs/` - Additional git hooks documentation
+
+**This rule takes precedence over all other rules.** Security is non-negotiable.
+
+### 6. Documentation Verification
 
 **IMPORTANT: README Accuracy Check**
 - Before committing changes to scripts, verify that README.md accurately reflects the current script implementation
@@ -199,6 +264,24 @@ if [ -z "$variable" ] || [ "$variable" = "null" ]; then
     # handle error
 fi
 ```
+
+## Security Enforcement
+
+**The Security and Sensitive Data rule (Section 5) is enforced by git hooks.**
+
+Git hooks automatically:
+- Scan all staged files before every commit
+- Scan commit messages for sensitive data patterns
+- Block commits that contain sensitive data
+- Cannot be bypassed without explicit `--no-verify` flag
+
+**This enforcement is why the git hooks system was developed.**
+
+If you encounter issues with hooks:
+- Verify hooks are installed: `ls -la .git/hooks/pre-commit`
+- Reinstall hooks: `cd git/ && make install-hooks`
+- Test hooks: `cd git/ && make test`
+- See `git/README.md` for troubleshooting
 
 ## Project-Specific Standards
 

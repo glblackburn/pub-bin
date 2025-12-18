@@ -158,3 +158,25 @@ make test
 For detailed documentation, see:
 - `git/docs/` - Additional documentation files
 - `git help githooks` - Official git hooks documentation
+
+## TODO: Review Git Hooks Setup and Testing
+
+**Status:** Pending Review
+**Date Added:** 2025-12-18
+**Related:** See [TODO in AI_STANDARDS_VIOLATIONS_LOG.md](../AI_STANDARDS_VIOLATIONS_LOG.md#todo-revisit-sensitive-data-in-md-files)
+
+**Action Required:**
+- Review git hooks configuration to ensure all file types (including .md files) are properly scanned
+- Verify test suite (`test-hooks.sh`) covers all file types and edge cases
+- Test hooks with actual .md files containing example patterns to ensure they are caught
+- Verify hooks are installed correctly and running on all commits
+- Document any gaps in testing coverage
+- Ensure hooks cannot be bypassed accidentally
+
+**Testing Checklist:**
+- [ ] Test hooks with .md files containing AWS key patterns
+- [ ] Test hooks with .md files containing GitHub token patterns
+- [ ] Test hooks with .md files in various locations (root, docs/, subdirectories)
+- [ ] Verify test suite passes all scenarios
+- [ ] Verify hooks are installed and executable
+- [ ] Test that hooks run automatically on commit attempts
