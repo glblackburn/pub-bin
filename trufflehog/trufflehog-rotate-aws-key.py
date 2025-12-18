@@ -258,7 +258,7 @@ def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number
 
 def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Path,
                       backup_dir: Path, branch_prefix: str, timestamp: str,
-                      mode: str, verbose: bool = False) -> Dict:
+                      mode: str, reuse_clones: bool = False, verbose: bool = False) -> Dict:
     """
     Process a single repository: clone, branch, replace key.
     Returns: Status dictionary
@@ -287,7 +287,7 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
         if verbose:
             print(f"  Cloning repository: {repo_url}", file=sys.stderr)
 
-        if not clone_repository(repo_url, local_path, reuse=False, verbose=verbose):
+        if not clone_repository(repo_url, local_path, reuse=reuse_clones, verbose=verbose):
             status['status'] = 'failed'
             status['error'] = 'Clone failed'
             return status
@@ -311,39 +311,53 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
         try:
             repo.git.checkout(base_branch)
             repo.git.pull('origin', base_branch)
-        except Exception:
+        except Exception as e:
             # Try main if specified branch doesn't exist
             if base_branch != 'main':
                 try:
                     repo.git.checkout('main')
                     repo.git.pull('origin', 'main')
                     base_branch = 'main'
-                except Exception:
+                except Exception as e2:
                     status['status'] = 'failed'
-                    status['error'] = f'Cannot checkout branch: {base_branch} or main'
+                    status['error'] = f'Cannot checkout branch {base_branch} or main: {e}, {e2}'
                     return status
+            else:
+                status['status'] = 'failed'
+                status['error'] = f'Cannot checkout branch {base_branch}: {e}'
+                return status
 
-        # Create new branch
+        # Create new branch using generate_branch_name function
         identifier = repo_info.get('identifier', 'unknown')
-        # Extract short identifier for branch name
-        if identifier.startswith('TOKEN_'):
-            short_id = identifier[6:14]  # After TOKEN_
-        elif identifier.startswith('RAW_'):
-            short_id = identifier[4:12]  # After RAW_
+        # generate_branch_name returns "rotate-aws-key-{short_id}-{timestamp}"
+        # Extract the short_id-timestamp part and use with configured branch_prefix
+        base_branch_name = generate_branch_name(identifier, timestamp)
+        # Remove the default prefix "rotate-aws-key-" and use branch_prefix instead
+        if base_branch_name.startswith('rotate-aws-key-'):
+            short_id_timestamp = base_branch_name[len('rotate-aws-key-'):]
         else:
-            short_id = identifier[:8]
-
-        # Format timestamp: 20251217-143000
-        dt = datetime.fromisoformat(timestamp.replace('T', ' '))
-        timestamp_str = dt.strftime('%Y%m%d-%H%M%S')
-
-        branch_name = f"{branch_prefix}-{short_id}-{timestamp_str}"
+            # Fallback if format changes
+            short_id_timestamp = '-'.join(base_branch_name.split('-')[2:])
+        branch_name = f"{branch_prefix}-{short_id_timestamp}"
 
         try:
             repo.git.checkout('-b', branch_name)
         except GitCommandError:
-            # Branch exists, use it
-            repo.git.checkout(branch_name)
+            # Branch exists - verify it's related to this rotation
+            # Check if branch was created for this identifier by checking recent commits
+            try:
+                branch_commits = list(repo.iter_commits(branch_name, max_count=1))
+                if branch_commits and identifier in branch_commits[0].message:
+                    # Branch appears to be for this rotation, use it
+                    repo.git.checkout(branch_name)
+                else:
+                    # Branch exists but doesn't match, create unique name
+                    branch_name = f"{branch_name}-{int(datetime.now().timestamp())}"
+                    repo.git.checkout('-b', branch_name)
+            except Exception:
+                # If we can't verify, create unique name to be safe
+                branch_name = f"{branch_name}-{int(datetime.now().timestamp())}"
+                repo.git.checkout('-b', branch_name)
 
         status['branch_name'] = branch_name
         status['base_branch'] = base_branch
@@ -496,7 +510,8 @@ def main():
             print(f"Found {len(pending_repos)} repositories with pending changes", file=sys.stderr)
 
         work_dir = Path(state['work_dir'])
-        old_key = state['old_key']
+        # old_key is no longer stored in state file (replaced with old_key_hash for security)
+        # Resume mode doesn't need old_key since it only commits existing changes
 
         for i, repo_status in enumerate(pending_repos, 1):
             org = repo_status.get('organization', 'unknown')
@@ -647,7 +662,7 @@ def main():
 
         status = process_repository(
             repo_info, old_key, new_key, work_dir, backup_dir,
-            args.branch_prefix, timestamp, args.mode, args.verbose
+            args.branch_prefix, timestamp, args.mode, args.reuse_clones, args.verbose
         )
         repositories_status.append(status)
 
@@ -664,9 +679,10 @@ def main():
 
     # Create state file
     new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()
+    old_key_hash = hashlib.sha256(old_key.encode()).hexdigest()
     state = {
         'identifier': args.identifier,
-        'old_key': old_key,
+        'old_key_hash': f'sha256:{old_key_hash}',  # Store hash instead of plain text
         'new_key_hash': f'sha256:{new_key_hash}',
         'timestamp': timestamp,
         'mode': args.mode,

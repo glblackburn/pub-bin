@@ -100,8 +100,8 @@ A Python script that replaces secret values in trufflehog output files with reve
 **Usage:**
 ```bash
 ./trufflehog-tokenize-secrets.py [-h] [-v] [-q] [-n] [--in-place]
-    -d <directory> 
-    [-o <output_directory>] 
+    -d <directory>
+    [-o <output_directory>]
     [-l <lookup_table_path>]
     [-p <file_pattern>]
     [--hash-length <n>]
@@ -300,6 +300,108 @@ A Python script that analyzes trufflehog output files (both tokenized and raw) t
 
 ---
 
+## trufflehog-rotate-aws-key.py
+
+A Python script that automatically rotates AWS keys found in trufflehog analysis reports across multiple repositories. The script clones repositories, creates branches, replaces keys, and optionally commits changes.
+
+**What it does:**
+- Parses markdown reports from `trufflehog-analyze-results.py`
+- Identifies all repositories and file locations for a given identifier (TOKEN_* or RAW_*)
+- Clones repositories and creates timestamped branches
+- Replaces old AWS keys with new key values
+- Supports dry-run mode (changes without commit) and commit mode
+- Supports resume mode to continue from where it left off
+
+**Usage:**
+```bash
+./trufflehog-rotate-aws-key.py [-hqv] [-r <report_file>] [-i <identifier>] [-k <new_key>] [-l <limit>] [OPTIONS]
+```
+
+**Options:**
+- `-r, --report` : Path to trufflehog-analyze-results.py markdown report (Required)
+- `-i, --identifier` : Identifier to rotate (TOKEN_* or RAW_*) (Required)
+- `-k, --new-key` : New AWS key value (or use -p for prompt)
+- `-p, --prompt-key` : Prompt for new key interactively (masked input)
+- `-l, --limit` : Limit number of repositories to process (Default: 0 = all)
+- `--lookup-table` : Path to secrets lookup table (required for TOKEN_ identifiers)
+- `--mode` : Operation mode: `dry-run` (make changes, don't commit) or `commit` (commit changes) (Default: dry-run)
+- `--resume` : Resume a previous rotation operation (reads from state file)
+- `--branch-prefix` : Prefix for branch names (Default: rotate-aws-key)
+- `--commit-message` : Custom commit message
+- `--skip-repos` : Comma-separated list of repository names to skip
+- `--only-repos` : Comma-separated list of repository names to process
+- `--work-dir` : Working directory for cloning repositories (Default: /tmp/trufflehog-rotate)
+- `--reuse-clones` : Reuse existing clones if found
+- `--backup-dir` : Directory to store backup copies of modified files
+- `-v, --verbose` : Verbose output (may contain sensitive data)
+- `-q, --quiet` : Quiet mode
+- `-h, --help` : Show help message
+
+**Examples:**
+```bash
+# Dry-run mode (make changes without committing)
+./trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    -p \
+    --mode dry-run
+
+# Commit mode (automatically commit changes)
+./trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    -k AKIANEWKEYEXAMPLE123 \
+    --mode commit
+
+# Resume a previous rotation to commit changes
+./trufflehog-rotate-aws-key.py \
+    --resume \
+    --mode commit
+
+# Rotate tokenized identifier (requires lookup table)
+./trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i TOKEN_abc123_def456 \
+    --lookup-table ./secrets_lookup.json \
+    -k AKIANEWKEYEXAMPLE123 \
+    --mode dry-run
+
+# Limit to first 5 repositories
+./trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    -k AKIANEWKEYEXAMPLE123 \
+    -l 5 \
+    --mode dry-run
+```
+
+**Dependencies:**
+- Python 3.8+
+- GitPython (install with: `make install-deps` or `pip install GitPython`)
+- Git installed and in PATH
+- SSH access to GitHub repositories (SSH keys configured)
+
+**Security:**
+- State files stored in `~/.secure/trufflehog-rotate/` with restrictive permissions (600)
+- Old keys stored as hashes in state files (not plain text)
+- New keys never logged or printed in plain text
+- Backup files stored with restrictive permissions (600)
+- Supports masked input for new key entry
+
+**Workflow:**
+1. Generate trufflehog analysis report using `trufflehog-analyze-results.py`
+2. Review the report to identify which keys need rotation
+3. Run rotation script in dry-run mode to verify changes
+4. Review changes in the created branches
+5. Resume with commit mode to commit the changes
+6. Create pull requests or push branches as needed
+
+**See also:**
+- `trufflehog-rotate-aws-key-design.md` - Complete design document
+- `REVIEW-trufflehog-rotate-aws-key.md` - Code review and recommendations
+
+---
+
 ## Complete Workflow Example
 
 ```bash
@@ -328,6 +430,19 @@ A Python script that analyzes trufflehog output files (both tokenized and raw) t
 # 5. Restore secrets when needed (auto-detects lookup table)
 ./trufflehog-detokenize-secrets.py -d ./tokenized_results \
     -o ./restored_results
+
+# 6. Rotate AWS keys found in the analysis (optional)
+# First, review the analysis report to identify keys to rotate
+./trufflehog-rotate-aws-key.py \
+    -r ./analysis_report.md \
+    -i RAW_abc123_def456 \
+    -p \
+    --mode dry-run
+
+# After reviewing changes, commit them
+./trufflehog-rotate-aws-key.py \
+    --resume \
+    --mode commit
 ```
 
 **Important Notes:**
