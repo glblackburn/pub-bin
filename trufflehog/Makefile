@@ -192,7 +192,7 @@ install-deps: ## install Python dependencies
 		exit 0; \
 	fi; \
 	echo "Installing GitPython..."; \
-	if python3 -m pip install --user GitPython>=3.1.0; then \
+	if python3 -m pip install --user "GitPython>=3.1.0"; then \
 		echo "✓ GitPython installed successfully"; \
 		echo ""; \
 		echo "Note: If you get 'command not found' errors, ensure pip's user bin directory is in your PATH:"; \
