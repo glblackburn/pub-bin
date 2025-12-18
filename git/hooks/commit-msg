@@ -1,0 +1,26 @@
+#!/bin/bash
+# commit-msg hook
+# Validates commit messages for sensitive data
+# Note: Git calls this hook "commit-msg", not "pre-commit-msg"
+
+set -euET -o pipefail
+
+commit_msg_file="$1"
+project_root="$(git rev-parse --show-toplevel)"
+hooks_dir="${project_root}/git/hooks"
+
+# Source helper functions
+source "${hooks_dir}/pre-commit-helpers.sh" 2>/dev/null || {
+    echo "ERROR: pre-commit-helpers.sh not found at ${hooks_dir}/pre-commit-helpers.sh" >&2
+    exit 1
+}
+
+# Check commit message for sensitive data
+if ! check_commit_message "${commit_msg_file}"; then
+    echo "" >&2
+    echo "ERROR: Commit message contains sensitive data!" >&2
+    echo "Please remove sensitive information from commit message." >&2
+    exit 1
+fi
+
+exit 0

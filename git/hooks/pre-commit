@@ -1,0 +1,41 @@
+#!/bin/bash
+# Pre-commit hook for trufflehog project
+# Enforces AI coding standards and prevents sensitive data commits
+
+set -euET -o pipefail
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+project_root="$(git rev-parse --show-toplevel)"
+hooks_dir="${project_root}/git/hooks"
+
+# Source helper functions
+source "${hooks_dir}/pre-commit-helpers.sh" 2>/dev/null || {
+    echo "ERROR: pre-commit-helpers.sh not found at ${hooks_dir}/pre-commit-helpers.sh" >&2
+    exit 1
+}
+
+# Run checks
+exit_code=0
+
+# 1. Code Quality Checks
+if ! check_code_quality; then
+    exit_code=1
+fi
+
+# 2. Sensitive Data Checks (files)
+if ! check_sensitive_data_files; then
+    exit_code=1
+fi
+
+# 3. Backup File Checks
+if ! check_backup_files; then
+    exit_code=1
+fi
+
+if [ $exit_code -ne 0 ]; then
+    echo "" >&2
+    echo "Pre-commit checks failed. Fix issues above before committing." >&2
+    exit 1
+fi
+
+exit 0
