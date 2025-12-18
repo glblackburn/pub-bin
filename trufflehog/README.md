@@ -402,6 +402,122 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
 
 ---
 
+## trufflehog-show-raw-results.sh
+
+A utility script to extract raw secret results from trufflehog output files.
+
+**What it does:**
+- Scans a directory for trufflehog output files
+- Extracts lines containing "Repository:", "File:", and "Raw result:" from all files
+- Outputs the extracted information to stdout
+
+**Usage:**
+```bash
+./trufflehog-show-raw-results.sh <directory>
+```
+
+**Arguments:**
+- `<directory>` : Directory containing trufflehog output files (Required)
+
+**Details:**
+- Finds all files in the specified directory recursively
+- Concatenates all files and filters for relevant lines
+- Useful for quickly viewing raw results across multiple scan files
+
+**Example:**
+```bash
+./trufflehog-show-raw-results.sh ./scan_results
+```
+
+---
+
+## trufflehog-sum-uniq-raw-results.sh
+
+A utility script to count and sum unique raw results from trufflehog output files.
+
+**What it does:**
+- Scans trufflehog output files for "Raw result:" lines
+- Counts unique occurrences of each raw result
+- Masks secret values in output for safety
+- Outputs count and sum statistics
+
+**Usage:**
+```bash
+./trufflehog-sum-uniq-raw-results.sh <directory>
+```
+
+**Arguments:**
+- `<directory>` : Directory containing trufflehog output files (Required)
+
+**Details:**
+- Filters for files matching a specific timestamp pattern (hardcoded in script)
+- Sorts and counts unique raw results
+- Masks actual secret values in output
+- Outputs count and sum of occurrences
+
+**Note:** This script appears to be a helper script with hardcoded timestamp patterns. It may need customization for your specific use case.
+
+---
+
+## audit-sensitive-data.py
+
+A Python script that audits the repository and git history for sensitive information that should not be committed.
+
+**What it does:**
+- Scans all files in the repository for sensitive patterns
+- Analyzes git history for sensitive data
+- Detects email addresses, GitHub org/repo names, file paths, API keys, tokens, and passwords
+- Generates a markdown report with findings
+- Excludes known safe patterns (example.com, system paths, etc.)
+
+**Usage:**
+```bash
+./trufflehog/audit-sensitive-data.py [-h] [-d DIRECTORY] [-o OUTPUT]
+    [--exclude EXCLUDE] [--no-git] [-v] [-q]
+```
+
+**Options:**
+- `-d, --directory` : Directory to analyze (Default: current directory)
+- `-o, --output` : Output markdown file (Default: `sensitive_data_audit_<timestamp>.md`)
+- `--exclude EXCLUDE` : Patterns to exclude from analysis (can be used multiple times)
+- `--no-git` : Skip git history analysis
+- `-v, --verbose` : Verbose output
+- `-q, --quiet` : Quiet mode
+- `-h, --help` : Show help message
+
+**Details:**
+- Scans for email addresses (excluding example/test domains)
+- Detects GitHub organization and repository references
+- Identifies user-specific file paths (especially `/Users/` paths)
+- Finds potential API keys, tokens, and passwords
+- Analyzes git history for sensitive data in past commits
+- Generates comprehensive markdown report with categorized findings
+
+**Examples:**
+```bash
+# Audit current directory
+./trufflehog/audit-sensitive-data.py
+
+# Audit specific directory with custom output
+./trufflehog/audit-sensitive-data.py -d ~/projects -o audit_report.md
+
+# Skip git history analysis
+./trufflehog/audit-sensitive-data.py --no-git
+
+# Exclude specific patterns
+./trufflehog/audit-sensitive-data.py --exclude "*.log" --exclude "*.tmp"
+```
+
+**Dependencies:**
+- Python 3.6+ (uses standard library only: argparse, re, subprocess, sys, collections, datetime, pathlib, typing)
+
+**Security:**
+- This script helps identify sensitive data that should not be in the repository
+- Use before making repositories public or sharing code
+- Review findings carefully and remove or sanitize sensitive data
+
+---
+
 ## Complete Workflow Example
 
 ```bash
