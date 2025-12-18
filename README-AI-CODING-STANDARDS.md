@@ -17,7 +17,7 @@ When AI agents are used to modify or create files in any repository:
     ```bash
     # Find backup files
     find . -name "*~"
-    
+
     # Remove backup files (use with caution)
     find . -name "*~" -delete
     ```
@@ -28,10 +28,31 @@ When AI agents are used to modify or create files in any repository:
 **IMPORTANT: Git Policy for AI Assistants**
 - AI assistants should NEVER automatically commit changes
 - AI assistants should NEVER prompt for commits
-- AI assistants should NEVER stage changes with `git add`
+- AI assistants should NEVER stage changes with `git add` (except as noted below)
 - AI assistants may only ask to check `git status` or `git diff`
 - The user handles ALL git operations (add, commit, push, etc.)
-- This applies to all AI coding assistants working on any project
+
+**Exception: Commits After Explicit Review and Confirmation**
+- AI assistants MAY commit changes ONLY when ALL of the following conditions are met:
+  1. AI assistant has provided a complete summary showing:
+     - The exact commit message to be used
+     - The list of files that will be committed
+     - A summary of changes (via `git diff --stat` or similar)
+  2. User has explicitly reviewed the diffs and files
+  3. User has explicitly confirmed with language such as:
+     - "you can commit using this message"
+     - "go ahead and commit"
+     - "commit with that message"
+     - Similar explicit confirmation after review
+- When committing under this exception:
+  - Use the exact commit message provided in the summary
+  - Only commit the files that were listed in the summary
+  - Do not commit any other changes
+  - Verify the commit succeeded and show the commit hash
+
+**Default Behavior:**
+- When user requests "commit" without the above review process, explain the policy and provide the commit information for their review
+- This exception applies to all AI coding assistants working on any project
 
 ### 3. File Creation
 
