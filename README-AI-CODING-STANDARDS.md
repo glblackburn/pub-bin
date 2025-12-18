@@ -36,19 +36,26 @@ When AI agents are used to modify or create files in any repository:
 - AI assistants MAY commit changes ONLY when ALL of the following conditions are met:
   1. AI assistant has provided a complete summary showing:
      - The exact commit message to be used
-     - The list of files that will be committed
-     - A summary of changes (via `git diff --stat` or similar)
-  2. User has explicitly reviewed the diffs and files
+     - The complete list of ALL files that will be committed (no exceptions)
+     - A summary of changes for EACH file (via `git diff --stat` or `git diff` for each file)
+  2. User has explicitly reviewed the diffs and files for ALL files in the commit
   3. User has explicitly confirmed with language such as:
      - "you can commit using this message"
      - "go ahead and commit"
      - "commit with that message"
      - Similar explicit confirmation after review
+  4. **CRITICAL:** The review summary and confirmation must cover ALL files - if a file is not in the review summary, it MUST NOT be committed
 - When committing under this exception:
   - Use the exact commit message provided in the summary
-  - Only commit the files that were listed in the summary
+  - Only commit the files that were explicitly listed in the review summary
+  - Do not add any files that were not in the review summary
   - Do not commit any other changes
   - Verify the commit succeeded and show the commit hash
+- **Multi-File Commits:**
+  - If multiple files are modified, ALL files must be included in the review summary
+  - Each file must have its changes shown (diff or stat)
+  - User must confirm they've reviewed ALL files before committing
+  - Never assume files can be committed together without explicit review of each
 
 **Default Behavior:**
 - When user requests "commit" without the above review process, explain the policy and provide the commit information for their review
