@@ -5,6 +5,63 @@
 
 ---
 
+## TL;DR - Quick Start
+
+**What's New:** The script can now push commits and create pull requests automatically, completing the rotation workflow end-to-end.
+
+### Simple Usage Example
+
+**Complete workflow in 3 steps:**
+
+1. **Modify files and commit** (initial run):
+   ```bash
+   ./trufflehog-rotate-aws-key.py \
+       -r report.md \
+       -i RAW_abc123_def456 \
+       -p \
+       --mode commit
+   ```
+   - Clones repos, creates branches, replaces keys, commits changes
+   - Saves state file: `~/.secure/trufflehog-rotate/RAW_abc123_def456-<timestamp>.json`
+
+2. **Push commits** (resume session):
+   ```bash
+   ./trufflehog-rotate-aws-key.py \
+       --resume \
+       -i RAW_abc123_def456 \
+       --push
+   ```
+   - Pushes all committed branches to their remotes
+   - Updates state file with push status
+
+3. **Create pull requests** (resume session):
+   ```bash
+   ./trufflehog-rotate-aws-key.py \
+       --resume \
+       -i RAW_abc123_def456 \
+       --create-pr
+   ```
+   - Creates PRs for all pushed branches
+   - Updates state file with PR URLs
+
+**Or combine steps 2 and 3** (push and create PRs in one command):
+   ```bash
+   ./trufflehog-rotate-aws-key.py \
+       --resume \
+       -i RAW_abc123_def456 \
+       --push \
+       --create-pr
+   ```
+   - Pushes commits, then immediately creates PRs for all pushed branches
+
+**That's it!** Each step can be done separately or combined. The `--resume` flag uses the state file to pick up where you left off.
+
+**Prerequisites:**
+- GitHub CLI (`gh`) installed and authenticated, OR
+- GitHub API token set in environment variable `GITHUB_TOKEN`
+
+---
+
 ## Executive Summary
 
 This document outlines the design for adding commit, push, and pull request creation functionality to `trufflehog-aws-key-rotate.py`. The feature completes the rotation workflow by eliminating manual steps after the script runs.
