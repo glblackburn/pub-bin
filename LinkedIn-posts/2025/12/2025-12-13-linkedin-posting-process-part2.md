@@ -1,4 +1,4 @@
-# December 13, 2025
+# December 18, 2025
 
 **LinkedIn Posting Automation Part 2: Testing and Automation**
 
@@ -19,7 +19,7 @@ I built post-to-linkedin.py to handle OAuth, credential management, and posting.
 ▶ Makefile wrapper for test execution, coverage, and code quality checks
 ▶ Testing strategy documentation and README for test usage
 
-The test suite ensures the posting automation works reliably, with fast mocked tests for development (~0.1s execution) and optional real API tests for final verification.
+The test suite ensures the posting automation works reliably, with fast mocked tests for development (~0.2s execution) and optional real API tests for final verification.
 
 𝐖𝐡𝐲 𝐈 𝐛𝐮𝐢𝐥𝐭 𝐢𝐭:
 
@@ -35,7 +35,7 @@ The test suite uses pytest with responses for HTTP mocking, making tests fast an
 
 𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:
 
-Automation needs testing. The test suite (36 tests, ~0.1s execution) ensures the posting script works correctly. Unit tests verify pure functions, mocked integration tests verify API interactions without real calls, and optional real API tests provide final verification.
+Automation needs testing. The test suite (36 tests, ~0.2s execution) ensures the posting script works correctly. Unit tests verify pure functions, mocked integration tests verify API interactions without real calls, and optional real API tests provide final verification.
 
 The Makefile makes it easy: `make test` for fast feedback, `make test-coverage` for detailed analysis. It's the same principle I use for code: document standards, provide examples, verify compliance. But here, the "code" is automation scripts, and tests are the verification.
 
