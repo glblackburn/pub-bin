@@ -112,29 +112,53 @@ def parse_report(report_path: Path) -> Dict:
                 secret_value = secret_match.group(1)
 
         # Extract occurrences
+        # Format is:
+        # 1. **Repository:** repo-name
+        #    - **File:** [file:line](url)
+        #    - **Detector:** detector
+        #    - **File:** [file2:line](url2)  (multiple files per repo)
+        #    - **Detector:** detector2
         occurrences = []
-        location_pattern = r'(\d+)\. \*\*Repository:\*\* (\S+)\s+.*?\*\*File:\*\* \[([^\]]+)\]\((https://github\.com/[^\)]+)\)\s+\*\*Detector:\*\* (\S+)'
+        # Match repository line, then find File/Detector pairs on subsequent lines
+        repo_pattern = r'(\d+)\. \*\*Repository:\*\* (\S+)'
 
-        for loc_match in re.finditer(location_pattern, section_content, re.DOTALL):
-            repo_name = loc_match.group(2)
-            file_display = loc_match.group(3)
-            file_url = loc_match.group(4)
-            detector = loc_match.group(5)
+        for repo_match in re.finditer(repo_pattern, section_content):
+            repo_num = repo_match.group(1)
+            repo_name = repo_match.group(2)
 
-            url_parts = extract_url_parts(file_url)
-            if url_parts:
-                ssh_url = convert_to_ssh_url(file_url)
-                if ssh_url:
-                    occurrences.append({
-                        'repository_url': ssh_url,
-                        'repository_name': repo_name,
-                        'organization': url_parts['organization'],
-                        'file_path': url_parts['file_path'],
-                        'line_number': url_parts['line_number'],
-                        'branch': url_parts['branch'],
-                        'file_url': file_url,
-                        'detector_type': detector
-                    })
+            # Find the content after this repository line
+            repo_start = repo_match.end()
+            # Find next repository or end of section
+            next_repo_match = re.search(r'\n\d+\. \*\*Repository:\*\*', section_content[repo_start:])
+            if next_repo_match:
+                repo_section = section_content[repo_start:repo_start + next_repo_match.start()]
+            else:
+                repo_section = section_content[repo_start:]
+
+            # Extract File/Detector pairs - they come in pairs, File then Detector
+            # Pattern matches: "   - **File:** [file:line](url)" followed by "   - **Detector:** detector"
+            # Allow flexible whitespace (spaces or tabs, multiple lines)
+            file_detector_pattern = r'\s+-\s+\*\*File:\*\*\s+\[([^\]]+)\]\((https://github\.com/[^\)]+)\)\s*\n\s+-\s+\*\*Detector:\*\*\s+(\S+)'
+
+            for file_det_match in re.finditer(file_detector_pattern, repo_section):
+                file_display = file_det_match.group(1)
+                file_url = file_det_match.group(2)
+                detector = file_det_match.group(3)
+
+                url_parts = extract_url_parts(file_url)
+                if url_parts:
+                    ssh_url = convert_to_ssh_url(file_url)
+                    if ssh_url:
+                        occurrences.append({
+                            'repository_url': ssh_url,
+                            'repository_name': repo_name,
+                            'organization': url_parts['organization'],
+                            'file_path': url_parts['file_path'],
+                            'line_number': url_parts['line_number'],
+                            'branch': url_parts['branch'],
+                            'file_url': file_url,
+                            'detector_type': detector
+                        })
 
         if occurrences:
             identifiers[identifier] = {
@@ -441,7 +465,9 @@ def main():
     parser.add_argument('--commit-message', help='Custom commit message')
     parser.add_argument('--skip-repos', help='Comma-separated list of repository names to skip')
     parser.add_argument('--only-repos', help='Comma-separated list of repository names to process')
-    parser.add_argument('--work-dir', default='/tmp/trufflehog-rotate', help='Working directory for cloning repositories')
+    # Generate default work directory with timestamp to avoid conflicts
+    default_work_dir = f'/tmp/trufflehog-rotate-{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+    parser.add_argument('--work-dir', default=default_work_dir, help='Working directory for cloning repositories (default: /tmp/trufflehog-rotate-YYYYMMDD-HHMMSS)')
     parser.add_argument('--reuse-clones', action='store_true', help='Reuse existing clones if found')
     parser.add_argument('--backup-dir', help='Directory to store backup copies of modified files')
 
@@ -640,15 +666,26 @@ def main():
     if args.limit > 0:
         repo_list = repo_list[:args.limit]
 
+    # Process repositories
+    work_dir = Path(args.work_dir)
+    repos_dir = work_dir / 'repos'
+
+    # Create working directories upfront
+    work_dir.mkdir(parents=True, exist_ok=True)
+    repos_dir.mkdir(parents=True, exist_ok=True)
+
     if not args.quiet:
+        print("─" * 70, file=sys.stderr)
+        print("Configuration:", file=sys.stderr)
+        print(f"  Working directory: {work_dir}", file=sys.stderr)
+        print(f"  Repositories will be cloned to: {repos_dir}", file=sys.stderr)
+        print(f"  Backup directory: {backup_dir}", file=sys.stderr)
+        print("─" * 70, file=sys.stderr)
         print(f"Processing AWS key rotation for identifier: {args.identifier}", file=sys.stderr)
         print(f"Old key: {old_key[:8]}... (hidden)", file=sys.stderr)
         print(f"New key: ******** (hidden)", file=sys.stderr)
         print(f"Repositories to process: {len(repo_list)}", file=sys.stderr)
         print("─" * 70, file=sys.stderr)
-
-    # Process repositories
-    work_dir = Path(args.work_dir)
     timestamp = datetime.now().isoformat()
 
     repositories_status = []
@@ -709,6 +746,12 @@ def main():
         print(f"  Failed: {state['summary']['failed']}", file=sys.stderr)
         print(f"  Skipped: {state['summary']['skipped']}", file=sys.stderr)
         print(f"\nState saved to: {state_file}", file=sys.stderr)
+        print("\n" + "─" * 70, file=sys.stderr)
+        print("Configuration:", file=sys.stderr)
+        print(f"  Working directory: {work_dir}", file=sys.stderr)
+        print(f"  Repositories will be cloned to: {repos_dir}", file=sys.stderr)
+        print(f"  Backup directory: {backup_dir}", file=sys.stderr)
+        print("─" * 70, file=sys.stderr)
 
         if args.mode == 'dry-run':
             print("\nTo commit changes, run:", file=sys.stderr)
