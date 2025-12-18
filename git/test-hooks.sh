@@ -85,7 +85,12 @@ test_precommit_blocks_aws_key() {
     echo "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE" > "$test_file"
     git add "$test_file" 2>/dev/null || true
 
-    if git commit -m "Test: verify hooks" 2>&1 | grep -q "contains sensitive data"; then
+    set +e
+    COMMIT_OUTPUT=$(git commit -m "Test: verify hooks" 2>&1)
+    COMMIT_EXIT=$?
+    set -e
+
+    if echo "$COMMIT_OUTPUT" | grep -q "contains sensitive data"; then
         print_result "pre-commit blocks AWS key" "PASS" "File with AWS key was blocked"
         git reset HEAD "$test_file" 2>/dev/null || true
         rm -f "$test_file"
@@ -106,7 +111,12 @@ test_precommit_blocks_trailing_whitespace() {
     echo "def test(): " > "$test_file"
     git add "$test_file" 2>/dev/null || true
 
-    if git commit -m "Test: trailing whitespace" 2>&1 | grep -q "trailing whitespace"; then
+    set +e
+    COMMIT_OUTPUT=$(git commit -m "Test: trailing whitespace" 2>&1)
+    COMMIT_EXIT=$?
+    set -e
+
+    if echo "$COMMIT_OUTPUT" | grep -q "trailing whitespace"; then
         print_result "pre-commit blocks trailing whitespace" "PASS" "File with trailing whitespace was blocked"
         git reset HEAD "$test_file" 2>/dev/null || true
         rm -f "$test_file"
@@ -127,7 +137,12 @@ test_precommit_blocks_no_newline() {
     printf "def test():\n    pass" > "$test_file"
     git add "$test_file" 2>/dev/null || true
 
-    if git commit -m "Test: no newline" 2>&1 | grep -q "does not end with newline"; then
+    set +e
+    COMMIT_OUTPUT=$(git commit -m "Test: no newline" 2>&1)
+    COMMIT_EXIT=$?
+    set -e
+
+    if echo "$COMMIT_OUTPUT" | grep -q "does not end with newline"; then
         print_result "pre-commit blocks missing newline" "PASS" "File without newline was blocked"
         git reset HEAD "$test_file" 2>/dev/null || true
         rm -f "$test_file"
@@ -148,7 +163,12 @@ test_commitmsg_blocks_aws_key() {
     echo "def test(): pass" > "$test_file"
     git add "$test_file" 2>/dev/null || true
 
-    if git commit -m "Added AWS key: AKIAIOSFODNN7EXAMPLE" 2>&1 | grep -q "Commit message contains sensitive data"; then
+    set +e
+    COMMIT_OUTPUT=$(git commit -m "Added AWS key: AKIAIOSFODNN7EXAMPLE" 2>&1)
+    COMMIT_EXIT=$?
+    set -e
+
+    if echo "$COMMIT_OUTPUT" | grep -q "Commit message contains sensitive data"; then
         print_result "commit-msg blocks AWS key" "PASS" "Commit message with AWS key was blocked"
         git reset HEAD "$test_file" 2>/dev/null || true
         rm -f "$test_file"
