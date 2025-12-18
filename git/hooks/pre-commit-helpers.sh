@@ -7,6 +7,8 @@ check_code_quality() {
     local errors=0
     local files
     local file
+    local staged_content
+    local working_content
 
     # Get staged files
     files=$(git diff --cached --name-only --diff-filter=ACM)
@@ -17,24 +19,48 @@ check_code_quality() {
 
     echo "Checking code quality..." >&2
 
-    # Check for trailing whitespace
+    # Check for trailing whitespace and file endings
     while IFS= read -r file; do
-        if [ -f "$file" ]; then
-            # Skip binary files
-            if git check-attr --all "$file" 2>/dev/null | grep -q "binary: set"; then
-                continue
+        if [ ! -f "$file" ]; then
+            continue
+        fi
+
+        # Skip binary files
+        if git check-attr --all "$file" 2>/dev/null | grep -q "binary: set"; then
+            continue
+        fi
+
+        # Check STAGED content (what will be committed)
+        # Write staged content directly to temp file to preserve newlines
+        local temp_staged=$(mktemp)
+        if git show :"$file" > "$temp_staged" 2>/dev/null && [ -s "$temp_staged" ]; then
+            # Check trailing whitespace in staged content
+            if grep -n '[[:space:]]$' "$temp_staged" >/dev/null 2>&1; then
+                echo "ERROR: $file (STAGED) contains trailing whitespace" >&2
+                grep -n '[[:space:]]$' "$temp_staged" | head -5 | sed 's/^/  /' >&2
+                errors=1
             fi
 
-            # Check trailing whitespace
+            # Check file ending in staged content (must end with newline)
+            if [ "$(tail -c1 "$temp_staged" | od -An -tx1 | tr -d ' \n')" != "0a" ]; then
+                echo "ERROR: $file (STAGED) does not end with newline" >&2
+                errors=1
+            fi
+        fi
+        rm -f "$temp_staged"
+
+        # Check WORKING DIRECTORY content (what's on disk)
+        if [ -f "$file" ]; then
+            # Check trailing whitespace in working directory
             if grep -n '[[:space:]]$' "$file" >/dev/null 2>&1; then
-                echo "ERROR: $file contains trailing whitespace" >&2
+                echo "ERROR: $file (WORKING DIRECTORY) contains trailing whitespace" >&2
                 grep -n '[[:space:]]$' "$file" | head -5 | sed 's/^/  /' >&2
                 errors=1
             fi
 
-            # Check file ending (must end with newline)
+            # Check file ending in working directory (must end with newline)
             if [ -s "$file" ] && [ "$(tail -c1 "$file" | wc -l)" -eq 0 ]; then
-                echo "ERROR: $file does not end with newline" >&2
+                echo "ERROR: $file (WORKING DIRECTORY) does not end with newline" >&2
                 errors=1
             fi
         fi
@@ -176,3 +202,5 @@ check_backup_files() {
 
     return 0
 }
+
+
