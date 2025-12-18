@@ -1,8 +1,6 @@
-# December 13, 2025
+## [December 18, 2025](https://www.linkedin.com/posts/activity-7407509157786058752-Kvjp/)
 
-**LinkedIn Posting Automation Part 1: Building a Style Guide for AI-Assisted Content**
-
-**Status:** ⏳ Publication pending - LinkedIn URL will be added after posting
+[LinkedIn](https://www.linkedin.com/posts/activity-7407509157786058752-Kvjp/)
 
 ---
 
