@@ -2,6 +2,8 @@
 
 This document defines the standard AI coding rules that should be applied consistently across all projects.
 
+**IMPORTANT:** These rules are automatically loaded in Cursor via `.cursorrules` file at the repository root. The `.cursorrules` file contains the most critical rules that must be followed in every session. This document provides complete details and context.
+
 ## Core Standards
 
 When AI agents are used to modify or create files in any repository:
@@ -34,7 +36,7 @@ When AI agents are used to modify or create files in any repository:
 
 **Exception: Commits After Explicit Review and Confirmation**
 - AI assistants MAY commit changes ONLY when ALL of the following conditions are met:
-  1. AI assistant has provided a complete summary showing:
+  1. **MANDATORY FIRST STEP:** AI assistant has provided a complete summary showing:
      - The exact commit message to be used
      - The complete list of ALL files that will be committed (no exceptions)
      - A summary of changes for EACH file (via `git diff --stat` or `git diff` for each file)
@@ -45,13 +47,22 @@ When AI agents are used to modify or create files in any repository:
      - "commit with that message"
      - Similar explicit confirmation after review
   4. **CRITICAL:** The review summary and confirmation must cover ALL files - if a file is not in the review summary, it MUST NOT be committed
-- When committing under this exception:
+
+**CRITICAL: Even When User Says "Commit"**
+- **NEVER commit immediately when user says "commit"**
+- **ALWAYS show commit message FIRST, then wait for confirmation**
+- User saying "commit" is NOT sufficient - must follow the full protocol
+- The exception rule is MANDATORY, not optional
+- Example: User says "commit Makefile change" → Show commit message and diff FIRST, then wait for confirmation
+
+**When committing under this exception:**
   - Use the exact commit message provided in the summary
   - Only commit the files that were explicitly listed in the review summary
   - Do not add any files that were not in the review summary
   - Do not commit any other changes
   - Verify the commit succeeded and show the commit hash
-- **Multi-File Commits:**
+
+**Multi-File Commits:**
   - If multiple files are modified, ALL files must be included in the review summary
   - Each file must have its changes shown (diff or stat)
   - User must confirm they've reviewed ALL files before committing
@@ -67,6 +78,18 @@ When AI agents are used to modify or create files in any repository:
   - AI assistants may create files freely within the repository source tree
   - Files must NOT be automatically committed (see Git Operations policy)
   - No need to ask permission for files in the repository directory structure
+  - **IMPORTANT:** Distinguish between:
+    - **Code/implementation files** (scripts, configs, etc.) - Create freely when needed for the task
+    - **Documentation/review files** (review docs, analysis reports, etc.) - Only create when explicitly requested
+    - **Conversational output** (reviews, analysis, findings) - Provide in conversation, don't create files unless asked
+
+- **When to Create Documentation Files:**
+  - ✅ User explicitly requests: "create a review document", "write an analysis file", "generate a report"
+  - ✅ File creation is clearly necessary for the task (e.g., "generate a report file")
+  - ❌ User says "review X" - Provide review in conversation, don't create a file
+  - ❌ User says "analyze Y" - Provide analysis in conversation, don't create a file
+  - ❌ Creating file "just in case" or "for future reference" without being asked
+  - **When in doubt:** Ask: "Should I create a review document file, or just provide the review here?"
 
 - **Files Outside Source Control Tree:**
   - AI assistants should NEVER create files outside the repository unless:

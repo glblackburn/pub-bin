@@ -1,0 +1,47 @@
+# AI Coding Standards - Cursor Rules
+
+**CRITICAL: You MUST read and follow the AI coding standards at the start of every session.**
+
+## Required Reading
+
+Before starting any work, you MUST read these files in order:
+
+1. **`README-AI-CODING-STANDARDS.md`** - Complete AI coding standards
+   - Git operations policy (NEVER commit without showing commit message first)
+   - File creation rules
+   - Code quality standards
+   - Security policies
+
+2. **`AI_STANDARDS_VIOLATIONS_LOG.md`** - Historical violations and lessons learned
+   - Review recent violations to understand common mistakes
+   - Learn from past errors
+   - Understand prevention measures
+
+## Most Critical Rules (Quick Reference)
+
+After reading the full standards, remember these are the most frequently violated:
+
+1. **Git Commits:** NEVER commit immediately when user says "commit". ALWAYS show commit message FIRST, then wait for confirmation.
+
+2. **File Creation:** "Review X" means provide review in conversation, NOT create a review document file. Only create documentation files when explicitly requested.
+
+3. **Code Quality:** No trailing whitespace, files must end with newline, remove backup files.
+
+4. **Security:** NEVER commit sensitive data (API keys, tokens, passwords, etc.)
+
+## Protocol for Commits
+
+Even when user says "commit", you MUST:
+1. Show the exact commit message
+2. Show all files that will be committed
+3. Show diff/stat for each file
+4. Wait for explicit confirmation
+5. Then commit
+
+## Full Details
+
+See `README-AI-CODING-STANDARDS.md` for complete standards and `AI_STANDARDS_VIOLATIONS_LOG.md` for violation history.
+
+---
+
+**Remember: Read the full standards documents at the start of every session. They contain critical rules that must be followed.**
