@@ -48,7 +48,7 @@ help: ## show this help message
 	@echo "Targets:"
 	@echo "  make trufflehog        - Install trufflehog (alias for install-trufflehog)"
 	@echo "  make install-trufflehog - Install trufflehog binary"
-	@echo "  make install-deps      - Install Python dependencies (GitPython)"
+	@echo "  make install-deps      - Install Python dependencies (GitPython, PyGithub)"
 	@echo "  make check             - Check if trufflehog is installed"
 	@echo "  make check-deps        - Check if Python dependencies are installed"
 	@echo "  make update            - Update trufflehog to latest version"
@@ -167,12 +167,30 @@ check-deps: ## check if Python dependencies are installed
 	fi
 	@PYTHON_VERSION=$$(python3 --version 2>&1 | awk '{print $$2}'); \
 	echo "✓ Python version: $$PYTHON_VERSION"; \
+	DEPS_MISSING=0; \
 	if python3 -c "import git" 2>/dev/null; then \
 		GITPYTHON_VERSION=$$(python3 -c "import git; print(git.__version__)" 2>/dev/null || echo "unknown"); \
 		echo "✓ GitPython is installed (version: $$GITPYTHON_VERSION)"; \
 	else \
 		echo "✗ GitPython is not installed"; \
-		echo "  Run 'make install-deps' to install it"; \
+		DEPS_MISSING=1; \
+	fi; \
+	if python3 -c "import github" 2>/dev/null; then \
+		PYGITHUB_VERSION=$$(python3 -c "import github; print(github.__version__)" 2>/dev/null || echo "unknown"); \
+		echo "✓ PyGithub is installed (version: $$PYGITHUB_VERSION)"; \
+	else \
+		echo "✗ PyGithub is not installed (optional - needed for PR creation via API)"; \
+		DEPS_MISSING=1; \
+	fi; \
+	if command -v gh >/dev/null 2>&1; then \
+		GH_VERSION=$$(gh --version 2>/dev/null | head -1 || echo "unknown"); \
+		echo "✓ GitHub CLI (gh) is installed: $$GH_VERSION"; \
+	else \
+		echo "⚠ GitHub CLI (gh) is not installed (optional - recommended for PR creation)"; \
+	fi; \
+	if [ $$DEPS_MISSING -eq 1 ]; then \
+		echo ""; \
+		echo "Run 'make install-deps' to install missing dependencies"; \
 		exit 1; \
 	fi
 
@@ -185,23 +203,58 @@ install-deps: ## install Python dependencies
 	fi
 	@PYTHON_VERSION=$$(python3 --version 2>&1 | awk '{print $$2}'); \
 	echo "Python version: $$PYTHON_VERSION"; \
+	INSTALLED_ANY=0; \
+	\
+	# Install GitPython \
 	if python3 -c "import git" 2>/dev/null; then \
 		GITPYTHON_VERSION=$$(python3 -c "import git; print(git.__version__)" 2>/dev/null || echo "unknown"); \
 		echo "✓ GitPython is already installed (version: $$GITPYTHON_VERSION)"; \
-		echo "  Run 'pip3 install --upgrade GitPython' to update"; \
-		exit 0; \
+	else \
+		echo "Installing GitPython..."; \
+		if python3 -m pip install --user "GitPython>=3.1.0"; then \
+			echo "✓ GitPython installed successfully"; \
+			INSTALLED_ANY=1; \
+		else \
+			echo "ERROR: Failed to install GitPython"; \
+			echo "  Try: pip3 install GitPython"; \
+			exit 1; \
+		fi; \
 	fi; \
-	echo "Installing GitPython..."; \
-	if python3 -m pip install --user "GitPython>=3.1.0"; then \
-		echo "✓ GitPython installed successfully"; \
+	\
+	# Install PyGithub (optional, for PR creation via API) \
+	if python3 -c "import github" 2>/dev/null; then \
+		PYGITHUB_VERSION=$$(python3 -c "import github; print(github.__version__)" 2>/dev/null || echo "unknown"); \
+		echo "✓ PyGithub is already installed (version: $$PYGITHUB_VERSION)"; \
+	else \
+		echo "Installing PyGithub (for PR creation via API)..."; \
+		if python3 -m pip install --user "PyGithub>=2.0.0"; then \
+			echo "✓ PyGithub installed successfully"; \
+			INSTALLED_ANY=1; \
+		else \
+			echo "WARNING: Failed to install PyGithub"; \
+			echo "  PR creation will require GitHub CLI (gh) instead"; \
+			echo "  Try: pip3 install PyGithub"; \
+		fi; \
+	fi; \
+	\
+	if [ $$INSTALLED_ANY -eq 1 ]; then \
 		echo ""; \
 		echo "Note: If you get 'command not found' errors, ensure pip's user bin directory is in your PATH:"; \
 		PIP_USER_BIN=$$(python3 -m site --user-base)/bin; \
 		echo "  export PATH=\"$$PIP_USER_BIN:\$$PATH\""; \
+	fi; \
+	\
+	# Check for GitHub CLI \
+	if command -v gh >/dev/null 2>&1; then \
+		GH_VERSION=$$(gh --version 2>/dev/null | head -1 || echo "unknown"); \
+		echo ""; \
+		echo "✓ GitHub CLI (gh) is installed: $$GH_VERSION"; \
+		echo "  Run 'gh auth login' to authenticate for PR creation"; \
 	else \
-		echo "ERROR: Failed to install GitPython"; \
-		echo "  Try: pip3 install GitPython"; \
-		exit 1; \
+		echo ""; \
+		echo "⚠ GitHub CLI (gh) is not installed (recommended for PR creation)"; \
+		echo "  Install with: brew install gh  # macOS"; \
+		echo "  Or download from: https://cli.github.com/"; \
 	fi
 
 # Internal targets

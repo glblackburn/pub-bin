@@ -17,7 +17,40 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TextIO
+
+
+class TeeOutput:
+    """Write to both stderr and a log file."""
+    def __init__(self, log_file: Path, quiet: bool = False):
+        self.log_file = log_file
+        self.quiet = quiet
+        self.file_handle: Optional[TextIO] = None
+        self.original_stderr = sys.stderr
+
+    def __enter__(self):
+        self.file_handle = open(self.log_file, 'a', encoding='utf-8')
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.file_handle:
+            self.file_handle.close()
+        sys.stderr = self.original_stderr
+
+    def write(self, text: str):
+        """Write to both stderr and log file."""
+        if not self.quiet:
+            self.original_stderr.write(text)
+            self.original_stderr.flush()
+        if self.file_handle:
+            self.file_handle.write(text)
+            self.file_handle.flush()
+
+    def flush(self):
+        """Flush both outputs."""
+        self.original_stderr.flush()
+        if self.file_handle:
+            self.file_handle.flush()
 
 try:
     from git import Repo, GitCommandError
@@ -26,6 +59,12 @@ except ImportError:
     print("Install with: make install-deps", file=sys.stderr)
     print("Or manually: pip install GitPython", file=sys.stderr)
     sys.exit(1)
+
+try:
+    from github import Github
+    GITHUB_API_AVAILABLE = True
+except ImportError:
+    GITHUB_API_AVAILABLE = False
 
 
 def setup_secure_directories() -> Tuple[Path, Path, Path]:
@@ -282,7 +321,9 @@ def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number
 
 def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Path,
                       backup_dir: Path, branch_prefix: str, timestamp: str,
-                      mode: str, reuse_clones: bool = False, verbose: bool = False) -> Dict:
+                      mode: str, reuse_clones: bool = False, verbose: bool = False,
+                      push: bool = False, force_push: bool = False, push_remote: str = 'origin',
+                      skip_if_exists: bool = True) -> Dict:
     """
     Process a single repository: clone, branch, replace key.
     Returns: Status dictionary
@@ -303,7 +344,17 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
         'files_modified': [],
         'changes_committed': False,
         'commit_hash': None,
-        'backup_files': []
+        'backup_files': [],
+        'pushed': False,
+        'push_attempted': False,
+        'push_error': None,
+        'push_timestamp': None,
+        'pr_created': False,
+        'pr_attempted': False,
+        'pr_url': None,
+        'pr_number': None,
+        'pr_error': None,
+        'pr_timestamp': None,
     }
 
     try:
@@ -418,6 +469,24 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
             status['changes_committed'] = True
             status['commit_hash'] = repo.head.commit.hexsha
 
+            # Push if requested
+            if push:
+                push_success, push_error = push_branch(
+                    repo, branch_name, push_remote, force_push, skip_if_exists, verbose
+                )
+                status['pushed'] = push_success
+                status['push_attempted'] = True
+                if push_success:
+                    status['push_timestamp'] = datetime.now().isoformat()
+                    status['push_error'] = None
+                else:
+                    status['push_error'] = push_error
+                    if verbose:
+                        print(f"  Push failed: {push_error}", file=sys.stderr)
+            else:
+                status['pushed'] = False
+                status['push_attempted'] = False
+
         status['status'] = 'completed'
 
     except Exception as e:
@@ -443,13 +512,232 @@ def load_state(state_file: Path) -> Dict:
         return json.load(f)
 
 
+def push_branch(repo: Repo, branch_name: str, remote: str = 'origin',
+                force: bool = False, skip_if_exists: bool = True,
+                verbose: bool = False) -> Tuple[bool, Optional[str]]:
+    """
+    Push branch to remote repository.
+    Returns: (success, error_message)
+    """
+    try:
+        # Check if branch exists on remote (if skip_if_exists is True)
+        if skip_if_exists:
+            try:
+                remote_refs = repo.git.ls_remote('--heads', remote, branch_name)
+                if remote_refs.strip():
+                    if verbose:
+                        print(f"  Branch {branch_name} already exists on {remote}, skipping push", file=sys.stderr)
+                    return True, None  # Already exists, consider it success
+            except Exception:
+                # If ls_remote fails, continue with push attempt
+                pass
+
+        # Push branch
+        if force:
+            repo.git.push(remote, branch_name, force=True)
+        else:
+            repo.git.push(remote, branch_name)
+
+        return True, None
+    except GitCommandError as e:
+        error_msg = str(e)
+        # Check for common error patterns
+        if 'permission denied' in error_msg.lower() or 'authentication failed' in error_msg.lower():
+            return False, f"Authentication failed: {error_msg}"
+        elif 'already exists' in error_msg.lower() or 'non-fast-forward' in error_msg.lower():
+            return False, f"Branch already exists on remote (use --force-push to override): {error_msg}"
+        else:
+            return False, error_msg
+    except Exception as e:
+        return False, str(e)
+
+
+def check_gh_cli_available() -> bool:
+    """Check if GitHub CLI (gh) is available and authenticated."""
+    try:
+        # First check if gh command exists
+        subprocess.run(['gh', '--version'], capture_output=True, timeout=2, check=True)
+        # Then check if authenticated (don't fail if not authenticated, just warn)
+        result = subprocess.run(['gh', 'auth', 'status'], capture_output=True, text=True, timeout=5)
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired, subprocess.CalledProcessError):
+        return False
+
+
+def check_gh_cli_installed() -> bool:
+    """Check if GitHub CLI (gh) is installed (regardless of auth status)."""
+    try:
+        subprocess.run(['gh', '--version'], capture_output=True, timeout=2, check=True)
+        return True
+    except (FileNotFoundError, subprocess.TimeoutExpired, subprocess.CalledProcessError):
+        return False
+
+
+def create_pr_via_cli(org: str, repo: str, branch: str, base: str, title: str,
+                     body: str, labels: List[str] = None, reviewers: List[str] = None,
+                     assignees: List[str] = None, draft: bool = False,
+                     verbose: bool = False) -> Tuple[bool, Optional[Dict]]:
+    """
+    Create pull request using GitHub CLI.
+    Returns: (success, pr_info_dict with 'url' and 'number' keys)
+    """
+    try:
+        cmd = ['gh', 'pr', 'create', '--repo', f'{org}/{repo}', '--head', branch,
+               '--base', base, '--title', title, '--body', body]
+
+        if draft:
+            cmd.append('--draft')
+        if labels:
+            cmd.extend(['--label', ','.join(labels)])
+        if reviewers:
+            cmd.extend(['--reviewer', ','.join(reviewers)])
+        if assignees:
+            cmd.extend(['--assignee', ','.join(assignees)])
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            error_msg = result.stderr.strip() or result.stdout.strip()
+            # Check if PR already exists
+            if 'already exists' in error_msg.lower() or 'already has a pull request' in error_msg.lower():
+                if verbose:
+                    print(f"  PR already exists for {branch}, attempting to find it...", file=sys.stderr)
+                # Try to find existing PR
+                find_cmd = ['gh', 'pr', 'list', '--repo', f'{org}/{repo}', '--head', f'{org}:{branch}', '--json', 'number,url']
+                find_result = subprocess.run(find_cmd, capture_output=True, text=True, timeout=10)
+                if find_result.returncode == 0:
+                    prs = json.loads(find_result.stdout)
+                    if prs:
+                        pr = prs[0]
+                        return True, {'url': pr['url'], 'number': pr['number']}
+            # Check for authentication errors
+            if 'not logged in' in error_msg.lower() or 'authentication' in error_msg.lower() or 'unauthorized' in error_msg.lower():
+                return False, f"GitHub CLI authentication failed: {error_msg}"
+            return False, error_msg
+
+        # Parse PR URL from output
+        output = result.stdout.strip()
+        # gh CLI outputs the PR URL
+        pr_url = output
+        # Extract PR number from URL
+        pr_number_match = re.search(r'/pull/(\d+)', pr_url)
+        pr_number = int(pr_number_match.group(1)) if pr_number_match else None
+
+        return True, {'url': pr_url, 'number': pr_number}
+    except subprocess.TimeoutExpired:
+        return False, "Timeout while creating PR"
+    except Exception as e:
+        return False, str(e)
+
+
+def create_pr_via_api(org: str, repo: str, branch: str, base: str, title: str,
+                     body: str, labels: List[str] = None, reviewers: List[str] = None,
+                     assignees: List[str] = None, draft: bool = False,
+                     github_token: Optional[str] = None,
+                     verbose: bool = False) -> Tuple[bool, Optional[Dict]]:
+    """
+    Create pull request using GitHub API.
+    Returns: (success, pr_info_dict with 'url' and 'number' keys)
+    """
+    if not GITHUB_API_AVAILABLE:
+        return False, "PyGithub not available. Install with: make install-deps (or: pip install PyGithub)"
+
+    token = github_token or os.environ.get('GITHUB_TOKEN')
+    if not token:
+        return False, "GitHub token required. Set GITHUB_TOKEN environment variable or use --github-token"
+
+    try:
+        g = Github(token)
+        github_repo = g.get_repo(f'{org}/{repo}')
+
+        # Check if PR already exists
+        existing_prs = github_repo.get_pulls(state='open', head=f'{org}:{branch}')
+        for pr in existing_prs:
+            if pr.head.ref == branch:
+                if verbose:
+                    print(f"  PR already exists: {pr.html_url}", file=sys.stderr)
+                return True, {'url': pr.html_url, 'number': pr.number}
+
+        # Create PR
+        pr = github_repo.create_pull(
+            title=title,
+            body=body,
+            head=branch,
+            base=base,
+            draft=draft
+        )
+
+        # Add labels
+        if labels:
+            pr.add_to_labels(*labels)
+
+        # Request reviewers
+        if reviewers:
+            pr.create_review_request(reviewers=reviewers)
+
+        # Add assignees
+        if assignees:
+            pr.add_to_assignees(*assignees)
+
+        return True, {'url': pr.html_url, 'number': pr.number}
+    except Exception as e:
+        error_msg = str(e)
+        if 'already exists' in error_msg.lower() or '422' in error_msg:
+            # Try to find existing PR
+            try:
+                g = Github(token)
+                github_repo = g.get_repo(f'{org}/{repo}')
+                existing_prs = github_repo.get_pulls(state='open', head=f'{org}:{branch}')
+                for pr in existing_prs:
+                    if pr.head.ref == branch:
+                        return True, {'url': pr.html_url, 'number': pr.number}
+            except Exception:
+                pass
+        return False, error_msg
+
+
+def create_pull_request(org: str, repo: str, branch: str, base: str, title: str,
+                       body: str, labels: List[str] = None, reviewers: List[str] = None,
+                       assignees: List[str] = None, draft: bool = False,
+                       use_cli: bool = True, github_token: Optional[str] = None,
+                       verbose: bool = False) -> Tuple[bool, Optional[Dict]]:
+    """
+    Create pull request using GitHub CLI or API.
+    Returns: (success, pr_info_dict with 'url' and 'number' keys)
+    """
+    # Prefer GitHub CLI if available and requested
+    if use_cli and check_gh_cli_installed():
+        # Try CLI first (even if not authenticated, it will give a better error)
+        result = create_pr_via_cli(org, repo, branch, base, title, body, labels,
+                                  reviewers, assignees, draft, verbose)
+        # If CLI fails due to auth issues, try API if available
+        if not result[0]:
+            error_msg = str(result[1]).lower() if result[1] else ''
+            if 'not logged in' in error_msg or 'authentication' in error_msg or 'unauthorized' in error_msg or 'login' in error_msg:
+                if verbose:
+                    print(f"  GitHub CLI authentication issue, trying API...", file=sys.stderr)
+                if GITHUB_API_AVAILABLE or github_token or os.environ.get('GITHUB_TOKEN'):
+                    return create_pr_via_api(org, repo, branch, base, title, body, labels,
+                                            reviewers, assignees, draft, github_token, verbose)
+                else:
+                    return False, f"GitHub CLI authentication failed: {result[1]}. Run 'gh auth login' or install PyGithub: make install-deps"
+        return result
+
+    # Fall back to API if CLI not installed or explicitly requested
+    if not use_cli or not check_gh_cli_installed():
+        return create_pr_via_api(org, repo, branch, base, title, body, labels,
+                                reviewers, assignees, draft, github_token, verbose)
+
+    # Should not reach here
+    return False, "Neither GitHub CLI nor PyGithub available. Install with: make install-deps"
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Rotate AWS keys found in trufflehog analysis reports',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
-    parser.add_argument('-r', '--report', required=True, help='Path to trufflehog-analyze-results.py markdown report')
+    parser.add_argument('-r', '--report', required=False, help='Path to trufflehog-analyze-results.py markdown report (not required for --resume with --push or --create-pr)')
     parser.add_argument('-i', '--identifier', required=True, help='Identifier to rotate (TOKEN_* or RAW_*)')
     parser.add_argument('-k', '--new-key', help='New AWS key value (or use -p for prompt)')
     parser.add_argument('-l', '--limit', type=int, default=0, help='Limit number of repositories to process (Default: 0 = all)')
@@ -471,28 +759,39 @@ def main():
     parser.add_argument('--reuse-clones', action='store_true', help='Reuse existing clones if found')
     parser.add_argument('--backup-dir', help='Directory to store backup copies of modified files')
 
+    # Push options
+    parser.add_argument('--push', action='store_true', help='Push commits to remote (requires --mode commit or --resume)')
+    parser.add_argument('--force-push', action='store_true', help='Force push if branch exists on remote (dangerous!)')
+    parser.add_argument('--push-remote', default='origin', help='Remote name to push to (default: origin)')
+    parser.add_argument('--skip-if-exists', action='store_true', default=True, help='Skip push if branch already exists on remote (default: True)')
+
+    # PR options
+    parser.add_argument('--create-pr', action='store_true', help='Create pull request after pushing (requires --push or already pushed)')
+    parser.add_argument('--draft-pr', action='store_true', help='Create draft PRs (requires --create-pr)')
+    parser.add_argument('--pr-title', help='PR title template (supports {identifier}, {repo}, {branch})')
+    parser.add_argument('--pr-body', help='PR body template file (or use default)')
+    parser.add_argument('--pr-labels', help='Comma-separated labels (e.g., "security,automated")')
+    parser.add_argument('--pr-reviewers', help='Comma-separated GitHub usernames for review')
+    parser.add_argument('--pr-assignees', help='Comma-separated GitHub usernames to assign')
+    parser.add_argument('--pr-base-branch', help='Base branch for PR (default: from state file or main)')
+    parser.add_argument('--skip-pr', help='Comma-separated list of repository names to skip PR creation')
+
+    # GitHub authentication
+    parser.add_argument('--github-token', help='GitHub token for API (alternative to gh CLI)')
+    parser.add_argument('--use-gh-cli', action='store_true', help='Use GitHub CLI (gh) for PR creation (default if available)')
+    parser.add_argument('--use-github-api', action='store_true', help='Use GitHub API directly (requires token)')
+
     args = parser.parse_args()
 
     # Setup secure directories
     secure_dir, trufflehog_rotate_dir, default_backup_dir = setup_secure_directories()
     backup_dir = Path(args.backup_dir) if args.backup_dir else default_backup_dir
 
-    # Get new key
-    if args.prompt_key:
-        new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
-    elif args.new_key:
-        new_key = args.new_key
-    else:
-        new_key = os.environ.get('TRUFFLEHOG_NEW_AWS_KEY')
-        if not new_key:
-            print("ERROR: New key required. Use -k, -p, or set TRUFFLEHOG_NEW_AWS_KEY", file=sys.stderr)
-            sys.exit(1)
+    # Setup logging to working directory (will be set up in resume mode or initial run)
+    log_file: Optional[Path] = None
+    tee_output: Optional[TeeOutput] = None
 
-    if not new_key:
-        print("ERROR: New key cannot be empty", file=sys.stderr)
-        sys.exit(1)
-
-    # Resume mode
+    # Resume mode (check before requiring new key, since resume may not need it)
     if args.resume:
         if args.state_file:
             state_file = Path(args.state_file)
@@ -504,36 +803,72 @@ def main():
                 sys.exit(1)
             state_file = state_files[0]
 
+        # Load state to get work_dir for logging
+        state = load_state(state_file)
+        work_dir_for_log = Path(state.get('work_dir', args.work_dir))
+        work_dir_for_log.mkdir(parents=True, exist_ok=True)
+        log_file = work_dir_for_log / f"trufflehog-rotate-resume-{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+        tee_output = TeeOutput(log_file, args.quiet)
+        tee_output.__enter__()
+        sys.stderr = tee_output
+
         if not args.quiet:
             print(f"Resuming from state file: {state_file}", file=sys.stderr)
+            print(f"Log file: {log_file}", file=sys.stderr)
 
-        state = load_state(state_file)
-
-        # Get new key (should be same as before, but verify hash)
+        # Get new key (optional in resume mode - only for verification)
+        # In resume mode, the key was already used to modify files, so we don't strictly need it
+        # But we can verify it matches if provided
+        new_key = None
         if args.prompt_key:
             new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
         elif args.new_key:
             new_key = args.new_key
         else:
             new_key = os.environ.get('TRUFFLEHOG_NEW_AWS_KEY')
-            if not new_key:
-                print("ERROR: New key required for resume. Use -k, -p, or set TRUFFLEHOG_NEW_AWS_KEY", file=sys.stderr)
-                sys.exit(1)
+            # In resume mode, key is optional - only warn if provided and doesn't match
 
-        # Verify key hash matches
-        new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()
-        if state.get('new_key_hash') != f'sha256:{new_key_hash}':
-            print("WARNING: New key hash does not match state file. Continuing anyway...", file=sys.stderr)
+        # Verify key hash matches (only if we have a key - optional in resume mode)
+        if new_key:
+            new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()
+            if state.get('new_key_hash') != f'sha256:{new_key_hash}':
+                print("WARNING: New key hash does not match state file. Continuing anyway...", file=sys.stderr)
+        # Note: In resume mode, we don't require the key - files were already modified in initial run
 
-        # Process pending repositories
-        pending_repos = [r for r in state['repositories'] if r['status'] in ('pending', 'completed') and not r.get('changes_committed', False)]
+        # Determine what operations to perform
+        do_commit = args.mode == 'commit'
+        do_push = args.push
+        do_create_pr = args.create_pr
+
+        # Process pending repositories based on operation
+        if do_commit:
+            # Resume commit mode: find repos that need committing
+            pending_repos = [r for r in state['repositories'] if r['status'] in ('pending', 'completed') and not r.get('changes_committed', False)]
+            if not args.quiet:
+                print(f"Found {len(pending_repos)} repositories with pending changes", file=sys.stderr)
+        elif do_push:
+            # Resume push mode: find repos that need pushing
+            pending_repos = [r for r in state['repositories'] if r.get('changes_committed', False) and not r.get('pushed', False)]
+            if not args.quiet:
+                print(f"Found {len(pending_repos)} repositories with committed changes to push", file=sys.stderr)
+        elif do_create_pr:
+            # Resume PR mode: find repos that need PRs
+            pending_repos = [r for r in state['repositories'] if r.get('pushed', False) and not r.get('pr_created', False)]
+            if not args.quiet:
+                print(f"Found {len(pending_repos)} repositories with pushed branches to create PRs for", file=sys.stderr)
+        else:
+            # Default: commit mode
+            pending_repos = [r for r in state['repositories'] if r['status'] in ('pending', 'completed') and not r.get('changes_committed', False)]
+            if not args.quiet:
+                print(f"Found {len(pending_repos)} repositories with pending changes", file=sys.stderr)
 
         # Apply limit
         if args.limit > 0:
             pending_repos = pending_repos[:args.limit]
 
-        if not args.quiet:
-            print(f"Found {len(pending_repos)} repositories with pending changes", file=sys.stderr)
+        # Apply skip filters
+        skip_repos = set((args.skip_repos or '').split(',')) if args.skip_repos else set()
+        skip_pr_repos = set((args.skip_pr or '').split(',')) if args.skip_pr else set()
 
         work_dir = Path(state['work_dir'])
         # old_key is no longer stored in state file (replaced with old_key_hash for security)
@@ -545,6 +880,12 @@ def main():
             if not args.quiet:
                 print(f"\n[{i}/{len(pending_repos)}] Processing {org}/{repo_name}...", file=sys.stderr)
 
+            # Skip if in skip list
+            if repo_name in skip_repos:
+                if not args.quiet:
+                    print(f"  Skipping {repo_name} (in --skip-repos)", file=sys.stderr)
+                continue
+
             local_path = Path(repo_status['local_clone_path'])
             if not local_path.exists():
                 repo_status['status'] = 'failed'
@@ -553,21 +894,20 @@ def main():
 
             try:
                 repo = Repo(str(local_path))
-
-                # Check if branch exists
                 branch_name = repo_status.get('branch_name')
-                if branch_name:
-                    try:
-                        repo.git.checkout(branch_name)
-                    except GitCommandError:
-                        repo_status['status'] = 'failed'
-                        repo_status['error'] = 'Branch does not exist'
-                        continue
 
-                # Check if there are uncommitted changes
-                if repo.is_dirty() or len(list(repo.index.diff('HEAD'))) > 0:
-                    # Commit if in commit mode
-                    if args.mode == 'commit':
+                # Handle commit operation
+                if do_commit:
+                    if branch_name:
+                        try:
+                            repo.git.checkout(branch_name)
+                        except GitCommandError:
+                            repo_status['status'] = 'failed'
+                            repo_status['error'] = 'Branch does not exist'
+                            continue
+
+                    # Check if there are uncommitted changes
+                    if repo.is_dirty() or len(list(repo.index.diff('HEAD'))) > 0:
                         commit_message = args.commit_message or f"Rotate AWS key: {state['identifier']}"
                         repo.git.add('-A')
                         repo.git.commit('-m', commit_message)
@@ -575,15 +915,116 @@ def main():
                         repo_status['commit_hash'] = repo.head.commit.hexsha
                         repo_status['status'] = 'completed'
                     else:
-                        repo_status['status'] = 'pending'
-                else:
-                    repo_status['status'] = 'completed'
-                    if not args.quiet:
-                        print(f"  No uncommitted changes found", file=sys.stderr)
+                        repo_status['status'] = 'completed'
+                        if not args.quiet:
+                            print(f"  No uncommitted changes found", file=sys.stderr)
+
+                # Handle push operation
+                if do_push and repo_status.get('changes_committed', False) and not repo_status.get('pushed', False):
+                    if not branch_name:
+                        repo_status['push_error'] = 'No branch name found'
+                        repo_status['push_attempted'] = True
+                        continue
+
+                    try:
+                        repo.git.checkout(branch_name)
+                    except GitCommandError:
+                        repo_status['push_error'] = 'Branch does not exist'
+                        repo_status['push_attempted'] = True
+                        continue
+
+                    push_success, push_error = push_branch(
+                        repo, branch_name, args.push_remote, args.force_push,
+                        args.skip_if_exists, args.verbose
+                    )
+                    repo_status['pushed'] = push_success
+                    repo_status['push_attempted'] = True
+                    if push_success:
+                        repo_status['push_timestamp'] = datetime.now().isoformat()
+                        repo_status['push_error'] = None
+                        if not args.quiet:
+                            print(f"  ✓ Pushed branch {branch_name}", file=sys.stderr)
+                    else:
+                        repo_status['push_error'] = push_error
+                        if not args.quiet:
+                            print(f"  ✗ Push failed: {push_error}", file=sys.stderr)
+
+                # Handle PR creation operation
+                if do_create_pr and repo_status.get('pushed', False) and not repo_status.get('pr_created', False):
+                    if repo_name in skip_pr_repos:
+                        if not args.quiet:
+                            print(f"  Skipping PR creation for {repo_name} (in --skip-pr)", file=sys.stderr)
+                        continue
+
+                    if not branch_name:
+                        repo_status['pr_error'] = 'No branch name found'
+                        repo_status['pr_attempted'] = True
+                        continue
+
+                    base_branch = args.pr_base_branch or repo_status.get('base_branch', 'main')
+                    identifier = state['identifier']
+
+                    # Generate PR title
+                    if args.pr_title:
+                        pr_title = args.pr_title.format(identifier=identifier, repo=repo_name, branch=branch_name)
+                    else:
+                        pr_title = f"Rotate AWS key: {identifier}"
+
+                    # Generate PR body
+                    if args.pr_body and Path(args.pr_body).exists():
+                        with open(args.pr_body, 'r') as f:
+                            pr_body = f.read().format(identifier=identifier, repo=repo_name, branch=branch_name)
+                    else:
+                        pr_body = f"""Rotate AWS key: {identifier}
+
+This PR rotates the AWS key found in this repository.
+
+**Branch:** {branch_name}
+**Identifier:** {identifier}
+**Files Modified:** {', '.join(repo_status.get('files_modified', []))}
+
+Please review and merge when ready.
+"""
+
+                    # Parse labels, reviewers, assignees
+                    labels = [l.strip() for l in (args.pr_labels or '').split(',') if l.strip()]
+                    reviewers = [r.strip() for r in (args.pr_reviewers or '').split(',') if r.strip()]
+                    assignees = [a.strip() for a in (args.pr_assignees or '').split(',') if a.strip()]
+
+                    # Determine which method to use
+                    # Prefer CLI if installed (even if not authenticated, will try and give better error)
+                    use_cli = args.use_gh_cli or (not args.use_github_api and check_gh_cli_installed())
+
+                    pr_success, pr_result = create_pull_request(
+                        org, repo_name, branch_name, base_branch, pr_title, pr_body,
+                        labels, reviewers, assignees, args.draft_pr,
+                        use_cli, args.github_token, args.verbose
+                    )
+
+                    repo_status['pr_attempted'] = True
+                    if pr_success and pr_result:
+                        repo_status['pr_created'] = True
+                        repo_status['pr_url'] = pr_result.get('url')
+                        repo_status['pr_number'] = pr_result.get('number')
+                        repo_status['pr_timestamp'] = datetime.now().isoformat()
+                        repo_status['pr_error'] = None
+                        if not args.quiet:
+                            print(f"  ✓ Created PR: {pr_result.get('url')}", file=sys.stderr)
+                    else:
+                        repo_status['pr_error'] = pr_result if isinstance(pr_result, str) else 'Unknown error'
+                        if not args.quiet:
+                            print(f"  ✗ PR creation failed: {repo_status['pr_error']}", file=sys.stderr)
 
             except Exception as e:
-                repo_status['status'] = 'failed'
-                repo_status['error'] = str(e)
+                if do_commit:
+                    repo_status['status'] = 'failed'
+                    repo_status['error'] = str(e)
+                elif do_push:
+                    repo_status['push_error'] = str(e)
+                    repo_status['push_attempted'] = True
+                elif do_create_pr:
+                    repo_status['pr_error'] = str(e)
+                    repo_status['pr_attempted'] = True
                 if args.verbose:
                     print(f"  Error: {e}", file=sys.stderr)
 
@@ -592,13 +1033,61 @@ def main():
         save_state(state, state_file)
 
         if not args.quiet:
-            completed = sum(1 for r in state['repositories'] if r.get('changes_committed', False))
-            print(f"\nCompleted: {completed} repositories committed", file=sys.stderr)
+            if do_commit:
+                completed = sum(1 for r in state['repositories'] if r.get('changes_committed', False))
+                print(f"\nCompleted: {completed} repositories committed", file=sys.stderr)
+                # Show next step if not already pushing
+                if not do_push:
+                    pushed_count = sum(1 for r in state['repositories'] if r.get('pushed', False))
+                    if pushed_count == 0:
+                        print("\nTo push commits, run:", file=sys.stderr)
+                        print(f"  ./trufflehog/trufflehog-rotate-aws-key.py --resume -i {state['identifier']} --push", file=sys.stderr)
+            if do_push:
+                pushed = sum(1 for r in state['repositories'] if r.get('pushed', False))
+                print(f"Pushed: {pushed} repositories", file=sys.stderr)
+                # Show next step if not already creating PRs
+                if not do_create_pr:
+                    pr_count = sum(1 for r in state['repositories'] if r.get('pr_created', False))
+                    if pr_count == 0 and pushed > 0:
+                        print("\nTo create pull requests, run:", file=sys.stderr)
+                        print(f"  ./trufflehog/trufflehog-rotate-aws-key.py --resume -i {state['identifier']} --create-pr", file=sys.stderr)
+            if do_create_pr:
+                prs_created = sum(1 for r in state['repositories'] if r.get('pr_created', False))
+                print(f"PRs created: {prs_created} repositories", file=sys.stderr)
             print(f"State updated: {state_file}", file=sys.stderr)
+            if log_file:
+                print(f"Log file: {log_file}", file=sys.stderr)
+
+        # Cleanup logging
+        if tee_output:
+            tee_output.__exit__(None, None, None)
 
         sys.exit(0)
 
-    # Parse report
+    # Get new key (required for initial run, optional for resume)
+    if args.prompt_key:
+        new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
+    elif args.new_key:
+        new_key = args.new_key
+    else:
+        new_key = os.environ.get('TRUFFLEHOG_NEW_AWS_KEY')
+        if not new_key and not args.resume:
+            print("ERROR: New key required. Use -k, -p, or set TRUFFLEHOG_NEW_AWS_KEY", file=sys.stderr)
+            sys.exit(1)
+
+    if not new_key and not args.resume:
+        print("ERROR: New key cannot be empty", file=sys.stderr)
+        sys.exit(1)
+
+    # Parse report (required for initial run, not for resume with push/PR only)
+    if not args.report and not args.resume:
+        print("ERROR: Report file required for initial run. Use -r/--report", file=sys.stderr)
+        sys.exit(1)
+
+    if not args.report:
+        # Resume mode with push/PR only - no report needed
+        sys.exit(0)
+
     report_path = Path(args.report)
     if not report_path.exists():
         print(f"ERROR: Report file not found: {report_path}", file=sys.stderr)
@@ -674,6 +1163,15 @@ def main():
     work_dir.mkdir(parents=True, exist_ok=True)
     repos_dir.mkdir(parents=True, exist_ok=True)
 
+    # Setup logging for initial run
+    log_file = work_dir / f"trufflehog-rotate-{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+    tee_output = TeeOutput(log_file, args.quiet)
+    tee_output.__enter__()
+    sys.stderr = tee_output
+
+    if not args.quiet:
+        print(f"Log file: {log_file}", file=sys.stderr)
+
     if not args.quiet:
         print("─" * 70, file=sys.stderr)
         print("Configuration:", file=sys.stderr)
@@ -699,7 +1197,8 @@ def main():
 
         status = process_repository(
             repo_info, old_key, new_key, work_dir, backup_dir,
-            args.branch_prefix, timestamp, args.mode, args.reuse_clones, args.verbose
+            args.branch_prefix, timestamp, args.mode, args.reuse_clones, args.verbose,
+            args.push, args.force_push, args.push_remote, args.skip_if_exists
         )
         repositories_status.append(status)
 
@@ -709,10 +1208,82 @@ def main():
                 print(f"  ✓ Files modified: {len(status['files_modified'])}", file=sys.stderr)
                 if status['changes_committed']:
                     print(f"  ✓ Changes committed", file=sys.stderr)
+                if status.get('pushed'):
+                    print(f"  ✓ Branch pushed", file=sys.stderr)
             else:
                 print(f"  ✗ Status: {status['status']}", file=sys.stderr)
                 if 'error' in status:
                     print(f"  ✗ Error: {status['error']}", file=sys.stderr)
+
+    # Create PRs if requested (after all repositories are processed)
+    if args.create_pr:
+        skip_pr_repos = set((args.skip_pr or '').split(',')) if args.skip_pr else set()
+        # Prefer CLI if installed (even if not authenticated, will try and give better error)
+        use_cli = args.use_gh_cli or (not args.use_github_api and check_gh_cli_installed())
+
+        for repo_status in repositories_status:
+            if not repo_status.get('pushed', False) or repo_status.get('pr_created', False):
+                continue
+
+            repo_name = repo_status.get('repository_name')
+            if repo_name in skip_pr_repos:
+                continue
+
+            org = repo_status.get('organization', 'unknown')
+            branch_name = repo_status.get('branch_name')
+            if not branch_name:
+                repo_status['pr_error'] = 'No branch name found'
+                repo_status['pr_attempted'] = True
+                continue
+
+            base_branch = args.pr_base_branch or repo_status.get('base_branch', 'main')
+
+            # Generate PR title
+            if args.pr_title:
+                pr_title = args.pr_title.format(identifier=args.identifier, repo=repo_name, branch=branch_name)
+            else:
+                pr_title = f"Rotate AWS key: {args.identifier}"
+
+            # Generate PR body
+            if args.pr_body and Path(args.pr_body).exists():
+                with open(args.pr_body, 'r') as f:
+                    pr_body = f.read().format(identifier=args.identifier, repo=repo_name, branch=branch_name)
+            else:
+                pr_body = f"""Rotate AWS key: {args.identifier}
+
+This PR rotates the AWS key found in this repository.
+
+**Branch:** {branch_name}
+**Identifier:** {args.identifier}
+**Files Modified:** {', '.join(repo_status.get('files_modified', []))}
+
+Please review and merge when ready.
+"""
+
+            # Parse labels, reviewers, assignees
+            labels = [l.strip() for l in (args.pr_labels or '').split(',') if l.strip()]
+            reviewers = [r.strip() for r in (args.pr_reviewers or '').split(',') if r.strip()]
+            assignees = [a.strip() for a in (args.pr_assignees or '').split(',') if a.strip()]
+
+            pr_success, pr_result = create_pull_request(
+                org, repo_name, branch_name, base_branch, pr_title, pr_body,
+                labels, reviewers, assignees, args.draft_pr,
+                use_cli, args.github_token, args.verbose
+            )
+
+            repo_status['pr_attempted'] = True
+            if pr_success and pr_result:
+                repo_status['pr_created'] = True
+                repo_status['pr_url'] = pr_result.get('url')
+                repo_status['pr_number'] = pr_result.get('number')
+                repo_status['pr_timestamp'] = datetime.now().isoformat()
+                repo_status['pr_error'] = None
+                if not args.quiet:
+                    print(f"  ✓ Created PR for {org}/{repo_name}: {pr_result.get('url')}", file=sys.stderr)
+            else:
+                repo_status['pr_error'] = pr_result if isinstance(pr_result, str) else 'Unknown error'
+                if not args.quiet:
+                    print(f"  ✗ PR creation failed for {org}/{repo_name}: {repo_status['pr_error']}", file=sys.stderr)
 
     # Create state file
     new_key_hash = hashlib.sha256(new_key.encode()).hexdigest()
@@ -755,7 +1326,23 @@ def main():
 
         if args.mode == 'dry-run':
             print("\nTo commit changes, run:", file=sys.stderr)
-            print(f"  ./trufflehog-rotate-aws-key.py --resume --mode commit", file=sys.stderr)
+            print(f"  ./trufflehog/trufflehog-rotate-aws-key.py --resume -i {args.identifier} --mode commit", file=sys.stderr)
+        elif args.mode == 'commit':
+            pushed_count = sum(1 for r in repositories_status if r.get('pushed', False))
+            pr_count = sum(1 for r in repositories_status if r.get('pr_created', False))
+            if not args.push and pushed_count == 0:
+                print("\nTo push commits, run:", file=sys.stderr)
+                print(f"  ./trufflehog/trufflehog-rotate-aws-key.py --resume -i {args.identifier} --push", file=sys.stderr)
+            if not args.create_pr and pr_count == 0 and pushed_count > 0:
+                print("\nTo create pull requests, run:", file=sys.stderr)
+                print(f"  ./trufflehog/trufflehog-rotate-aws-key.py --resume -i {args.identifier} --create-pr", file=sys.stderr)
+
+        if log_file:
+            print(f"\nLog file: {log_file}", file=sys.stderr)
+
+    # Cleanup logging
+    if tee_output:
+        tee_output.__exit__(None, None, None)
 
 
 if __name__ == '__main__':
