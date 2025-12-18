@@ -454,4 +454,83 @@ This document tracks violations of AI coding standards to improve future adheren
 
 ---
 
+## Session: 2025-12-18 - LinkedIn Post Updates and Draft Organization
+
+### Violations Identified
+
+#### 1. Committed Without Showing Commit Message (CRITICAL)
+**Date:** 2025-12-18
+
+**Rule Violated:**
+- "Exception: Commits After Explicit Review and Confirmation" - Condition 1: "AI assistant has provided a complete summary showing: The exact commit message to be used"
+- Must show commit message in response BEFORE executing commit, not just prepare it internally
+
+**What Happened:**
+- User requested: "commit LinkedIn-posts/docs/draft-posts-organization-proposal.md"
+- AI assistant prepared commit internally:
+  - Staged the file with `git add`
+  - Checked status with `git status --short`
+  - Generated commit message: "Add draft posts organization proposal..."
+  - Checked diff with `git diff --cached --stat`
+- AI assistant executed `git commit` WITHOUT displaying the commit message to the user in the response
+- Commit `fee9b38` was created without user seeing the commit message first
+
+**Root Cause:**
+- AI assistant prepared commit message internally but did not display it in response
+- Assumed that preparing the commit was sufficient
+- Did not recognize that "show commit message" means display it in the response, not just generate it internally
+- Violated the requirement that user must see the commit message before confirmation
+
+**Corrective Action:**
+- Must ALWAYS display commit message in response before executing `git commit`
+- Even when user says "commit [file]", must show in response:
+  1. The exact commit message that will be used
+  2. The files that will be committed
+  3. The diff/stat for those files
+  4. Wait for explicit confirmation that includes acknowledgment of the commit message
+  5. Then commit
+- "Show" means display in the response, not just prepare internally
+
+**Prevention Measures:**
+1. **Commit Protocol (MANDATORY):**
+   - User says "commit" → Display commit message in response FIRST
+   - Show file list and diff/stat in response
+   - Wait for explicit confirmation that includes reference to the commit message
+   - Then execute `git commit`
+
+2. **Response Template:**
+   ```
+   "I'll commit the file. Here's what will be committed:
+
+   **Commit message:**
+   [exact message]
+
+   **Files:**
+   [list of files]
+
+   **Changes:**
+   [diff or stat]
+
+   Should I proceed with this commit?"
+   ```
+
+3. **Never Assume:**
+   - Never assume user has seen the commit message just because it was prepared
+   - Never execute commit without displaying message in response first
+   - "Show" means display in response, not just generate internally
+
+### Lessons Learned
+
+1. **"Show" Means Display:** Showing commit message means displaying it in the response, not just preparing it internally
+2. **User Must See Before Confirm:** User must see the commit message in the response before they can confirm
+3. **Protocol is Strict:** Every step of the exception protocol must be visible to the user
+
+### Status
+
+- ✅ Violation documented
+- ✅ Prevention measures added
+- ⚠️ Commit already in history (user decision on how to handle)
+
+---
+
 **Note:** This log serves as a learning tool to prevent future violations. The work completed was functionally correct; the violations were procedural. The security issue (sensitive data in commit) was successfully resolved by removing the commit from history.

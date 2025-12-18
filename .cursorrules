@@ -12,7 +12,7 @@ Before starting any work, you MUST read these files in order:
    - Code quality standards
    - Security policies
 
-2. **`AI_STANDARDS_VIOLATIONS_LOG.md`** - Historical violations and lessons learned
+2. **`docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md`** - Historical violations and lessons learned
    - Review recent violations to understand common mistakes
    - Learn from past errors
    - Understand prevention measures
@@ -40,7 +40,7 @@ Even when user says "commit", you MUST:
 
 ## Full Details
 
-See `README-AI-CODING-STANDARDS.md` for complete standards and `AI_STANDARDS_VIOLATIONS_LOG.md` for violation history.
+See `README-AI-CODING-STANDARDS.md` for complete standards and `docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md` for violation history.
 
 ---
 

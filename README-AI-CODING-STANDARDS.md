@@ -86,7 +86,13 @@ When AI agents are used to modify or create files in any repository:
 - **When to Create Documentation Files:**
   - ✅ User explicitly requests: "create a review document", "write an analysis file", "generate a report"
   - ✅ File creation is clearly necessary for the task (e.g., "generate a report file")
-  - ❌ User says "review X" - Provide review in conversation, don't create a file
+  - ✅ **AI Coding Standards Compliance Reviews:** When user asks to review a session for violations of AI coding standards, create a detailed review file:
+    - File should be named: `AI_STANDARDS_SESSION_REVIEW_YYYY-MM-DD.md`
+    - File should be saved in: `docs/ai-standards/`
+    - File should document all commits made, standards checked, violations found, and compliance status
+    - Any violations found must also be documented in `docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md`
+    - This is an exception to the general rule - standards compliance reviews require documentation files
+  - ❌ User says "review X" (general reviews) - Provide review in conversation, don't create a file
   - ❌ User says "analyze Y" - Provide analysis in conversation, don't create a file
   - ❌ Creating file "just in case" or "for future reference" without being asked
   - **When in doubt:** Ask: "Should I create a review document file, or just provide the review here?"
@@ -169,12 +175,40 @@ This rule is **MANDATORY** and is enforced by git hooks. Violations will block c
 
 **Related Documentation:**
 - `git/README.md` - Git hooks documentation and setup
-- `AI_STANDARDS_VIOLATIONS_LOG.md` - Security violations and lessons learned
+- `docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md` - Security violations and lessons learned
 - `git/docs/` - Additional git hooks documentation
 
 **This rule takes precedence over all other rules.** Security is non-negotiable.
 
-### 6. Documentation Verification
+### 6. AI Coding Standards Compliance Reviews
+
+**IMPORTANT: Session Review Documentation**
+
+When asked to review a session for violations of AI coding standards:
+
+1. **Create Detailed Review File:**
+   - File name: `AI_STANDARDS_SESSION_REVIEW_YYYY-MM-DD.md`
+   - File location: `docs/ai-standards/`
+   - Document all commits made during the session
+   - Review each commit against the exception protocol requirements
+   - Check file creation, code quality, security, and other standards
+   - Provide summary of violations found (if any) and compliance status
+
+2. **Document Violations:**
+   - Any violations found must be documented in `docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md`
+   - Include root cause analysis, corrective action, and prevention measures
+   - Follow the format established in the violations log
+
+3. **Review Scope:**
+   - Check all git operations (commits, staging, etc.)
+   - Verify file creation followed standards
+   - Check code quality (trailing whitespace, newlines, etc.)
+   - Verify no sensitive data was committed
+   - Check documentation accuracy (if applicable)
+
+**This is a required exception:** When reviewing for standards compliance, a documentation file must be created (unlike general "review X" requests which are conversational).
+
+### 7. Documentation Verification
 
 **IMPORTANT: README Accuracy Check**
 - Before committing changes to scripts, verify that README.md accurately reflects the current script implementation
@@ -309,3 +343,9 @@ If you encounter issues with hooks:
 ## Project-Specific Standards
 
 Projects may have additional standards beyond these core rules. Refer to each project's README.md for project-specific AI coding standards.
+
+## Related Documentation
+
+- `docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md` - Historical violations and lessons learned
+- `docs/ai-standards/AI_RULES_REVIEW.md` - Standards review and recommendations
+- `docs/ai-standards/AI_STANDARDS_SESSION_REVIEW_*.md` - Session-specific compliance reviews

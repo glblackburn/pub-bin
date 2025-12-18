@@ -163,7 +163,7 @@ For detailed documentation, see:
 
 **Status:** Pending Review
 **Date Added:** 2025-12-18
-**Related:** See [TODO in AI_STANDARDS_VIOLATIONS_LOG.md](../AI_STANDARDS_VIOLATIONS_LOG.md#todo-revisit-sensitive-data-in-md-files)
+**Related:** See [TODO in AI_STANDARDS_VIOLATIONS_LOG.md](../docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md#todo-revisit-sensitive-data-in-md-files)
 
 **Action Required:**
 - Review git hooks configuration to ensure all file types (including .md files) are properly scanned

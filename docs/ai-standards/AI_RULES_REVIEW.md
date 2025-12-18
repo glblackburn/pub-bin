@@ -4,7 +4,7 @@
 **Reviewer:** AI Assistant
 **Documents Reviewed:**
 - `README-AI-CODING-STANDARDS.md`
-- `AI_STANDARDS_VIOLATIONS_LOG.md`
+- `AI_STANDARDS_VIOLATIONS_LOG.md` (same directory)
 
 ---
 
@@ -195,7 +195,7 @@ Before executing any of these operations, AI assistants MUST:
 ### 8. Error Recovery
 
 **If a Violation Occurs:**
-1. Document the violation in `AI_STANDARDS_VIOLATIONS_LOG.md`
+1. Document the violation in `AI_STANDARDS_VIOLATIONS_LOG.md` (same directory)
 2. Explain what went wrong and why
 3. Fix the issue if possible
 4. Update prevention measures
@@ -245,7 +245,7 @@ Before executing any of these operations, AI assistants MUST:
    ```markdown
    **Valid Confirmations:**
    - "You can commit using that message for both files"
-   - "Go ahead and commit README-AI-CODING-STANDARDS.md and AI_STANDARDS_VIOLATIONS_LOG.md with that message"
+   - "Go ahead and commit README-AI-CODING-STANDARDS.md and docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md with that message"
    - "I've reviewed both files, commit with that message"
 
    **Invalid Confirmations:**
@@ -278,7 +278,7 @@ Before executing any of these operations, AI assistants MUST:
 
 ### 3. Cross-References
 - Standards document doesn't reference violations log
-- Could add: "See `AI_STANDARDS_VIOLATIONS_LOG.md` for examples of violations and lessons learned"
+   - Could add: "See `docs/ai-standards/AI_STANDARDS_VIOLATIONS_LOG.md` for examples of violations and lessons learned"
 
 ---
 
