@@ -1,17 +1,19 @@
-Performance optimization is iterative - small changes compound into significant improvements.  
+Performance optimization is iterative - small changes compound into significant improvements.
 
-When I started testing React2Shell Server, the test suite took 5m33s. Through iterative optimization, I got it down to 2m27s. That's a 52% improvement.  
+When I started testing React2Shell Server, the test suite took 5m33s. Through iterative optimization, I got it down to 2m27s. That's a 52% improvement.
 
-𝐖𝐡𝐚𝐭 𝐜𝐡𝐚𝐧𝐠𝐞𝐝:  
+𝐖𝐡𝐚𝐭 𝐜𝐡𝐚𝐧𝐠𝐞𝐝:
 
-▶ Reduced wait times - implicit waits: 10s → 3s, explicit waits: 10s → 5s  
-▶ Smart caching - check if React version already installed before npm install  
-▶ Browser optimizations - use headless mode, disable unnecessary features  
-▶ Parallel execution - optimized to 6 workers per version  
-▶ Performance tracking - automatic regression detection with personalized time limits  
+▶ Reduced wait times - implicit waits: 10s → 3s, explicit waits: 10s → 5s
+▶ Smart caching - check if React version already installed before npm install
+▶ Browser optimizations - use headless mode, disable unnecessary features
+▶ Parallel execution - 10 workers for regular tests, 6 workers per version for version-switch tests
+▶ Performance tracking - automatic regression detection with personalized time limits
 
-But more importantly, I built performance tracking that detects regressions automatically. Each test has personalized time limits based on historical performance, and the system warns when tests start running slower.  
+But more importantly, I built a comprehensive performance tracking system that detects regressions automatically. Each test has personalized time limits based on historical performance data, and the system warns when tests start running slower. The system stores timestamped performance history, compares against baselines, and generates HTML reports with trends and regression analysis.
 
-The lesson: measure before optimizing. Tracking actual metrics (5m33s → 2m27s) validates the work and shows where to focus.  
+The tracking system uses individual test limits (calculated from historical data with 10% buffer) and category-based fallbacks. Suite-level limits provide additional protection. All performance data is stored in timestamped JSON files for trend analysis.
 
-#TestAutomation #Performance #Selenium #Python
+The lesson: measure before optimizing. Tracking actual metrics (5m33s → 2m27s) validates the work and shows where to focus. But building the tracking system first enabled data-driven optimization - I could see exactly which tests were slow and where to invest effort.
+
+#TestAutomation #Performance #Selenium #Python #PerformanceTracking

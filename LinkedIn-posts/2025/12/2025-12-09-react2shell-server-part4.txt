@@ -1,19 +1,22 @@
-Some bugs aren't fixable. And that's okay.  
+Some bugs aren't fixable. And that's okay.
 
-Next.js 14.0.0 and 14.1.0 have an internal bug when processing RCE PoC payloads - the error handler crashes due to a null reference, causing requests to hang indefinitely.  
+Next.js 14.0.0 and 14.1.0 have an internal bug when processing RCE PoC payloads - the error handler crashes due to a null reference, causing requests to hang indefinitely. After multiple investigation iterations (testing with React 18, React 19, different wait strategies, polling vs fixed waits), I confirmed it's a Next.js 14.x internal bug that cannot be fixed in application code. I documented it as BUG-8 (Not Fixable) and moved on.
 
-After multiple investigation iterations, I documented it as a framework limitation and moved on.  
+𝐖𝐡𝐚𝐭 𝐈 𝐥𝐞𝐚𝐫𝐧𝐞𝐝:
 
-𝐖𝐡𝐚𝐭 𝐈 𝐥𝐞𝐚𝐫𝐧𝐞𝐝:  
+▶ Start simple, then iterate - began with basic version switching, added features incrementally across 13 development phases
+▶ Some bugs are framework limitations - document and work around, don't try to fix unfixable issues
+▶ Test what you think you're testing - initially version tests only ran when current version matched; had to actually switch versions to test all scenarios
+▶ Framework-aware architecture - servers and utilities that adapt to context (Vite/React vs Next.js) are more flexible
+▶ Polling beats fixed waits - polling-based readiness checks are more efficient than fixed wait times
+▶ Root cause analysis requires iteration - complex bugs may require multiple investigation iterations to identify fundamental misunderstandings
+▶ Framework-specific tools - security scanners may be designed for specific frameworks (Next.js) and won't work with others (standalone React)
 
-▶ Start simple, then iterate - began with basic version switching, added features incrementally  
-▶ Some bugs are framework limitations - document and work around, don't try to fix unfixable issues  
-▶ Test what you think you're testing - initially version tests only ran when current version matched; had to actually switch versions to test all scenarios  
-▶ Framework-aware architecture - servers and utilities that adapt to context are more flexible  
+The project evolved from a simple React version switcher to a comprehensive security testing tool with framework-aware architecture, performance tracking, defect tracking, and scanner verification. It now supports both Vite/React and Next.js modes, with automated testing across multiple versions.
 
-The project now serves as both a functional security testing tool and a learning resource for version management, test automation, and framework-aware architecture.  
+The project serves as both a functional security testing tool and a learning resource for version management, test automation, framework-aware architecture, and performance optimization.
 
-Project: https://github.com/glblackburn/react2shell-server  
-Full development narrative with all 13 phases: https://github.com/glblackburn/react2shell-server/blob/main/DEVELOPMENT_NARRATIVE.md  
+Project: https://github.com/glblackburn/react2shell-server
+Full development narrative with all 13 phases: https://github.com/glblackburn/react2shell-server/blob/main/DEVELOPMENT_NARRATIVE.md
 
-#SoftwareDevelopment #LessonsLearned #TestAutomation #React
+#SoftwareDevelopment #LessonsLearned #TestAutomation #React #NextJS #Architecture
