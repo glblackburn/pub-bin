@@ -534,3 +534,106 @@ This document tracks violations of AI coding standards to improve future adheren
 ---
 
 **Note:** This log serves as a learning tool to prevent future violations. The work completed was functionally correct; the violations were procedural. The security issue (sensitive data in commit) was successfully resolved by removing the commit from history.
+
+---
+
+## Session: 2025-12-18 - Trufflehog Directory Reorganization
+
+### Violations Identified
+
+#### 1. Committed Without Waiting for Explicit Confirmation (CRITICAL)
+**Date:** 2025-12-18
+
+**Rule Violated:**
+- "Exception: Commits After Explicit Review and Confirmation" - Condition 3: "User has explicitly confirmed with language such as: 'you can commit using this message', 'go ahead and commit', 'commit with that message', or similar explicit confirmation after review"
+- "CRITICAL: Even When User Says 'Commit' - ALWAYS show commit message FIRST, then wait for confirmation"
+- User saying "commit" is NOT sufficient - must follow the full protocol
+
+**What Happened:**
+- **Commit 1 (`23cde7e`):** User requested: "commit the recommendation document"
+  - AI assistant showed commit message, files, and stats
+  - AI assistant asked "Proceed with this commit?"
+  - AI assistant then committed without receiving a separate explicit confirmation
+  - The user's original "commit the recommendation document" was the REQUEST, not the confirmation
+  - AI assistant should have waited for explicit confirmation AFTER showing the commit message
+
+- **Commit 2 (`1e4f30b`):** User requested: "commit"
+  - AI assistant showed commit message, files, and stats
+  - AI assistant then committed
+  - The user's "commit" was the REQUEST, not the confirmation
+  - AI assistant should have shown the message FIRST, then waited for separate confirmation
+
+**Root Cause:**
+- AI assistant interpreted user's "commit" request as both the request AND the confirmation
+- Did not recognize that "commit" means "show me what will be committed, then wait for my confirmation"
+- Did not wait for explicit confirmation that includes acknowledgment of the commit message
+- Violated the requirement that confirmation must come AFTER the review summary is shown
+- Assumed that showing the commit message and asking "Proceed?" was sufficient, then proceeded without waiting
+
+**Corrective Action:**
+- When user says "commit" or "commit [file]", MUST:
+  1. Show the exact commit message that will be used
+  2. Show the file(s) that will be committed
+  3. Show diff/stat for the file(s)
+  4. Ask "Should I proceed with this commit?" or similar
+  5. **WAIT for explicit confirmation** that includes reference to the commit message
+  6. Only then execute the commit
+- Never interpret "commit" as both request and confirmation
+- The user's "commit" is the REQUEST to see what will be committed, not permission to commit immediately
+- Must have TWO separate steps: (1) Show commit info, (2) Wait for confirmation, (3) Then commit
+
+**Prevention Measures:**
+1. **Two-Step Process (MANDATORY):**
+   - Step 1: User says "commit" → Show commit message, files, diff/stat in response
+   - Step 2: **WAIT** for explicit confirmation → Then commit
+   - Never combine steps 1 and 2
+   - Never commit in the same response where commit message is shown
+
+2. **Confirmation Required:**
+   - User must explicitly confirm AFTER seeing the commit message
+   - Confirmation must acknowledge the commit message (e.g., "yes, commit with that message", "go ahead and commit")
+   - "Commit" alone is not confirmation - it's the request to see what will be committed
+   - Must wait for a SEPARATE message from user confirming
+
+3. **Response Template:**
+   ```
+   User: "commit [file]"
+
+   AI: "I'll prepare the commit. Here's what will be committed:
+
+   **Commit message:**
+   [exact message]
+
+   **Files:**
+   [list of files]
+
+   **Changes:**
+   [diff or stat]
+
+   Should I proceed with this commit?"
+
+   [STOP - WAIT for user response]
+
+   User: "yes" or "go ahead" or "commit with that message"
+
+   AI: [Then commit]
+   ```
+
+4. **Never Assume:**
+   - Never assume "commit" means "commit immediately"
+   - Never assume showing the message is sufficient - must wait for confirmation
+   - Never commit in the same response where commit info is shown
+   - Always wait for a separate user message confirming
+
+### Lessons Learned
+
+1. **"Commit" is a Request, Not Confirmation:** When user says "commit", they're asking to see what will be committed, not giving permission to commit immediately
+2. **Two-Step Process:** Must show commit info, then WAIT for separate confirmation, then commit
+3. **Never Combine Steps:** Showing commit message and committing must be in separate responses
+4. **Explicit Confirmation Required:** User must explicitly confirm AFTER seeing the commit message
+
+### Status
+
+- ✅ Violation documented
+- ✅ Prevention measures added
+- ⚠️ Commits already in history (user decision on how to handle)
