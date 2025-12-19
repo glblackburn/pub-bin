@@ -13,7 +13,7 @@ A utility script to recursively find and scan git repositories for secrets using
 
 **Usage:**
 ```bash
-./trufflehog-local-git-repos.sh [-hqv] -d <directory> [-o <output_directory>]
+./scripts/trufflehog-local-git-repos.sh [-hqv] -d <directory> [-o <output_directory>]
 ```
 
 **Options:**
@@ -32,10 +32,10 @@ A utility script to recursively find and scan git repositories for secrets using
 **Examples:**
 ```bash
 # Scan all repos in ~/projects
-./trufflehog-local-git-repos.sh -d ~/projects
+./scripts/trufflehog-local-git-repos.sh -d ~/projects
 
 # Verbose mode
-./trufflehog-local-git-repos.sh -v -d ~/projects
+./scripts/trufflehog-local-git-repos.sh -v -d ~/projects
 ```
 
 **Dependencies:**
@@ -99,7 +99,7 @@ A Python script that replaces secret values in trufflehog output files with reve
 
 **Usage:**
 ```bash
-./trufflehog-tokenize-secrets.py [-h] [-v] [-q] [-n] [--in-place]
+./scripts/trufflehog-tokenize-secrets.py [-h] [-v] [-q] [-n] [--in-place]
     -d <directory>
     [-o <output_directory>]
     [-l <lookup_table_path>]
@@ -132,18 +132,18 @@ A Python script that replaces secret values in trufflehog output files with reve
 **Examples:**
 ```bash
 # Basic usage (creates timestamped output directory)
-./trufflehog-tokenize-secrets.py -d ./scan_results
+./scripts/trufflehog-tokenize-secrets.py -d ./scan_results
 
 # Custom output and lookup table
-./trufflehog-tokenize-secrets.py -d ./scan_results \
+./scripts/trufflehog-tokenize-secrets.py -d ./scan_results \
     -o ./tokenized_results \
     -l ./secrets_lookup.json
 
 # Dry run to see what would happen
-./trufflehog-tokenize-secrets.py -d ./scan_results -n -v
+./scripts/trufflehog-tokenize-secrets.py -d ./scan_results -n -v
 
 # In-place tokenization (with confirmation prompt)
-./trufflehog-tokenize-secrets.py -d ./scan_results --in-place
+./scripts/trufflehog-tokenize-secrets.py -d ./scan_results --in-place
 ```
 
 **Dependencies:**
@@ -170,7 +170,7 @@ A Python script that restores original secret values from tokenized trufflehog o
 
 **Usage:**
 ```bash
-./trufflehog-detokenize-secrets.py [-h] [-v] [-q] [-n] [--continue-on-missing]
+./scripts/trufflehog-detokenize-secrets.py [-h] [-v] [-q] [-n] [--continue-on-missing]
     -d <directory>
     [-l <lookup_table_path>]
     [-o <output_directory>]
@@ -197,18 +197,18 @@ A Python script that restores original secret values from tokenized trufflehog o
 **Examples:**
 ```bash
 # Restore secrets (auto-detects lookup table in directory)
-./trufflehog-detokenize-secrets.py -d ./tokenized_results -o ./restored_results
+./scripts/trufflehog-detokenize-secrets.py -d ./tokenized_results -o ./restored_results
 
 # Specify lookup table explicitly
-./trufflehog-detokenize-secrets.py -d ./tokenized_results \
+./scripts/trufflehog-detokenize-secrets.py -d ./tokenized_results \
     -l ./secrets_lookup.json \
     -o ./restored_results
 
 # Dry run to see what would happen
-./trufflehog-detokenize-secrets.py -d ./tokenized_results -n -v
+./scripts/trufflehog-detokenize-secrets.py -d ./tokenized_results -n -v
 
 # Continue even if some tokens are missing
-./trufflehog-detokenize-secrets.py -d ./tokenized_results \
+./scripts/trufflehog-detokenize-secrets.py -d ./tokenized_results \
     --continue-on-missing
 ```
 
@@ -232,7 +232,7 @@ A Python script that analyzes trufflehog output files (both tokenized and raw) t
 
 **Usage:**
 ```bash
-./trufflehog-analyze-results.py [-h] [-v] [-q] [--no-browser]
+./scripts/trufflehog-analyze-results.py [-h] [-v] [-q] [--no-browser]
     -d <directory>
     --org <organization>
     [-o <output_file>]
@@ -272,20 +272,20 @@ A Python script that analyzes trufflehog output files (both tokenized and raw) t
 **Examples:**
 ```bash
 # Analyze tokenized files (auto-detect)
-./trufflehog-analyze-results.py -d ./tokenized_results --org example-org
+./scripts/trufflehog-analyze-results.py -d ./tokenized_results --org example-org
 
 # Analyze raw files (with confirmation prompt)
-./trufflehog-analyze-results.py -d ./raw_results --org example-org --mode raw
+./scripts/trufflehog-analyze-results.py -d ./raw_results --org example-org --mode raw
 
 # Analyze mixed directory (auto-detect both types)
-./trufflehog-analyze-results.py -d ./mixed_results --org example-org --mode auto
+./scripts/trufflehog-analyze-results.py -d ./mixed_results --org example-org --mode auto
 
 # Analyze raw files without confirmation (for automation)
-./trufflehog-analyze-results.py -d ./raw_results --org example-org \
+./scripts/trufflehog-analyze-results.py -d ./raw_results --org example-org \
     --mode raw --skip-raw-confirmation
 
 # Custom output location and branch
-./trufflehog-analyze-results.py -d ./results --org example-org \
+./scripts/trufflehog-analyze-results.py -d ./results --org example-org \
     -o ./analysis_report.md --branch develop
 ```
 
@@ -314,7 +314,7 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
 
 **Usage:**
 ```bash
-./trufflehog-rotate-aws-key.py [-hqv] [-r <report_file>] [-i <identifier>] [-k <new_key>] [-l <limit>] [OPTIONS]
+./scripts/trufflehog-rotate-aws-key.py [-hqv] [-r <report_file>] [-i <identifier>] [-k <new_key>] [-l <limit>] [OPTIONS]
 ```
 
 **Options:**
@@ -340,26 +340,26 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
 **Examples:**
 ```bash
 # Dry-run mode (make changes without committing)
-./trufflehog-rotate-aws-key.py \
+./scripts/trufflehog-rotate-aws-key.py \
     -r ./trufflehog_report.md \
     -i RAW_abc123_def456 \
     -p \
     --mode dry-run
 
 # Commit mode (automatically commit changes)
-./trufflehog-rotate-aws-key.py \
+./scripts/trufflehog-rotate-aws-key.py \
     -r ./trufflehog_report.md \
     -i RAW_abc123_def456 \
     -k AKIANEWKEYEXAMPLE123 \
     --mode commit
 
 # Resume a previous rotation to commit changes
-./trufflehog-rotate-aws-key.py \
+./scripts/trufflehog-rotate-aws-key.py \
     --resume \
     --mode commit
 
 # Rotate tokenized identifier (requires lookup table)
-./trufflehog-rotate-aws-key.py \
+./scripts/trufflehog-rotate-aws-key.py \
     -r ./trufflehog_report.md \
     -i TOKEN_abc123_def456 \
     --lookup-table ./secrets_lookup.json \
@@ -367,7 +367,7 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
     --mode dry-run
 
 # Limit to first 5 repositories
-./trufflehog-rotate-aws-key.py \
+./scripts/trufflehog-rotate-aws-key.py \
     -r ./trufflehog_report.md \
     -i RAW_abc123_def456 \
     -k AKIANEWKEYEXAMPLE123 \
@@ -397,8 +397,8 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
 6. Create pull requests or push branches as needed
 
 **See also:**
-- `trufflehog-rotate-aws-key-design.md` - Complete design document
-- `REVIEW-trufflehog-rotate-aws-key.md` - Code review and recommendations
+- `docs/design/trufflehog-rotate-aws-key-design.md` - Complete design document
+- `docs/reviews/REVIEW-trufflehog-rotate-aws-key.md` - Code review and recommendations
 
 ---
 
@@ -413,7 +413,7 @@ A utility script to extract raw secret results from trufflehog output files.
 
 **Usage:**
 ```bash
-./trufflehog-show-raw-results.sh <directory>
+./scripts/trufflehog-show-raw-results.sh <directory>
 ```
 
 **Arguments:**
@@ -426,7 +426,7 @@ A utility script to extract raw secret results from trufflehog output files.
 
 **Example:**
 ```bash
-./trufflehog-show-raw-results.sh ./scan_results
+./scripts/trufflehog-show-raw-results.sh ./scan_results
 ```
 
 ---
@@ -443,7 +443,7 @@ A utility script to count and sum unique raw results from trufflehog output file
 
 **Usage:**
 ```bash
-./trufflehog-sum-uniq-raw-results.sh <directory>
+./scripts/trufflehog-sum-uniq-raw-results.sh <directory>
 ```
 
 **Arguments:**
@@ -472,7 +472,7 @@ A Python script that audits the repository and git history for sensitive informa
 
 **Usage:**
 ```bash
-./trufflehog/audit-sensitive-data.py [-h] [-d DIRECTORY] [-o OUTPUT]
+./scripts/audit-sensitive-data.py [-h] [-d DIRECTORY] [-o OUTPUT]
     [--exclude EXCLUDE] [--no-git] [-v] [-q]
 ```
 
@@ -496,16 +496,16 @@ A Python script that audits the repository and git history for sensitive informa
 **Examples:**
 ```bash
 # Audit current directory
-./trufflehog/audit-sensitive-data.py
+./scripts/audit-sensitive-data.py
 
 # Audit specific directory with custom output
-./trufflehog/audit-sensitive-data.py -d ~/projects -o audit_report.md
+./scripts/audit-sensitive-data.py -d ~/projects -o audit_report.md
 
 # Skip git history analysis
-./trufflehog/audit-sensitive-data.py --no-git
+./scripts/audit-sensitive-data.py --no-git
 
 # Exclude specific patterns
-./trufflehog/audit-sensitive-data.py --exclude "*.log" --exclude "*.tmp"
+./scripts/audit-sensitive-data.py --exclude "*.log" --exclude "*.tmp"
 ```
 
 **Dependencies:**
@@ -522,41 +522,41 @@ A Python script that audits the repository and git history for sensitive informa
 
 ```bash
 # 1. Run trufflehog scans on local repositories
-./trufflehog-local-git-repos.sh -d ~/repos -o ./scan_results
+./scripts/trufflehog-local-git-repos.sh -d ~/repos -o ./scan_results
 
 # 2. Tokenize the results (masks secrets for safe processing)
-./trufflehog-tokenize-secrets.py -d ./scan_results \
+./scripts/trufflehog-tokenize-secrets.py -d ./scan_results \
     -o ./tokenized_results \
     -l ./secrets_lookup.json
 
 # 3. Analyze the results (works with both tokenized and raw files)
 # Option A: Analyze tokenized files
-./trufflehog-analyze-results.py -d ./tokenized_results --org example-org
+./scripts/trufflehog-analyze-results.py -d ./tokenized_results --org example-org
 
 # Option B: Analyze raw files directly (with confirmation)
-./trufflehog-analyze-results.py -d ./scan_results --org example-org --mode raw
+./scripts/trufflehog-analyze-results.py -d ./scan_results --org example-org --mode raw
 
 # Option C: Analyze mixed directory (auto-detects both types)
-./trufflehog-analyze-results.py -d ./scan_results --org example-org --mode auto
+./scripts/trufflehog-analyze-results.py -d ./scan_results --org example-org --mode auto
 
 # 4. Process tokenized files with AI agent or other tools
 # (secrets are masked as tokens, safe for external processing)
 # ... AI processing happens here ...
 
 # 5. Restore secrets when needed (auto-detects lookup table)
-./trufflehog-detokenize-secrets.py -d ./tokenized_results \
+./scripts/trufflehog-detokenize-secrets.py -d ./tokenized_results \
     -o ./restored_results
 
 # 6. Rotate AWS keys found in the analysis (optional)
 # First, review the analysis report to identify keys to rotate
-./trufflehog-rotate-aws-key.py \
+./scripts/trufflehog-rotate-aws-key.py \
     -r ./analysis_report.md \
     -i RAW_abc123_def456 \
     -p \
     --mode dry-run
 
 # After reviewing changes, commit them
-./trufflehog-rotate-aws-key.py \
+./scripts/trufflehog-rotate-aws-key.py \
     --resume \
     --mode commit
 ```

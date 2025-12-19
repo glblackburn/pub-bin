@@ -150,12 +150,12 @@ clean: ## remove downloaded trufflehog files
 
 test: check ## test the script (requires trufflehog)
 	@echo "Testing trufflehog-local-git-repos.sh..."
-	@if [ ! -f "./trufflehog-local-git-repos.sh" ]; then \
+	@if [ ! -f "./scripts/trufflehog-local-git-repos.sh" ]; then \
 		echo "ERROR: trufflehog-local-git-repos.sh not found"; \
 		exit 1; \
 	fi
-	@bash -n ./trufflehog-local-git-repos.sh && echo "✓ Syntax check passed" || exit 1
-	@./trufflehog-local-git-repos.sh -h >/dev/null && echo "✓ Help output works" || exit 1
+	@bash -n ./scripts/trufflehog-local-git-repos.sh && echo "✓ Syntax check passed" || exit 1
+	@./scripts/trufflehog-local-git-repos.sh -h >/dev/null && echo "✓ Help output works" || exit 1
 	@echo "✓ All tests passed"
 
 check-deps: ## check if Python dependencies are installed
