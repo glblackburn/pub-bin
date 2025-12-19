@@ -31,12 +31,23 @@ After reading the full standards, remember these are the most frequently violate
 
 ## Protocol for Commits
 
-Even when user says "commit", you MUST:
+**CRITICAL: Two-Step Process (MANDATORY)**
+
+When user says "commit", interpret it as "show me what will be committed" - NOT as "go ahead and commit".
+
+**Step 1 - Show Info, Then STOP:**
 1. Show the exact commit message
 2. Show all files that will be committed
 3. Show diff/stat for each file
-4. Wait for explicit confirmation
-5. Then commit
+4. **END YOUR RESPONSE** - Do NOT commit yet
+5. Ask "Should I proceed with this commit?"
+
+**Step 2 - Wait for Confirmation:**
+6. Wait for user's NEXT message (separate from "commit" request)
+7. User must explicitly confirm (not just "commit" again)
+8. **THEN commit in a NEW response**
+
+**CRITICAL RULE:** NEVER commit in the same response where you show the commit message. The commit must happen in a SEPARATE response after user confirms.
 
 ## Full Details
 

@@ -34,43 +34,109 @@ When AI agents are used to modify or create files in any repository:
 - AI assistants may only ask to check `git status` or `git diff`
 - The user handles ALL git operations (add, commit, push, etc.)
 
-**Exception: Commits After Explicit Review and Confirmation**
-- AI assistants MAY commit changes ONLY when ALL of the following conditions are met:
-  1. **MANDATORY FIRST STEP:** AI assistant has provided a complete summary showing:
-     - The exact commit message to be used
-     - The complete list of ALL files that will be committed (no exceptions)
-     - A summary of changes for EACH file (via `git diff --stat` or `git diff` for each file)
-  2. User has explicitly reviewed the diffs and files for ALL files in the commit
-  3. User has explicitly confirmed with language such as:
-     - "you can commit using this message"
-     - "go ahead and commit"
-     - "commit with that message"
-     - Similar explicit confirmation after review
-  4. **CRITICAL:** The review summary and confirmation must cover ALL files - if a file is not in the review summary, it MUST NOT be committed
+**MANDATORY: Commit Workflow (Two-Step Process)**
 
-**CRITICAL: Even When User Says "Commit"**
-- **NEVER commit immediately when user says "commit"**
-- **ALWAYS show commit message FIRST, then wait for confirmation**
-- User saying "commit" is NOT sufficient - must follow the full protocol
-- The exception rule is MANDATORY, not optional
-- Example: User says "commit Makefile change" → Show commit message and diff FIRST, then wait for confirmation
+AI assistants MUST follow this exact workflow to commit changes. This is a REQUIRED PROCESS, not optional.
 
-**When committing under this exception:**
-  - Use the exact commit message provided in the summary
-  - Only commit the files that were explicitly listed in the review summary
-  - Do not add any files that were not in the review summary
-  - Do not commit any other changes
-  - Verify the commit succeeded and show the commit hash
+**Understanding "Commit" Requests:**
+- When user says "commit" or "commit [file]", they are REQUESTING to see what will be committed, NOT giving permission to commit
+- Interpret "commit" as: "show me what will be committed" - NOT as "go ahead and commit"
+- Permission to commit comes in a SEPARATE message AFTER you show the commit information
+- "Commit" has two meanings:
+  - **Request:** "Show me what will be committed" (what user means when they say "commit")
+  - **Confirmation:** "Go ahead and commit" (what user means when they say "yes", "go ahead", "proceed", etc.)
+
+**What Does NOT Count as Confirmation:**
+- User saying "commit" (this is the request, not confirmation)
+- User saying "commit [file]" (this is the request, not confirmation)
+- User saying "ok" without seeing the full summary first
+
+**What DOES Count as Confirmation:**
+- "yes, commit with that message"
+- "go ahead and commit"
+- "proceed"
+- "commit with that message"
+- Similar explicit confirmation AFTER seeing the commit summary
+
+**Step-by-Step Commit Workflow:**
+
+Before committing, you MUST complete ALL of these steps:
+
+1. **[ ] Show Commit Information in Response:**
+   - Display the exact commit message that will be used
+   - Display the complete list of ALL files that will be committed (no exceptions)
+   - Display a summary of changes for EACH file (via `git diff --stat` or `git diff` for each file)
+   - Format clearly with headers: "Commit message:", "Files:", "Changes:"
+
+2. **[ ] END YOUR RESPONSE (CRITICAL):**
+   - **You MUST NEVER commit in the same response where you show the commit message**
+   - **The commit message display and the commit execution MUST be in separate responses**
+   - After showing commit info, END your response with: "Should I proceed with this commit?" or similar
+   - **STOP - DO NOT PROCEED - WAIT FOR USER'S NEXT MESSAGE**
+
+3. **[ ] Wait for User's Next Message:**
+   - Do not commit until you receive a SEPARATE message from the user
+   - The user's confirmation must come AFTER they see your commit summary
+   - The confirmation must be in a DIFFERENT message than the original "commit" request
+
+4. **[ ] Verify Confirmation:**
+   - User's message must explicitly confirm (not just "commit" again)
+   - Confirmation must acknowledge the commit message or changes
+   - Examples: "yes", "go ahead", "proceed", "commit with that message"
+
+5. **[ ] Execute Commit in NEW Response:**
+   - Only after receiving explicit confirmation in a separate message
+   - Use the exact commit message you showed in step 1
+   - Only commit the files that were explicitly listed in step 1
+   - Do not add any files that were not in the review summary
+   - Verify the commit succeeded and show the commit hash
+
+**CRITICAL RULES:**
+
+- **NEVER commit in the same response as showing commit information**
+- **ALWAYS end your response after showing commit info, then wait for user confirmation**
+- **The commit must happen in a SEPARATE response after user confirms**
+- **If you show commit info, you MUST end your response and wait for user confirmation**
 
 **Multi-File Commits:**
-  - If multiple files are modified, ALL files must be included in the review summary
-  - Each file must have its changes shown (diff or stat)
-  - User must confirm they've reviewed ALL files before committing
-  - Never assume files can be committed together without explicit review of each
+- If multiple files are modified, ALL files must be included in the review summary
+- Each file must have its changes shown (diff or stat)
+- User must confirm they've reviewed ALL files before committing
+- Never assume files can be committed together without explicit review of each
+- The confirmation must acknowledge that ALL files have been reviewed
+
+**Example Workflow:**
+
+```
+User: "commit Makefile change"
+
+AI Response 1 (SHOW INFO, THEN STOP):
+"I'll prepare the commit. Here's what will be committed:
+
+**Commit message:**
+Fix Makefile: Quote GitPython package specification
+
+**Files:**
+- Makefile
+
+**Changes:**
+Makefile | 2 +-
+1 file changed, 1 insertion(+), 1 deletion(-)
+
+Should I proceed with this commit?"
+
+[END RESPONSE - DO NOT COMMIT YET]
+
+User: "yes"
+
+AI Response 2 (NOW COMMIT):
+[Executes git commit]
+Commit successful. Commit hash: abc1234
+```
 
 **Default Behavior:**
-- When user requests "commit" without the above review process, explain the policy and provide the commit information for their review
-- This exception applies to all AI coding assistants working on any project
+- When user requests "commit" without the above review process, follow the workflow above
+- This workflow applies to all AI coding assistants working on any project
 
 ### 3. File Creation
 
