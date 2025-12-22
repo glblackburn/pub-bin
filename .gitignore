@@ -39,3 +39,6 @@ Thumbs.db
 
 # Migration tracking backup
 .migration-tracking.json.backup
+
+# Sensitive migration plan information
+docs/system-setup-migration-plan-sensitive.md
