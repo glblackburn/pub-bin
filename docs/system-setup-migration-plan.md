@@ -11,7 +11,7 @@ Analysis and recommendations for migrating scripts from `/Users/lblackb/data/lbl
 - **`software-installs.sh`** - Runs all software install scripts in sequence
 - **`create-key.sh`** - Creates SSH keys with good default values
 - **`setup-bin-config.sh`** - Sets up bin config (references old bin-config system)
-- **`setup-remote-syslogd.sh`** - Configures macOS remote syslog daemon
+- **`setup-remote-syslogd.sh`** - Configures macOS remote syslog daemon (see [analysis](system-setup-remote-syslogd-analysis.md))
 
 **Software Install Scripts (11 total):**
 - `01-homebrew.sh` - Homebrew installation check
@@ -122,7 +122,23 @@ pub-bin/
 - Remove or replace with pub-bin's `config/config.sh` integration
 - This script may not be needed if using pub-bin's config system
 
-#### E. Individual Software Install Scripts
+#### E. `setup-remote-syslogd.sh`
+
+**Current Status:**
+- Configures macOS syslogd to listen on network socket (UDP port 514)
+- Enables remote syslog message reception
+- See [detailed analysis](system-setup-remote-syslogd-analysis.md) for complete assessment
+
+**Required Changes:**
+- Make script idempotent (currently fails on second run)
+- Add error handling and validation
+- Add user feedback and security warnings
+- Follow pub-bin script patterns
+- Document security implications (opens UDP port 514 to network)
+
+**Note:** This script has significant issues that need to be addressed. See the [analysis document](system-setup-remote-syslogd-analysis.md) for detailed recommendations.
+
+#### F. Individual Software Install Scripts
 
 **Current Status:**
 - Some use `#!/bin/bash`, others `#!/usr/bin/env bash`
@@ -135,7 +151,7 @@ pub-bin/
 - Consider adding `-h` help option to each
 - Follow shell-template.sh patterns
 
-#### F. User Config Templates
+#### G. User Config Templates
 
 **Current Status:**
 - Contains personal paths and specific configurations
@@ -325,7 +341,7 @@ Create comprehensive `system-setup/README.md`:
 
 #### Medium Priority (Supporting Scripts)
 4. **Individual software install scripts** - Standardize patterns
-5. **`setup-remote-syslogd.sh`** - macOS-specific, document well
+5. **`setup-remote-syslogd.sh`** - macOS-specific, document well (see [detailed analysis](system-setup-remote-syslogd-analysis.md))
 
 #### Low Priority (Templates/Configs)
 6. **User config templates** - Clean up and template-ize
