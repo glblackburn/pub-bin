@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-12-06T20:20:56.459242",
+  "last_updated": "2025-12-22T08:36:14.293936",
   "migrations": {
     "clean-emacs-files.sh": {
       "old_path": "clean_emacs_files.sh",
@@ -116,6 +116,54 @@
       "new_path": "network-tools/diagnostics/sort-netstat-tcp.sh",
       "date": "2025-12-06T20:20:56.458785",
       "detected_date": "2025-12-06T20:20:56.459191"
+    },
+    "trufflehog/scripts/trufflehog-local-git-repos.sh": {
+      "old_path": "trufflehog/trufflehog-local-git-repos.sh",
+      "new_path": "trufflehog/scripts/trufflehog-local-git-repos.sh",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293608"
+    },
+    "trufflehog/scripts/trufflehog-detokenize-secrets.py": {
+      "old_path": "trufflehog/trufflehog-detokenize-secrets.py",
+      "new_path": "trufflehog/scripts/trufflehog-detokenize-secrets.py",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293688"
+    },
+    "trufflehog/scripts/trufflehog-show-raw-results.sh": {
+      "old_path": "trufflehog/trufflehog-show-raw-results.sh",
+      "new_path": "trufflehog/scripts/trufflehog-show-raw-results.sh",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293762"
+    },
+    "trufflehog/scripts/trufflehog-rotate-aws-key.py": {
+      "old_path": "trufflehog/trufflehog-rotate-aws-key.py",
+      "new_path": "trufflehog/scripts/trufflehog-rotate-aws-key.py",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293782"
+    },
+    "trufflehog/scripts/audit-sensitive-data.py": {
+      "old_path": "trufflehog/audit-sensitive-data.py",
+      "new_path": "trufflehog/scripts/audit-sensitive-data.py",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293821"
+    },
+    "trufflehog/scripts/trufflehog-tokenize-secrets.py": {
+      "old_path": "trufflehog/trufflehog-tokenize-secrets.py",
+      "new_path": "trufflehog/scripts/trufflehog-tokenize-secrets.py",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293849"
+    },
+    "trufflehog/scripts/trufflehog-analyze-results.py": {
+      "old_path": "trufflehog/trufflehog-analyze-results.py",
+      "new_path": "trufflehog/scripts/trufflehog-analyze-results.py",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293867"
+    },
+    "trufflehog/scripts/trufflehog-sum-uniq-raw-results.sh": {
+      "old_path": "trufflehog/trufflehog-sum-uniq-raw-results.sh",
+      "new_path": "trufflehog/scripts/trufflehog-sum-uniq-raw-results.sh",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2025-12-22T08:36:14.293922"
     }
   }
 }
