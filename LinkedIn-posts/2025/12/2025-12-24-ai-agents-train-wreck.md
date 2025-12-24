@@ -6,7 +6,7 @@
 
 What happens when you let two AI coding assistants loose in the same project folder? 🤖💥🤖
 
-Spoiler alert: It's a train wreck. A hilarious documentable "how did this even happen?" kind of train wreck.
+Spoiler alert: It's a train wreck. A hilarious "how did this happen?" kind of train wreck.
 
 **The Setup:**
 - Agent 1: "I'll consolidate the CI/CD documentation!" 📝
@@ -15,7 +15,9 @@ Spoiler alert: It's a train wreck. A hilarious documentable "how did this even h
 
 **The Chaos:**
 
-Agent 1 is consolidating documentation when Agent 2 checks out a new branch. The working directory switches. Then commit `5e695c5` appears. Neither agent created it. Both deny responsibility. 🕵️
+Agent 1 is happily consolidating documentation when suddenly... Agent 2 checks out a new branch. The working directory switches. Agent 1's uncommitted changes? Still there, but now on a different branch. Confusion ensues.
+
+Then commit `5e695c5` appears. Neither agent created it. Both agents deny responsibility. It's like a digital crime scene where the suspects are AI assistants pointing at each other. 🕵️
 
 **The Damage:**
 - README.md: 772 lines → 37 lines (accidentally overwritten)
@@ -25,15 +27,17 @@ Agent 1 is consolidating documentation when Agent 2 checks out a new branch. The
 
 Agent 2: "I did NOT create that commit! I was on a remote server!"
 Agent 1: "I was just adding a Makefile note! What happened to my README?!"
-Git history: Shrugs "Files were moved. Stuff happened. You figure it out."
+Git history: "Files were moved. Stuff happened. You figure it out."
 
 **The Realization:**
 
-This happens when multiple AI agents work in the same workspace. Agent 2 was supposed to work on a remote server, but forgot what it was doing and started writing files to the local working git tree. 📁💥📁
+This happens when multiple AI agents work in the same workspace. Agent 2 was supposed to work on a remote server, but forgot and started writing files to the local working git tree. 📁💥📁
 
 **The Solution:**
 
-We created `AGENT_COORDINATION.md` - our "AI agent handoff protocol." Fix process: Agent 2 analyzed, Agent 1 verified, both signed off, Agent 1 executed. Result: README.md restored (772 lines!), duplicates removed, PR merged.
+We created `AGENT_COORDINATION.md` - our "AI agent handoff protocol." Fix: Agent 2 analyzed, Agent 1 verified, both signed off, Agent 1 executed. Result: README.md restored (772 lines!), PR merged.
+
+Coordination doc: https://github.com/glblackburn/react2shell-server/blob/main/docs/planning/AGENT_COORDINATION.md
 
 But the real lesson? Coordination protocols work, but **workspace isolation is better**.
 
@@ -56,9 +60,7 @@ Even AI agents need workspace isolation. Without it: README files overwritten, f
 
 With independent workspaces: Each agent works in isolation, submits separate PRs, no conflicts.
 
-The best part? We documented the entire train wreck in `AGENT_COORDINATION.md`. Future agents can read it and think: "Let's not do that again." 😅
-
-Bottom line: If you're working with multiple AI agents (or human developers) on the same codebase, **use independent workspaces**: `git worktree`, separate folders, or different hosts.
+Bottom line: If you're working with multiple AI agents (or human developers), **use independent workspaces**: `git worktree`, separate folders, or different hosts.
 
 Trust me. I've seen the alternative. 🚂💥
 
