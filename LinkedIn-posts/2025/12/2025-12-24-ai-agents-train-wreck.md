@@ -1,6 +1,6 @@
-# AI Agents Working in the Same Folder: A Comedy of Errors
+# [December 24, 2025](https://www.linkedin.com/posts/activity-7409589478576574464-i4pz/)
 
-**Status:** ⏳ Publication pending - LinkedIn URL will be added after posting
+[LinkedIn](https://www.linkedin.com/posts/activity-7409589478576574464-i4pz/)
 
 ---
 

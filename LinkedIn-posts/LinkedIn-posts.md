@@ -17,6 +17,7 @@
 
 #### December 2025
 
+- ✅ [December 24, 2025](2025/12/2025-12-24-ai-agents-train-wreck.md) - AI Agents Working in the Same Folder: A Comedy of Errors
 - ✅ [December 22, 2025](2025/12/2025-12-22-react2shell-server-debugging-rabbit-hole.md) - React2Shell Server: AI Debugging Rabbit Hole - When AI Agents Miss Obvious Errors
 - ✅ [December 18, 2025](2025/12/18/2025-12-18-linkedin-posting-process-part1.md) - LinkedIn Posting Automation Part 1: Building a Style Guide for AI-Assisted Content
 - ✅ [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) - React2Shell Server Part 2: Framework-Aware Architecture
@@ -58,6 +59,7 @@
 
 | Date | Title | Status |
 |------|-------|--------|
+| [December 24, 2025](2025/12/2025-12-24-ai-agents-train-wreck.md) | AI Agents Working in the Same Folder: A Comedy of Errors | ✅ Published |
 | [December 22, 2025](2025/12/2025-12-22-react2shell-server-debugging-rabbit-hole.md) | React2Shell Server: AI Debugging Rabbit Hole - When AI Agents Miss Obvious Errors | ✅ Published |
 | [December 18, 2025](2025/12/18/2025-12-18-linkedin-posting-process-part1.md) | LinkedIn Posting Automation Part 1: Building a Style Guide for AI-Assisted Content | ✅ Published |
 | [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) | React2Shell Server Part 2: Framework-Aware Architecture | ✅ Published |
