@@ -28,15 +28,8 @@ This feature enables rotation of **paired secrets** - secrets that must be rotat
   - [Current Behavior](#current-behavior)
   - [Current Patterns Supported](#current-patterns-supported)
   - [Limitations](#limitations)
-- [Design Options](#design-options)
-  - [Option 1: Automatic Discovery with Pairing](#option-1-automatic-discovery-with-pairing)
-  - [Option 2: Explicit Dual-Key Mode](#option-2-explicit-dual-key-mode)
-  - [Option 3: Hybrid Approach (Recommended for Flexibility)](#option-3-hybrid-approach-recommended-for-flexibility)
-  - [Option 4: Configuration File Approach](#option-4-configuration-file-approach)
-- [Design Scope and Extensibility](#design-scope-and-extensibility)
-  - [Current Focus: AWS Credentials](#current-focus-aws-credentials)
-  - [Future Extensibility: Other Secret Types](#future-extensibility-other-secret-types)
-- [Recommended Design: Option 3 (Hybrid Approach)](#recommended-design-option-3-hybrid-approach)
+- [Selected Design: Hybrid Approach](#selected-design-hybrid-approach)
+  - [Design Scope and Extensibility](#design-scope-and-extensibility)
   - [Rationale](#rationale)
   - [Design Review and Validation](#design-review-and-validation)
   - [Implementation Plan](#implementation-plan)
@@ -69,6 +62,10 @@ This feature enables rotation of **paired secrets** - secrets that must be rotat
   - [Development Strategy](#development-strategy)
   - [Code Organization](#code-organization)
 - [Next Steps](#next-steps)
+- [Appendix: Alternative Design Options](#appendix-alternative-design-options)
+  - [Option 1: Automatic Discovery with Pairing](#option-1-automatic-discovery-with-pairing)
+  - [Option 2: Explicit Dual-Key Mode](#option-2-explicit-dual-key-mode)
+  - [Option 4: Configuration File Approach](#option-4-configuration-file-approach)
 
 ## Feature Request
 
@@ -204,116 +201,38 @@ patterns = [
    - Doesn't attempt to find the Secret Access Key associated with the Access Key ID
    - Relies on user to know where Secret Access Key is located
 
-## Design Options
+## Selected Design: Hybrid Approach
 
-### Option 1: Automatic Discovery with Pairing
+**Status:** ✅ **SELECTED** - This design has been chosen for implementation.
 
-**Approach:** Automatically discover and replace both keys together.
-
-**How It Works:**
-1. User provides Access Key ID identifier (as currently)
-2. Script searches for associated Secret Access Key in the same file/location
-3. User provides new Access Key ID + Secret Access Key pair
-4. Script replaces both keys atomically
-
-**Implementation:**
-- Add Secret Access Key pattern matching
-- Search for Secret Access Key near Access Key ID (same file, nearby lines)
-- Replace both keys in single operation
-- Validate that both keys are replaced successfully
-
-**Pros:**
-- Most user-friendly (automatic discovery)
-- Ensures keys stay paired
-- Minimal user intervention required
-- Handles common cases automatically
-
-**Cons:**
-- More complex implementation
-- May miss Secret Access Keys in different files
-- Requires heuristics for key pairing
-- Edge cases where keys are in different locations
-
-**Patterns to Support:**
-```python
-# Access Key ID patterns (existing)
-AWS_ACCESS_KEY_ID=AKIA...
-"accessKeyId": "AKIA..."
-
-# Secret Access Key patterns (new)
-AWS_SECRET_ACCESS_KEY=wJalr...
-"secretAccessKey": "wJalr..."
-"secret_key": "wJalr..."
-AWS_SECRET_KEY=wJalr...
-```
-
-### Option 2: Explicit Dual-Key Mode
-
-**Approach:** Add explicit CLI option for dual-key rotation with user specifying both identifiers.
-
-**How It Works:**
-1. User provides two identifiers:
-   - Access Key ID identifier (TOKEN_* or RAW_*)
-   - Secret Access Key identifier (TOKEN_* or RAW_*)
-2. User provides new Access Key ID + Secret Access Key pair
-3. Script replaces both keys using their respective identifiers
-
-**Implementation:**
-- Add `--secret-identifier` CLI option
-- Add `--new-secret-key` or `--prompt-secret` option
-- Process both identifiers in same rotation operation
-- Replace both keys atomically
-
-**Pros:**
-- Explicit control for user
-- Works when keys are in different files
-- No heuristics needed
-- Clear separation of concerns
-
-**Cons:**
-- Requires user to know both identifiers
-- More complex CLI interface
-- User must manually find Secret Access Key identifier
-- Less automated than Option 1
-
-**CLI Example:**
-```bash
-./scripts/trufflehog-rotate-aws-key.py \
-    -r report.md \
-    -i RAW_abc123_def456 \
-    --secret-identifier RAW_xyz789_uvw012 \
-    -k AKIANEWKEYEXAMPLE123 \
-    --new-secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYNEWKEY \
-    --mode dry-run
-```
-
-### Option 3: Hybrid Approach (Recommended for Flexibility)
+The Hybrid Approach combines automatic discovery with explicit override option, providing the best balance of automation, flexibility, and backward compatibility.
 
 **Approach:** Combine automatic discovery with explicit override option.
 
 **How It Works:**
-1. By default, attempt automatic discovery (Option 1)
-2. If automatic discovery fails or user prefers, allow explicit specification (Option 2)
-3. User can opt-in via `--dual-key` flag
-4. Falls back to single-key mode if Secret Access Key not found
+1. By default, attempt automatic discovery
+2. If automatic discovery fails or user prefers, allow explicit specification
+3. User can opt-in via `--paired-secret` flag (aliased as `--dual-key` for AWS)
+4. Falls back to single-secret mode if paired secret not found
 
 **Implementation:**
-- Add `--dual-key` flag to enable dual-key rotation
+- Add `--paired-secret` flag to enable paired secret rotation (aliased as `--dual-key` for AWS)
 - Attempt automatic discovery first
-- If discovery fails, prompt user for Secret Access Key identifier
+- If discovery fails, prompt user for paired secret identifier
 - Support both automatic and explicit modes
-- Maintain backward compatibility (single-key mode default)
+- Maintain backward compatibility (single-secret mode default)
 
 **Pros:**
 - Best of both worlds
 - Flexible for different scenarios
 - Backward compatible
 - User can choose level of automation
+- Future-proof (can add more discovery strategies)
 
 **Cons:**
-- Most complex implementation
+- More complex implementation (but manageable)
 - Requires both discovery and explicit modes
-- More code to maintain
+- More code to maintain (but well-structured)
 - Need to handle fallback scenarios
 
 **CLI Example:**
@@ -322,70 +241,35 @@ AWS_SECRET_KEY=wJalr...
 ./scripts/trufflehog-rotate-aws-key.py \
     -r report.md \
     -i RAW_abc123_def456 \
-    --dual-key \
+    --paired-secret \
     -k AKIANEWKEYEXAMPLE123 \
-    --prompt-secret \
+    --prompt-paired-secret \
     --mode dry-run
 
 # Explicit mode (if auto-discovery fails or user prefers)
 ./scripts/trufflehog-rotate-aws-key.py \
     -r report.md \
     -i RAW_abc123_def456 \
-    --dual-key \
-    --secret-identifier RAW_xyz789_uvw012 \
+    --paired-secret \
+    --paired-secret-identifier RAW_xyz789_uvw012 \
     -k AKIANEWKEYEXAMPLE123 \
-    --new-secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYNEWKEY \
+    --new-paired-secret wJalrXUtnFEMI/K7MDENG/bPxRfiCYNEWKEY \
     --mode dry-run
 
 # If automatic discovery fails, script will prompt:
-# "Secret Access Key not found automatically. Provide identifier manually (--secret-identifier) or run with --secret-identifier to skip discovery."
+# "Paired secret not found automatically. Provide identifier manually (--paired-secret-identifier) or run with --paired-secret-identifier to skip discovery."
 ```
 
-### Option 4: Configuration File Approach
+### Design Scope and Extensibility
 
-**Approach:** Use configuration file to map Access Key ID to Secret Access Key.
-
-**How It Works:**
-1. User creates mapping file: `aws-key-pairs.json`
-2. Maps Access Key ID identifiers to Secret Access Key identifiers
-3. Script reads mapping and replaces both keys
-
-**Implementation:**
-- Add `--key-pair-map` option pointing to JSON file
-- JSON format: `{ "RAW_abc123": "RAW_xyz789", ... }`
-- Script uses mapping to find Secret Access Key identifier
-- Replaces both keys using their identifiers
-
-**Pros:**
-- Good for bulk operations
-- Reusable mapping file
-- Clear separation of key relationships
-- Works well for multiple rotations
-
-**Cons:**
-- Requires upfront configuration
-- Additional file to manage
-- Less convenient for one-off rotations
-- User must maintain mapping file
-
-**Configuration File Format:**
-```json
-{
-  "RAW_abc123_def456": "RAW_xyz789_uvw012",
-  "TOKEN_a1b2c3d4_e5f6g7h8": "TOKEN_i9j0k1l2_m3n4o5p6"
-}
-```
-
-## Design Scope and Extensibility
-
-### Current Focus: AWS Credentials
+#### Current Focus: AWS Credentials
 
 The initial implementation focuses on **AWS Access Key ID + Secret Access Key** rotation as the primary use case. This provides:
 - Clear, well-defined patterns
 - Common real-world use case
 - Validation of the paired secret concept
 
-### Future Extensibility: Other Secret Types
+#### Future Extensibility: Other Secret Types
 
 The design is structured to support other paired secret types in the future:
 
@@ -407,11 +291,9 @@ The design is structured to support other paired secret types in the future:
 - Phase 2: Automatic discovery for AWS credentials
 - Phase 3+: Extend to other secret types based on demand
 
-## Recommended Design: Option 3 (Hybrid Approach)
-
 ### Rationale
 
-Option 3 provides the best balance of:
+The Hybrid Approach provides the best balance of:
 - **Automation:** Handles common cases automatically
 - **Flexibility:** Allows explicit control when needed
 - **Backward Compatibility:** Doesn't break existing workflows
@@ -422,7 +304,7 @@ Option 3 provides the best balance of:
 **Review Date:** 2025-12-24
 **Status:** Design Validated - Ready for Implementation
 
-After comprehensive review of the design document and current implementation, Option 3 (Hybrid Approach) is confirmed as the recommended solution. The following analysis validates this choice:
+After comprehensive review of the design document and current implementation, the Hybrid Approach has been selected for implementation. The following analysis validates this choice:
 
 #### Option Comparison: Option 1 vs Option 3
 
@@ -1002,6 +884,146 @@ This structure allows:
 3. Test with real repositories
 4. Implement Phase 2 (automatic discovery)
 5. Iterate based on feedback
+
+---
+
+---
+
+## Appendix: Alternative Design Options
+
+The following design options were considered but not selected. They are documented here for reference and potential future consideration.
+
+### Option 1: Automatic Discovery with Pairing
+
+**Approach:** Automatically discover and replace both keys together.
+
+**How It Works:**
+1. User provides Access Key ID identifier (as currently)
+2. Script searches for associated Secret Access Key in the same file/location
+3. User provides new Access Key ID + Secret Access Key pair
+4. Script replaces both keys atomically
+
+**Implementation:**
+- Add Secret Access Key pattern matching
+- Search for Secret Access Key near Access Key ID (same file, nearby lines)
+- Replace both keys in single operation
+- Validate that both keys are replaced successfully
+
+**Pros:**
+- Most user-friendly (automatic discovery)
+- Ensures keys stay paired
+- Minimal user intervention required
+- Handles common cases automatically
+
+**Cons:**
+- More complex implementation
+- May miss Secret Access Keys in different files
+- Requires heuristics for key pairing
+- Edge cases where keys are in different locations
+
+**Patterns to Support:**
+```python
+# Access Key ID patterns (existing)
+AWS_ACCESS_KEY_ID=AKIA...
+"accessKeyId": "AKIA..."
+
+# Secret Access Key patterns (new)
+AWS_SECRET_ACCESS_KEY=wJalr...
+"secretAccessKey": "wJalr..."
+"secret_key": "wJalr..."
+AWS_SECRET_KEY=wJalr...
+```
+
+**Why Not Selected:**
+- Cannot handle keys in different files (common in some architectures)
+- No fallback when discovery fails
+- Limited to same-file discovery only
+
+### Option 2: Explicit Dual-Key Mode
+
+**Approach:** Add explicit CLI option for dual-key rotation with user specifying both identifiers.
+
+**How It Works:**
+1. User provides two identifiers:
+   - Access Key ID identifier (TOKEN_* or RAW_*)
+   - Secret Access Key identifier (TOKEN_* or RAW_*)
+2. User provides new Access Key ID + Secret Access Key pair
+3. Script replaces both keys using their respective identifiers
+
+**Implementation:**
+- Add `--secret-identifier` CLI option
+- Add `--new-secret-key` or `--prompt-secret` option
+- Process both identifiers in same rotation operation
+- Replace both keys atomically
+
+**Pros:**
+- Explicit control for user
+- Works when keys are in different files
+- No heuristics needed
+- Clear separation of concerns
+
+**Cons:**
+- Requires user to know both identifiers
+- More complex CLI interface
+- User must manually find Secret Access Key identifier
+- Less automated than Option 1
+
+**CLI Example:**
+```bash
+./scripts/trufflehog-rotate-aws-key.py \
+    -r report.md \
+    -i RAW_abc123_def456 \
+    --secret-identifier RAW_xyz789_uvw012 \
+    -k AKIANEWKEYEXAMPLE123 \
+    --new-secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYNEWKEY \
+    --mode dry-run
+```
+
+**Why Not Selected:**
+- Less user-friendly (requires manual identifier lookup)
+- More complex CLI interface
+- The Hybrid Approach includes explicit mode as a fallback option
+
+### Option 4: Configuration File Approach
+
+**Approach:** Use configuration file to map Access Key ID to Secret Access Key.
+
+**How It Works:**
+1. User creates mapping file: `aws-key-pairs.json`
+2. Maps Access Key ID identifiers to Secret Access Key identifiers
+3. Script reads mapping and replaces both keys
+
+**Implementation:**
+- Add `--key-pair-map` option pointing to JSON file
+- JSON format: `{ "RAW_abc123": "RAW_xyz789", ... }`
+- Script uses mapping to find Secret Access Key identifier
+- Replaces both keys using their identifiers
+
+**Pros:**
+- Good for bulk operations
+- Reusable mapping file
+- Clear separation of key relationships
+- Works well for multiple rotations
+
+**Cons:**
+- Requires upfront configuration
+- Additional file to manage
+- Less convenient for one-off rotations
+- User must maintain mapping file
+
+**Configuration File Format:**
+```json
+{
+  "RAW_abc123_def456": "RAW_xyz789_uvw012",
+  "TOKEN_a1b2c3d4_e5f6g7h8": "TOKEN_i9j0k1l2_m3n4o5p6"
+}
+```
+
+**Why Not Selected:**
+- Requires upfront configuration (less convenient for one-off rotations)
+- Additional file to manage
+- The Hybrid Approach provides automatic discovery which is more user-friendly
+- Can be added as an enhancement in Phase 3 if needed
 
 ---
 
