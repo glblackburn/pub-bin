@@ -31,7 +31,7 @@ This feature enables rotation of **paired secrets** - secrets that must be rotat
 - [Selected Design: Hybrid Approach](#selected-design-hybrid-approach)
   - [Design Scope and Extensibility](#design-scope-and-extensibility)
   - [Rationale](#rationale)
-  - [Design Review and Validation](#design-review-and-validation)
+  - [Design Selection Rationale](#design-selection-rationale)
   - [Implementation Plan](#implementation-plan)
     - [Phase 1: Core Paired Secret Support + Explicit Mode (AWS Focus)](#phase-1-core-paired-secret-support--explicit-mode-aws-focus)
     - [Phase 2: Automatic Discovery (AWS Focus)](#phase-2-automatic-discovery-aws-focus)
@@ -72,6 +72,12 @@ This feature enables rotation of **paired secrets** - secrets that must be rotat
   - [Readiness Assessment](#readiness-assessment)
   - [Specific Fixes Required](#specific-fixes-required)
   - [Recommended Actions Before Handoff](#recommended-actions-before-handoff)
+- [Consistency Review](#consistency-review)
+  - [Executive Summary](#executive-summary-2)
+  - [Consistency Verification](#consistency-verification)
+  - [Duplicate Content Analysis](#duplicate-content-analysis)
+  - [Recommendations Summary](#recommendations-summary)
+  - [Additional Observations](#additional-observations)
 - [Next Steps](#next-steps)
 - [Appendix: Alternative Design Options](#appendix-alternative-design-options)
   - [Option 1: Automatic Discovery with Pairing](#option-1-automatic-discovery-with-pairing)
@@ -166,12 +172,7 @@ A user discovers a secret in a trufflehog scan report that is part of a paired s
 6. **Security:**
    - Never log or display paired secrets in output
    - Use secure input methods (getpass) for secret entry
-   - Store secret hashes in state files (not plaintext) - **Rationale:**
-     - **State file stores hashes:** Hashes are stored in state file for verification (can verify if secret is provided, but cannot be reversed to get the secret)
-     - **Secrets provided at runtime:** Actual secret values are provided at runtime (via CLI args, prompt, or environment variable) and used only temporarily for replacements
-     - **Hashes used for verification:** When resuming operations, provided secrets can be verified against stored hashes to ensure consistency
-     - **Plaintext only for replacements:** Plaintext secret values are only used temporarily during the replacement operation in source files, never stored
-     - **State file is already secured:** State files are stored in `~/.secure/trufflehog-rotate/` with restrictive permissions (600)
+   - Store secret hashes in state files (not plaintext). See [Security Considerations](#security-considerations) for detailed rationale and implementation
 
 ## Current Implementation Analysis
 
@@ -308,7 +309,7 @@ The Hybrid Approach provides the best balance of:
 - **Flexibility:** Allows explicit control when needed
 - **User Experience:** Progressive enhancement (try automatic, fall back to explicit)
 
-### Design Review and Validation
+### Design Selection Rationale
 
 **Review Date:** 2025-12-24
 **Status:** Design Validated - Ready for Implementation
@@ -514,14 +515,7 @@ def find_paired_secret_near_primary(
 
 #### State File Extension
 
-**Security Note:** Key hashes are stored in state files (not plaintext keys). This follows the current implementation pattern:
-
-- **State file stores hashes:** Hashes (`old_key_hash`, `new_key_hash`, `old_paired_secret_hash`, `new_paired_secret_hash`) are stored in state file
-- **Hashes for verification:** Hashes can verify if a secret is provided (cannot be reversed to get the secret)
-- **Secrets provided at runtime:** Actual secret values are provided at runtime via CLI args (`-k`, `--new-paired-secret`), prompt (`-p`, `--prompt-paired-secret`), or environment variables
-- **Plaintext only for replacements:** Plaintext secret values are used temporarily during replacement operations in source files, never stored
-- **Resume verification:** When resuming operations, provided keys can be verified against stored hashes to ensure consistency
-- **Protection:** State files stored in `~/.secure/trufflehog-rotate/` with restrictive permissions (600)
+**Security Note:** Key hashes are stored in state files (not plaintext keys). See [Security Considerations](#security-considerations) for comprehensive security documentation and rationale.
 
 **Implementation Note:** This matches the current implementation which stores `old_key_hash` and `new_key_hash`. For paired secret rotation, we'll extend this to also store `old_paired_secret_hash` and `new_paired_secret_hash`.
 
@@ -661,6 +655,8 @@ The script supports two modes of operation:
 - `--paired-secret-identifier` - Specify paired secret identifier explicitly (explicit mode)
 
 **State File Format:**
+
+See [State File Extension](#state-file-extension) for the detailed format specification. Quick reference:
 
 ```json
 // Single-secret mode state file (existing format)
@@ -1596,6 +1592,171 @@ The document is **ready for implementation handoff**. The remaining clarifying q
 
 **Overall Assessment:** ✅ **100% ready for handoff** - All critical issues resolved, remaining items are enhancements.
 
+## Consistency Review
+
+**Review Date:** 2025-12-24
+**Last Updated:** 2025-12-24
+**Reviewer:** AI Assistant
+
+This section documents the consistency review of the design document, including terminology verification, duplicate content analysis, and consolidation recommendations. All identified issues have been resolved.
+
+### Executive Summary
+
+**Status:** ✅ **All Issues Resolved**
+
+The document is **consistent and well-structured** with all critical review items addressed. All duplicate content has been consolidated to improve maintainability and clarity.
+
+**Status:** ✅ **Consistent** - All terminology standardized, all review items addressed
+**Status:** ✅ **Consolidated** - All duplicate content removed, single source of truth established
+
+### Consistency Verification
+
+#### ✅ Terminology Consistency - VERIFIED
+
+**All terminology is consistent throughout:**
+- ✅ `--paired-secret` used exclusively (no `--dual-key` references found)
+- ✅ `paired_secret_*` field naming used consistently in state file format
+- ✅ "primary secret" and "paired secret" terminology used consistently
+- ✅ "Hybrid Approach" or "Selected Design" used (no "Option 3" references)
+- ✅ All examples use `--paired-secret` flag
+
+#### ✅ Review Items Verification - ALL ADDRESSED
+
+**All items from "Consistency Issues Found (RESOLVED)" section are verified:**
+
+1. ✅ **Issue 1: Terminology Inconsistency** - RESOLVED
+   - Verified: All `--dual-key` references removed
+   - Verified: All examples use `--paired-secret`
+
+2. ✅ **Issue 2: State File Field Naming** - RESOLVED
+   - Verified: All state file examples use `paired_secret_*` naming
+   - Verified: No `dual_key_*` references found
+
+3. ✅ **Issue 3: CLI Flag Naming** - RESOLVED
+   - Verified: All CLI examples use `--paired-secret`
+   - Verified: All option names use `--paired-secret-*` format
+
+4. ✅ **Issue 4: Mixed References to "Option 3"** - RESOLVED
+   - Verified: All references use "Hybrid Approach" or "Selected Design"
+
+5. ✅ **Issue 5-10: Terminology Updates** - RESOLVED
+   - Verified: All sections use "primary secret" and "paired secret" consistently
+
+#### ✅ Recommended Actions Verification - ALL COMPLETED
+
+**All high-priority actions completed:**
+- ✅ Terminology inconsistencies resolved
+- ✅ Backward compatibility removed
+- ✅ Testing strategy section added
+- ✅ Design review section integrated
+- ✅ All duplicate content consolidated
+
+### Duplicate Content Analysis
+
+#### ✅ All Duplicates Resolved
+
+##### 1. Duplicate "Design Review and Validation" Sections - FIXED
+
+**Original Issue:** Two sections with the same name but different purposes.
+
+**Resolution:**
+- ✅ Renamed subsection (line 311) from `### Design Review and Validation` to `### Design Selection Rationale`
+- ✅ Updated TOC to reflect the rename
+- ✅ Major section remains as `## Design Review and Validation` (comprehensive review)
+
+**Status:** ✅ **RESOLVED**
+
+##### 2. State File Format Duplication - FIXED
+
+**Original Issue:** State file format documented in two places with overlapping detail levels.
+
+**Resolution:**
+- ✅ Kept "State File Extension" section as the authoritative detailed specification
+- ✅ Simplified "State File Format" in "Single-Secret vs Paired-Secret Modes" to reference detailed section
+- ✅ Kept minimal JSON examples for quick reference with reference to detailed section
+
+**Status:** ✅ **RESOLVED**
+
+##### 3. Security Rationale Duplication - FIXED
+
+**Original Issue:** Security rationale appeared in three places with varying detail levels.
+
+**Resolution:**
+- ✅ Kept "Security Considerations" section as the comprehensive documentation
+- ✅ Simplified Requirements section to reference Security Considerations
+- ✅ Simplified State File Extension section to reference Security Considerations
+
+**Status:** ✅ **RESOLVED**
+
+##### 4. CLI Examples Duplication - FIXED
+
+**Original Issue:** Similar CLI examples in different contexts.
+
+**Resolution:**
+- ✅ Added clarifying note in Option 2 appendix explaining it shows what Option 2 would have looked like
+- ✅ Added reference to primary CLI examples in Selected Design section
+- ✅ Both examples serve different purposes (selected vs. not selected)
+
+**Status:** ✅ **RESOLVED**
+
+### Recommendations Summary
+
+#### ✅ All Recommendations Implemented
+
+**High Priority (Should Fix) - ALL COMPLETED:**
+
+1. ✅ **Rename duplicate "Design Review and Validation" subsection** - COMPLETED
+   - Changed subsection to `### Design Selection Rationale`
+   - Updated TOC entry
+
+2. ✅ **Consolidate state file format documentation** - COMPLETED
+   - Kept detailed format in "State File Extension" section
+   - Simplified "State File Format" to reference detailed section
+   - Kept minimal examples for quick reference
+
+**Medium Priority (Consider Fixing) - ALL COMPLETED:**
+
+3. ✅ **Consolidate security rationale** - COMPLETED
+   - Kept comprehensive "Security Considerations" section
+   - Simplified other mentions to reference the main section
+
+**Low Priority (Nice to Have) - ALL COMPLETED:**
+
+4. ✅ **Clarify CLI example purposes** - COMPLETED
+   - Added note in appendix that main examples are in selected design section
+
+### Additional Observations
+
+#### ✅ Well-Structured Sections
+
+- Table of Contents is comprehensive and accurate
+- Implementation Plan is clear and phased
+- Testing Strategy is thorough and well-organized
+- Design Review section provides good validation
+- All duplicate content has been consolidated
+
+#### ✅ No Issues Found
+
+- Terminology is consistent throughout
+- All review items have been addressed
+- Document structure is logical
+- Cross-references are appropriate
+- Single source of truth established for all duplicated content
+
+### Conclusion
+
+The document is **consistent, consolidated, and ready for implementation**. All critical review items have been addressed, and all duplicate content has been consolidated with proper cross-references.
+
+**Status:** ✅ **100% ready for handoff** - All issues resolved, document fully consolidated
+
+**Key Achievements:**
+- ✅ All terminology standardized
+- ✅ All duplicate sections consolidated
+- ✅ Single source of truth established for state file format
+- ✅ Single source of truth established for security rationale
+- ✅ All cross-references updated and accurate
+- ✅ Document structure optimized for maintainability
+
 ## Next Steps
 
 1. ✅ Design validated and approved (2025-12-24)
@@ -1707,6 +1868,8 @@ AWS_SECRET_KEY=wJalr...
     --new-paired-secret wJalrXUtnFEMI/K7MDENG/bPxRfiCYNEWKEY \
     --mode dry-run
 ```
+
+**Note:** This example shows what Option 2 would have looked like. The selected Hybrid Approach includes explicit mode with the same CLI interface. See [Selected Design: Hybrid Approach](#selected-design-hybrid-approach) for the primary CLI examples.
 
 **Why Not Selected:**
 - Less user-friendly (requires manual identifier lookup)
