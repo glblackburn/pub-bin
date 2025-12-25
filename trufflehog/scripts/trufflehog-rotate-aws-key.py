@@ -116,6 +116,158 @@ def extract_url_parts(browser_url: str) -> Optional[Dict]:
     return None
 
 
+# ============================================================================
+# AUTOMATIC DISCOVERY FEATURE (ISOLATED FOR FUTURE DEVELOPMENT)
+# ============================================================================
+# This feature attempts to automatically find paired secrets near primary secrets.
+# It is currently DISABLED in the main flow due to fragility. The code is preserved
+# here for future development and improvement.
+#
+# To re-enable: Uncomment the discovery call in process_repository() and ensure
+# old_paired_secret is not required when discovery is attempted.
+# ============================================================================
+
+def find_paired_secret_near_primary(
+    file_path: Path,
+    primary_secret_line: int,
+    primary_secret_value: str,
+    secret_type: str = 'aws',
+    search_range: int = 50,
+    debug: bool = False
+) -> Optional[Tuple[int, str]]:
+    """
+    [DISABLED] Find paired secret near primary secret in same file.
+
+    This function is isolated for future development. It is not currently used
+    in the main processing flow. The main flow now requires explicit provision
+    of old_paired_secret via environment variable or interactive prompt.
+
+    Args:
+        file_path: Path to file containing primary secret
+        primary_secret_line: Line number where primary secret was found
+        primary_secret_value: The primary secret value (for context validation)
+        secret_type: Type of secret pair ('aws', 'username_password', etc.)
+        search_range: Number of lines to search before/after (default: 50)
+        debug: If True, print debug information about the search
+
+    Returns:
+        (line_number, paired_secret_value) or None if not found
+
+    Strategy:
+        1. Determine paired secret patterns based on secret_type
+        2. Read file and extract lines [primary_secret_line - search_range : primary_secret_line + search_range]
+        3. Match against paired secret patterns for the secret type
+        4. Return first match found (closest to primary_secret_line preferred)
+
+    Known Issues:
+        - Fragile pattern matching (may miss non-standard formats)
+        - Limited search range (50 lines may not be enough)
+        - No validation that discovered secret actually belongs to primary secret
+        - Pattern library may not cover all file formats
+    """
+    if secret_type != 'aws':
+        # Future: Support other secret types
+        return None
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        # Calculate search bounds
+        start_line = max(0, primary_secret_line - search_range - 1)  # -1 for 0-indexed
+        end_line = min(len(lines), primary_secret_line + search_range)
+
+        # Get patterns for paired secret
+        paired_patterns = get_patterns_for_secret_type(secret_type, is_paired=True)
+
+        if debug:
+            print(f"  Searching lines {start_line + 1} to {end_line} (range: ±{search_range} from line {primary_secret_line})", file=sys.stderr)
+            print(f"  Using {len(paired_patterns)} pattern(s) for paired secret detection", file=sys.stderr)
+
+        # Search for paired secret patterns
+        best_match = None
+        best_distance = float('inf')
+        matches_found = []  # For debug output
+
+        for line_idx in range(start_line, end_line):
+            line = lines[line_idx]
+            line_num = line_idx + 1  # Convert to 1-indexed
+
+            # Try each pattern
+            for pattern_idx, pattern_prefix in enumerate(paired_patterns):
+                # Build pattern to match: prefix + secret value
+                # AWS Secret Access Keys are typically 40 characters, base64-like
+                # Pattern: prefix + (quoted or unquoted secret value)
+                # More specific: look for 30-50 character base64-like strings
+                pattern = pattern_prefix + r'(["\']?)([A-Za-z0-9+/=]{30,50})(["\']?)'
+                try:
+                    compiled_pattern = re.compile(pattern)
+                    match = compiled_pattern.search(line)
+                    if match:
+                        secret_value = match.group(2)
+                        # Validate: AWS Secret Access Keys are typically 40 chars, base64-like
+                        # Exclude values that look like Access Key IDs (start with AKIA)
+                        if len(secret_value) >= 30 and len(secret_value) <= 50 and not secret_value.startswith('AKIA'):
+                            distance = abs(line_num - primary_secret_line)
+                            matches_found.append((line_num, secret_value, pattern_idx, distance))
+                            if distance < best_distance:
+                                best_distance = distance
+                                best_match = (line_num, secret_value)
+                except re.error as e:
+                    if debug:
+                        print(f"  WARNING: Pattern {pattern_idx} compilation error: {e}", file=sys.stderr)
+
+        if debug:
+            if matches_found:
+                print(f"  Found {len(matches_found)} potential paired secret(s):", file=sys.stderr)
+                for line_num, val, pat_idx, dist in matches_found[:5]:  # Show first 5
+                    print(f"    Line {line_num}: {val[:8]}...{val[-4:]} (pattern {pat_idx}, distance {dist})", file=sys.stderr)
+                if len(matches_found) > 5:
+                    print(f"    ... and {len(matches_found) - 5} more", file=sys.stderr)
+                if best_match:
+                    print(f"  Selected best match: line {best_match[0]}", file=sys.stderr)
+            else:
+                print(f"  No paired secret patterns matched in search range", file=sys.stderr)
+
+        return best_match
+
+    except Exception as e:
+        if debug:
+            print(f"  ERROR during discovery: {e}", file=sys.stderr)
+        # Silently fail - will fall back to explicit mode or skip file
+        return None
+
+# ============================================================================
+# END OF AUTOMATIC DISCOVERY FEATURE
+# ============================================================================
+
+
+def detect_secret_type(detector_type: str) -> str:
+    """
+    Detect secret type from trufflehog detector information.
+
+    Args:
+        detector_type: Detector type string from trufflehog
+
+    Returns:
+        Secret type string ('aws', 'username_password', etc.)
+    """
+    detector_lower = detector_type.lower()
+
+    # AWS detectors
+    if 'aws' in detector_lower or 'accesskey' in detector_lower:
+        return 'aws'
+
+    # Future: Add other secret type detection
+    # if 'username' in detector_lower or 'password' in detector_lower:
+    #     return 'username_password'
+    # if 'api' in detector_lower and 'key' in detector_lower:
+    #     return 'api_key_secret'
+
+    # Default to 'aws' for now (Phase 1 focus)
+    return 'aws'
+
+
 def parse_report(report_path: Path) -> Dict:
     """
     Parse trufflehog-analyze-results.py markdown report.
@@ -200,10 +352,17 @@ def parse_report(report_path: Path) -> Dict:
                         })
 
         if occurrences:
+            # Detect secret type from first occurrence's detector
+            secret_type = 'aws'  # Default
+            if occurrences:
+                first_detector = occurrences[0].get('detector_type', '')
+                secret_type = detect_secret_type(first_detector)
+
             identifiers[identifier] = {
                 'identifier': identifier,
                 'secret_value': secret_value,
-                'detector_type': 'AWS',  # Default, could extract from first occurrence
+                'detector_type': occurrences[0].get('detector_type', 'AWS') if occurrences else 'AWS',
+                'secret_type': secret_type,
                 'occurrences': occurrences
             }
 
@@ -275,10 +434,63 @@ def clone_repository(repo_url: str, local_path: Path, reuse: bool = False, verbo
         return False
 
 
-def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number: int, backup_path: Optional[Path] = None) -> bool:
+# Pattern definitions for secret types
+AWS_ACCESS_KEY_PATTERNS = [
+    r'(AWS_ACCESS_KEY_ID\s*[=:]\s*["\']?)',
+    r'("accessKeyId"\s*:\s*["\']?)',
+    r'("access_key"\s*:\s*["\']?)',
+    r'(access_key\s*[=:]\s*["\']?)',
+    r'("[^"]*\.accessKey"\s*:\s*["\']?)',  # JSON keys like "aws.sqs.automotive_que.accessKey"
+    r'("[^"]*accessKey[^"]*"\s*:\s*["\']?)',  # Any JSON key containing "accessKey"
+    r'("[^"]*\.awsAccessKey"\s*:\s*["\']?)',  # JSON keys like "aws.s3.awsAccessKey"
+]
+
+AWS_SECRET_KEY_PATTERNS = [
+    r'(AWS_SECRET_ACCESS_KEY\s*[=:]\s*["\']?)',
+    r'("secretAccessKey"\s*:\s*["\']?)',
+    r'("secret_key"\s*:\s*["\']?)',
+    r'(secret_key\s*[=:]\s*["\']?)',
+    r'(AWS_SECRET_KEY\s*[=:]\s*["\']?)',
+    r'("[^"]*\.secretKey"\s*:\s*["\']?)',  # JSON keys like "aws.sqs.automotive_que.secretKey"
+    r'("[^"]*\.awsSecretKey"\s*:\s*["\']?)',  # JSON keys like "aws.s3.awsSecretKey"
+    r'("[^"]*secretKey[^"]*"\s*:\s*["\']?)',  # Any JSON key containing "secretKey"
+]
+
+
+def get_patterns_for_secret_type(secret_type: str, is_paired: bool = False) -> List[str]:
+    """
+    Get patterns for a given secret type.
+
+    Args:
+        secret_type: Type of secret ('aws', 'username_password', etc.)
+        is_paired: If True, return paired secret patterns; if False, return primary patterns
+
+    Returns:
+        List of regex patterns
+    """
+    if secret_type == 'aws':
+        return AWS_SECRET_KEY_PATTERNS if is_paired else AWS_ACCESS_KEY_PATTERNS
+    # Future: Add other secret types here
+    return []
+
+
+def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number: int,
+                        backup_path: Optional[Path] = None, secret_type: str = 'aws',
+                        is_paired: bool = False, verbose: bool = False) -> bool:
     """
     Replace AWS key in file.
-    Returns: True if replacement was made, False otherwise
+
+    Args:
+        file_path: Path to file
+        old_key: Old key value to replace
+        new_key: New key value
+        line_number: Line number where key was found (for context)
+        backup_path: Optional path to create backup
+        secret_type: Type of secret ('aws', etc.)
+        is_paired: If True, use paired secret patterns; if False, use primary patterns
+
+    Returns:
+        True if replacement was made, False otherwise
     """
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -291,22 +503,56 @@ def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number
                 f.write(content)
             backup_path.chmod(0o600)
 
-        # Common AWS key patterns
-        patterns = [
-            (r'(AWS_ACCESS_KEY_ID\s*[=:]\s*["\']?)' + re.escape(old_key) + r'(["\']?)', r'\1' + new_key + r'\2'),
-            (r'("accessKeyId"\s*:\s*["\']?)' + re.escape(old_key) + r'(["\']?)', r'\1' + new_key + r'\2'),
-            (r'("access_key"\s*:\s*["\']?)' + re.escape(old_key) + r'(["\']?)', r'\1' + new_key + r'\2'),
-            (r'(access_key\s*[=:]\s*["\']?)' + re.escape(old_key) + r'(["\']?)', r'\1' + new_key + r'\2'),
-            (re.escape(old_key), new_key)  # Fallback: exact match
-        ]
+        # Get patterns based on secret type and whether it's paired
+        pattern_prefixes = get_patterns_for_secret_type(secret_type, is_paired)
+
+        # Build patterns with old_key and new_key
+        # Compile patterns explicitly to catch errors early and ensure proper raw string handling
+        patterns = []
+        escaped_old_key = re.escape(old_key)
+        # Escape new_key for use in replacement string (escape backslashes and $)
+        escaped_new_key = new_key.replace('\\', '\\\\').replace('$', '\\$')
+
+        for prefix in pattern_prefixes:
+            # Build pattern: prefix (capture group) + escaped old_key + quote (capture group)
+            pattern_str = prefix + escaped_old_key + r'(["\']?)'
+            # Compile pattern to catch any syntax errors early and ensure proper handling
+            try:
+                compiled_pattern = re.compile(pattern_str)
+            except re.error as e:
+                # Log the error for debugging
+                if verbose:
+                    print(f"  Pattern compilation failed for prefix '{prefix[:50]}...': {e}", file=sys.stderr)
+                # Skip invalid patterns (shouldn't happen with our patterns, but be safe)
+                continue
+            except Exception as e:
+                if verbose:
+                    print(f"  Unexpected error compiling pattern: {e}", file=sys.stderr)
+                continue
+
+            # Build replacement: \1 (prefix) + new_key (literal) + \2 (quote)
+            # In replacement strings, backreferences use \1, \2, etc.
+            replacement = r'\1' + escaped_new_key + r'\2'
+            patterns.append((compiled_pattern, replacement))
+
+        # Fallback: exact match (no prefix pattern)
+        try:
+            fallback_pattern = re.compile(re.escape(old_key))
+            patterns.append((fallback_pattern, new_key))
+        except re.error:
+            pass  # Should never fail, but be safe
 
         modified = False
-        for pattern, replacement in patterns:
-            new_content = re.sub(pattern, replacement, content)
-            if new_content != content:
-                modified = True
-                content = new_content
-                break
+        for compiled_pattern, replacement in patterns:
+            try:
+                new_content = compiled_pattern.sub(replacement, content)
+                if new_content != content:
+                    modified = True
+                    content = new_content
+                    break
+            except Exception as e:
+                # Skip this pattern if it fails, try next one
+                continue
 
         if modified:
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -314,16 +560,213 @@ def replace_key_in_file(file_path: Path, old_key: str, new_key: str, line_number
             return True
 
         return False
+    except re.error as e:
+        print(f"ERROR: Invalid regex pattern in {file_path}: {e}", file=sys.stderr)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        return False
     except Exception as e:
         print(f"ERROR: Failed to replace key in {file_path}: {e}", file=sys.stderr)
+        if verbose:
+            import traceback
+            traceback.print_exc()
         return False
+
+
+def replace_paired_secrets_in_file(file_path: Path, old_primary: str, new_primary: str,
+                                   old_paired: str, new_paired: str, line_number: int,
+                                   backup_path: Optional[Path] = None, secret_type: str = 'aws') -> Tuple[bool, bool]:
+    """
+    Atomically replace both primary and paired secrets in file.
+
+    Args:
+        file_path: Path to file
+        old_primary: Old primary secret value
+        new_primary: New primary secret value
+        old_paired: Old paired secret value
+        new_paired: New paired secret value
+        line_number: Line number where primary secret was found
+        backup_path: Optional path to create backup
+        secret_type: Type of secret pair ('aws', etc.)
+
+    Returns:
+        (primary_success, paired_success) - Both must be True for success
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            original_content = content = f.read()
+
+        # Create backup before any modifications
+        if backup_path:
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                f.write(original_content)
+            backup_path.chmod(0o600)
+
+        # Replace primary secret
+        primary_success = replace_key_in_file(
+            file_path, old_primary, new_primary, line_number,
+            backup_path=None, secret_type=secret_type, is_paired=False, verbose=False
+        )
+
+        # If primary replacement failed, return immediately
+        if not primary_success:
+            return False, False
+
+        # Read updated content
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Replace paired secret
+        paired_success = replace_key_in_file(
+            file_path, old_paired, new_paired, line_number,
+            backup_path=None, secret_type=secret_type, is_paired=True, verbose=False
+        )
+
+        # If paired replacement failed, rollback primary
+        if not paired_success:
+            # Restore from backup
+            if backup_path and backup_path.exists():
+                with open(backup_path, 'r', encoding='utf-8') as f:
+                    rollback_content = f.read()
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(rollback_content)
+                print(f"ERROR: Paired secret replacement failed. Rolled back primary secret replacement in {file_path}", file=sys.stderr)
+            return False, False
+
+        return True, True
+
+    except Exception as e:
+        print(f"ERROR: Failed to replace paired secrets in {file_path}: {e}", file=sys.stderr)
+        # Attempt rollback if backup exists
+        if backup_path and backup_path.exists():
+            try:
+                with open(backup_path, 'r', encoding='utf-8') as f:
+                    rollback_content = f.read()
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(rollback_content)
+            except Exception as rollback_error:
+                print(f"ERROR: Failed to rollback {file_path}: {rollback_error}", file=sys.stderr)
+        return False, False
+
+
+def show_file_context(file_path: Path, line_number: int, context_lines: int = 10) -> None:
+    """Show file content around a specific line number."""
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+
+        start_line = max(0, line_number - context_lines - 1)
+        end_line = min(len(lines), line_number + context_lines)
+
+        print(f"\nFile Context (lines {start_line + 1}-{end_line}):", file=sys.stderr)
+        print("-" * 70, file=sys.stderr)
+        for i in range(start_line, end_line):
+            line_num = i + 1
+            marker = " >>> " if line_num == line_number else "     "
+            # Mask potential secrets in output
+            line_content = lines[i].rstrip()
+            # Simple masking: if line looks like it contains a secret, mask it
+            if len(line_content) > 50 and ('"' in line_content or "'" in line_content):
+                # Try to mask JSON-like values
+                import re
+                # Mask values that look like secrets (long alphanumeric strings)
+                masked_line = re.sub(r':\s*["\']?([A-Za-z0-9+/=]{20,})["\']?', r': "***MASKED***"', line_content)
+                if masked_line != line_content:
+                    line_content = masked_line
+            print(f"{marker}{line_num:4d}: {line_content}", file=sys.stderr)
+        print("-" * 70, file=sys.stderr)
+    except Exception as e:
+        print(f"  (Could not read file context: {e})", file=sys.stderr)
+
+
+def confirm_replacement(file_path: Path, old_primary: str, new_primary: str,
+                        old_paired: Optional[str] = None, new_paired: Optional[str] = None,
+                        primary_line: int = None, paired_line: int = None,
+                        show_context: bool = True, discovery_info: Optional[str] = None,
+                        confirm_all_ref: Optional[List[bool]] = None) -> bool:
+    """
+    Show replacement details and wait for user confirmation in debug mode.
+
+    Args:
+        file_path: Path to file being modified
+        old_primary: Old primary secret value
+        new_primary: New primary secret value
+        old_paired: Old paired secret value (optional)
+        new_paired: New paired secret value (optional)
+        primary_line: Line number of primary secret
+        paired_line: Line number of paired secret
+        show_context: Whether to show file context around the line
+        discovery_info: Additional information about discovery process
+        confirm_all_ref: Mutable container (list) to track if "all" was selected
+
+    Returns:
+        True if user confirms, False otherwise
+    """
+    # Check if "all" was already selected
+    if confirm_all_ref and len(confirm_all_ref) > 0 and confirm_all_ref[0]:
+        return True
+
+    print("\n" + "=" * 70, file=sys.stderr)
+    print("DEBUG MODE: Replacement Preview", file=sys.stderr)
+    print("=" * 70, file=sys.stderr)
+    print(f"File: {file_path}", file=sys.stderr)
+
+    # Show file context around primary secret
+    if show_context and primary_line:
+        show_file_context(file_path, primary_line)
+
+    print(f"\nPrimary Secret Replacement:", file=sys.stderr)
+    print(f"  Old value: {old_primary[:8]}...{old_primary[-4:] if len(old_primary) > 12 else old_primary} (length: {len(old_primary)})", file=sys.stderr)
+    print(f"  New value: {new_primary[:8]}...{new_primary[-4:] if len(new_primary) > 12 else new_primary} (length: {len(new_primary)})", file=sys.stderr)
+    if primary_line:
+        print(f"  Location: Line {primary_line}", file=sys.stderr)
+
+    if old_paired and new_paired:
+        print(f"\nPaired Secret Replacement:", file=sys.stderr)
+        print(f"  Old value: {old_paired[:8]}...{old_paired[-4:] if len(old_paired) > 12 else old_paired} (length: {len(old_paired)})", file=sys.stderr)
+        print(f"  New value: {new_paired[:8]}...{new_paired[-4:] if len(new_paired) > 12 else new_paired} (length: {len(new_paired)})", file=sys.stderr)
+        if paired_line:
+            print(f"  Location: Line {paired_line}", file=sys.stderr)
+            if show_context and paired_line != primary_line:
+                show_file_context(file_path, paired_line)
+        elif primary_line:
+            print(f"  Location: Discovered near line {primary_line}", file=sys.stderr)
+    else:
+        print(f"\nPaired Secret: NOT FOUND", file=sys.stderr)
+        if discovery_info:
+            print(f"  {discovery_info}", file=sys.stderr)
+
+    if discovery_info:
+        print(f"\nDiscovery Info:", file=sys.stderr)
+        print(f"  {discovery_info}", file=sys.stderr)
+
+    print("\n" + "=" * 70, file=sys.stderr)
+    response = input("Proceed with this replacement? (yes/no/all/skip): ").strip().lower()
+    print("=" * 70 + "\n", file=sys.stderr)
+
+    # Handle "all" option
+    if response in ('all', 'a'):
+        if confirm_all_ref is not None:
+            confirm_all_ref.clear()
+            confirm_all_ref.append(True)
+        print("INFO: Proceeding with all remaining replacements without confirmation", file=sys.stderr)
+        return True
+
+    return response in ('yes', 'y')
 
 
 def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Path,
                       backup_dir: Path, branch_prefix: str, timestamp: str,
                       mode: str, reuse_clones: bool = False, verbose: bool = False,
                       push: bool = False, force_push: bool = False, push_remote: str = 'origin',
-                      skip_if_exists: bool = True) -> Dict:
+                      skip_if_exists: bool = True, paired_secret_mode: bool = False,
+                      old_paired_secret: Optional[str] = None, new_paired_secret: Optional[str] = None,
+                      secret_type: str = 'aws', paired_secret_occurrences: Optional[List[Dict]] = None,
+                      debug: bool = False, quiet: bool = False,
+                      old_paired_secret_ref: Optional[List[str]] = None,
+                      confirm_all_ref: Optional[List[bool]] = None) -> Dict:
     """
     Process a single repository: clone, branch, replace key.
     Returns: Status dictionary
@@ -440,16 +883,165 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
         # Process files
         files_modified = []
         backup_files = []
+        processed_files = set()  # Track files we've already processed
 
-        # Find all occurrences for this repository
-        for occ in repo_info.get('occurrences', []):
-            if occ['repository_name'] == repo_name:
-                file_path = local_path / occ['file_path']
-                if file_path.exists():
-                    backup_path = backup_dir / f"{org}-{repo_name}-{occ['file_path'].replace('/', '-')}"
-                    if replace_key_in_file(file_path, old_key, new_key, occ['line_number'], backup_path):
-                        files_modified.append(occ['file_path'])
+        # Use a mutable container for old_paired_secret so we can update it if user provides it
+        # If not provided, create a new one; otherwise use the shared one
+        if old_paired_secret_ref is None:
+            old_paired_secret_ref = [old_paired_secret] if old_paired_secret else []
+        elif old_paired_secret and not old_paired_secret_ref:
+            # If we have old_paired_secret but ref is empty, populate it
+            old_paired_secret_ref.append(old_paired_secret)
+
+        if paired_secret_mode and new_paired_secret:
+            # Paired secret mode: process both primary and paired secret occurrences
+            primary_occurrences = []
+            paired_occurrences = []
+
+            # Collect primary secret occurrences
+            for occ in repo_info.get('occurrences', []):
+                if occ['repository_name'] == repo_name:
+                    primary_occurrences.append(occ)
+
+            # Collect paired secret occurrences if provided (explicit mode)
+            if paired_secret_occurrences:
+                for occ in paired_secret_occurrences:
+                    if occ['repository_name'] == repo_name:
+                        paired_occurrences.append(occ)
+
+            # Process primary occurrences
+            for primary_occ in primary_occurrences:
+                file_path = local_path / primary_occ['file_path']
+                if not file_path.exists():
+                    continue
+
+                # Get current old_paired_secret value (from ref or None)
+                current_old_paired_secret = old_paired_secret_ref[0] if old_paired_secret_ref else None
+
+                # Debug mode: show what we're about to process
+                if debug:
+                    print(f"\n{'='*70}", file=sys.stderr)
+                    print(f"DEBUG: Processing {primary_occ['file_path']} at line {primary_occ['line_number']}", file=sys.stderr)
+                    print(f"{'='*70}", file=sys.stderr)
+                    print(f"Primary secret (old): {old_key[:8]}...{old_key[-4:] if len(old_key) > 12 else old_key}", file=sys.stderr)
+                    print(f"Primary secret (new): {new_key[:8]}...{new_key[-4:] if len(new_key) > 12 else new_key}", file=sys.stderr)
+                    if current_old_paired_secret:
+                        print(f"Paired secret (old): {current_old_paired_secret[:8]}...{current_old_paired_secret[-4:] if len(current_old_paired_secret) > 12 else current_old_paired_secret}", file=sys.stderr)
+                    else:
+                        print(f"Paired secret (old): Not provided - will prompt", file=sys.stderr)
+                    print(f"Paired secret (new): {new_paired_secret[:8]}...{new_paired_secret[-4:] if len(new_paired_secret) > 12 else new_paired_secret}", file=sys.stderr)
+
+                # Check if we have old paired secret - prompt if not set
+                if not current_old_paired_secret:
+                    print("\n" + "=" * 70, file=sys.stderr)
+                    print("Old paired secret is required for paired secret rotation.", file=sys.stderr)
+                    print("Set TRUFFLEHOG_OLD_AWS_SECRET_KEY environment variable to avoid this prompt.", file=sys.stderr)
+                    print("=" * 70, file=sys.stderr)
+                    prompted_old_paired = getpass.getpass("Enter old paired secret (input will be hidden): ")
+                    if prompted_old_paired:
+                        # Update old_paired_secret_ref so it persists for remaining files
+                        old_paired_secret_ref.clear()
+                        old_paired_secret_ref.append(prompted_old_paired)
+                        current_old_paired_secret = prompted_old_paired
+                        if not quiet:
+                            print("INFO: Using prompted old paired secret for remaining files", file=sys.stderr)
+                    else:
+                        if verbose or debug:
+                            print(f"  Skipping {primary_occ['file_path']} - old paired secret not provided", file=sys.stderr)
+                        continue
+
+                # Use the old paired secret (from env var or prompt)
+                paired_secret_to_use = current_old_paired_secret
+
+                # Debug mode: show replacement details and wait for confirmation
+                if debug:
+                    if not confirm_replacement(
+                        file_path, old_key, new_key,
+                        old_paired=paired_secret_to_use, new_paired=new_paired_secret,
+                        primary_line=primary_occ['line_number'],
+                        paired_line=None,
+                        discovery_info="Using explicitly provided old paired secret",
+                        confirm_all_ref=confirm_all_ref
+                    ):
+                        if verbose or debug:
+                            print(f"  Skipping {primary_occ['file_path']} - user declined", file=sys.stderr)
+                        continue
+
+                # Same file: atomic replacement
+                backup_path = backup_dir / f"{org}-{repo_name}-{primary_occ['file_path'].replace('/', '-')}"
+                primary_success, paired_success = replace_paired_secrets_in_file(
+                    file_path, old_key, new_key, paired_secret_to_use, new_paired_secret,
+                    primary_occ['line_number'], backup_path, secret_type
+                )
+                if primary_success and paired_success:
+                    if primary_occ['file_path'] not in processed_files:
+                        files_modified.append(primary_occ['file_path'])
                         backup_files.append(str(backup_path))
+                        processed_files.add(primary_occ['file_path'])
+                elif primary_success and not paired_success:
+                    status['status'] = 'failed'
+                    status['error'] = f'Paired secret replacement failed in {primary_occ["file_path"]} (rolled back)'
+                    return status
+
+            # Process paired secret occurrences that are in different files (explicit mode only)
+            if paired_occurrences:
+                for paired_occ in paired_occurrences:
+                    file_path = local_path / paired_occ['file_path']
+                    if not file_path.exists():
+                        continue
+
+                    # Skip if already processed (was in same file as primary)
+                    if paired_occ['file_path'] in processed_files:
+                        continue
+
+                    # Different file: replace paired secret
+                    backup_path = backup_dir / f"{org}-{repo_name}-{paired_occ['file_path'].replace('/', '-')}"
+
+                    # Get current old_paired_secret value
+                    current_old_paired_secret = old_paired_secret_ref[0] if old_paired_secret_ref else None
+                    if not current_old_paired_secret:
+                        if verbose or debug:
+                            print(f"  WARNING: Old paired secret not available for {paired_occ['file_path']}", file=sys.stderr)
+                        continue
+
+                    # Debug mode: show replacement details and wait for confirmation
+                    if debug:
+                        if not confirm_replacement(
+                            file_path, None, None,
+                            old_paired=current_old_paired_secret, new_paired=new_paired_secret,
+                            paired_line=paired_occ['line_number'],
+                            confirm_all_ref=confirm_all_ref
+                        ):
+                            if verbose or debug:
+                                print(f"  Skipping {paired_occ['file_path']} - user declined", file=sys.stderr)
+                            continue
+
+                    if replace_key_in_file(file_path, current_old_paired_secret, new_paired_secret, paired_occ['line_number'], backup_path, secret_type=secret_type, is_paired=True, verbose=verbose):
+                        files_modified.append(paired_occ['file_path'])
+                        backup_files.append(str(backup_path))
+                        processed_files.add(paired_occ['file_path'])
+        else:
+            # Single secret mode: replace only primary secret
+            for occ in repo_info.get('occurrences', []):
+                if occ['repository_name'] == repo_name:
+                    file_path = local_path / occ['file_path']
+                    if file_path.exists():
+                        backup_path = backup_dir / f"{org}-{repo_name}-{occ['file_path'].replace('/', '-')}"
+
+                        # Debug mode: show replacement details and wait for confirmation
+                        if debug:
+                            if not confirm_replacement(
+                                file_path, old_key, new_key,
+                                primary_line=occ['line_number'],
+                                confirm_all_ref=confirm_all_ref
+                            ):
+                                if verbose or debug:
+                                    print(f"  Skipping {occ['file_path']} - user declined", file=sys.stderr)
+                                continue
+
+                        if replace_key_in_file(file_path, old_key, new_key, occ['line_number'], backup_path, secret_type=secret_type, verbose=verbose):
+                            files_modified.append(occ['file_path'])
+                            backup_files.append(str(backup_path))
 
         status['files_modified'] = files_modified
         status['backup_files'] = backup_files
@@ -464,7 +1056,10 @@ def process_repository(repo_info: Dict, old_key: str, new_key: str, work_dir: Pa
 
         # Commit if in commit mode
         if mode == 'commit':
-            commit_message = repo_info.get('commit_message', f"Rotate AWS key: {identifier}")
+            if paired_secret_mode:
+                commit_message = repo_info.get('commit_message', f"Rotate paired secrets: {identifier}")
+            else:
+                commit_message = repo_info.get('commit_message', f"Rotate AWS key: {identifier}")
             repo.git.commit('-m', commit_message)
             status['changes_committed'] = True
             status['commit_hash'] = repo.head.commit.hexsha
@@ -744,6 +1339,12 @@ def main():
     parser.add_argument('-p', '--prompt-key', action='store_true', help='Prompt for new key interactively (masked input)')
     parser.add_argument('-q', '--quiet', action='store_true', help='Quiet mode. Output as little as possible.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output (may contain sensitive data)')
+    parser.add_argument('--debug', action='store_true', help='Debug mode: show replacement values and wait for confirmation before proceeding')
+
+    # Paired secret rotation options
+    parser.add_argument('--paired-secret', action='store_true', help='Enable paired secret rotation (rotates both primary and paired secrets together)')
+    parser.add_argument('--prompt-paired-secret', action='store_true', help='Prompt for new paired secret interactively (masked input)')
+    parser.add_argument('--paired-secret-identifier', help='Paired secret identifier (TOKEN_* or RAW_*) for explicit mode (optional - automatic discovery will be attempted if not provided)')
 
     parser.add_argument('--lookup-table', help='Path to secrets lookup table (required for TOKEN_ identifiers)')
     parser.add_argument('--mode', choices=['dry-run', 'commit'], default='dry-run', help='Operation mode (Default: dry-run)')
@@ -816,6 +1417,17 @@ def main():
             print(f"Resuming from state file: {state_file}", file=sys.stderr)
             print(f"Log file: {log_file}", file=sys.stderr)
 
+        # Validate mode compatibility
+        state_paired_mode = state.get('paired_secret_mode', False)
+        if state_paired_mode and not args.paired_secret:
+            print("ERROR: State file is for paired-secret mode, but --paired-secret flag not provided.", file=sys.stderr)
+            print("Resume with: --resume --paired-secret", file=sys.stderr)
+            sys.exit(1)
+        if not state_paired_mode and args.paired_secret:
+            print("ERROR: State file is for single-secret mode, but --paired-secret flag provided.", file=sys.stderr)
+            print("Resume without --paired-secret flag, or use a different state file.", file=sys.stderr)
+            sys.exit(1)
+
         # Get new key (optional in resume mode - only for verification)
         # In resume mode, the key was already used to modify files, so we don't strictly need it
         # But we can verify it matches if provided
@@ -834,6 +1446,24 @@ def main():
             if state.get('new_key_hash') != f'sha256:{new_key_hash}':
                 print("WARNING: New key hash does not match state file. Continuing anyway...", file=sys.stderr)
         # Note: In resume mode, we don't require the key - files were already modified in initial run
+
+        # Handle paired secret in resume mode
+        new_paired_secret = None
+        if state_paired_mode:
+            if args.prompt_paired_secret:
+                new_paired_secret = getpass.getpass("Enter new paired secret (input will be hidden): ")
+            elif args.new_paired_secret:
+                new_paired_secret = args.new_paired_secret
+            else:
+                secret_type = state.get('secret_type', 'aws')
+                if secret_type == 'aws':
+                    new_paired_secret = os.environ.get('TRUFFLEHOG_NEW_AWS_SECRET_KEY')
+
+            # Verify paired secret hash if provided
+            if new_paired_secret:
+                new_paired_secret_hash = hashlib.sha256(new_paired_secret.encode()).hexdigest()
+                if state.get('new_paired_secret_hash') != f'sha256:{new_paired_secret_hash}':
+                    print("WARNING: New paired secret hash does not match state file. Continuing anyway...", file=sys.stderr)
 
         # Determine what operations to perform
         do_commit = args.mode == 'commit'
@@ -1065,15 +1695,20 @@ Please review and merge when ready.
         sys.exit(0)
 
     # Get new key (required for initial run, optional for resume)
+    # SECURITY: Prefer interactive prompts over CLI args or env vars
     if args.prompt_key:
         new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
     elif args.new_key:
+        # CLI args are insecure (visible in shell history and process lists)
+        # But allow for backward compatibility - warn user
+        print("WARNING: Passing secrets via CLI arguments is insecure (visible in shell history and process lists).", file=sys.stderr)
+        print("WARNING: Consider using -p (prompt) or environment variables instead.", file=sys.stderr)
         new_key = args.new_key
     else:
         new_key = os.environ.get('TRUFFLEHOG_NEW_AWS_KEY')
         if not new_key and not args.resume:
-            print("ERROR: New key required. Use -k, -p, or set TRUFFLEHOG_NEW_AWS_KEY", file=sys.stderr)
-            sys.exit(1)
+            # Automatically prompt if no key provided (most secure default)
+            new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
 
     if not new_key and not args.resume:
         print("ERROR: New key cannot be empty", file=sys.stderr)
@@ -1105,6 +1740,9 @@ Please review and merge when ready.
 
     identifier_data = identifiers[args.identifier]
 
+    # Detect secret type from identifier data
+    secret_type = identifier_data.get('secret_type', 'aws')
+
     # Get old key
     if args.identifier.startswith('RAW_'):
         old_key = identifier_data['secret_value']
@@ -1126,11 +1764,102 @@ Please review and merge when ready.
         print(f"ERROR: Unknown identifier format: {args.identifier}", file=sys.stderr)
         sys.exit(1)
 
+    # Handle paired secret mode
+    paired_secret_mode = args.paired_secret
+    old_paired_secret = None
+    new_paired_secret = None
+    paired_secret_identifier = None
+    secret_discovery_method = None
+
+    if paired_secret_mode:
+        # Get paired secret identifier (explicit mode)
+        if args.paired_secret_identifier:
+            paired_secret_identifier = args.paired_secret_identifier
+            if paired_secret_identifier not in identifiers:
+                print(f"ERROR: Paired secret identifier not found in report: {paired_secret_identifier}", file=sys.stderr)
+                print(f"Available identifiers: {', '.join(identifiers.keys())}", file=sys.stderr)
+                sys.exit(1)
+
+            paired_identifier_data = identifiers[paired_secret_identifier]
+            secret_discovery_method = 'explicit'
+
+            # Get old paired secret
+            if paired_secret_identifier.startswith('RAW_'):
+                old_paired_secret = paired_identifier_data['secret_value']
+                if not old_paired_secret:
+                    print(f"ERROR: Could not extract secret value for paired RAW_ identifier", file=sys.stderr)
+                    sys.exit(1)
+            elif paired_secret_identifier.startswith('TOKEN_'):
+                if not args.lookup_table:
+                    print(f"ERROR: Lookup table required for paired TOKEN_ identifier. Use --lookup-table", file=sys.stderr)
+                    sys.exit(1)
+                if paired_secret_identifier not in lookup:
+                    print(f"ERROR: Paired identifier not found in lookup table: {paired_secret_identifier}", file=sys.stderr)
+                    sys.exit(1)
+                old_paired_secret = lookup[paired_secret_identifier]
+            else:
+                print(f"ERROR: Unknown paired identifier format: {paired_secret_identifier}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            # Explicit mode: require old paired secret from environment variable or prompt
+            # Automatic discovery is disabled due to fragility - see find_paired_secret_near_primary()
+            if secret_type == 'aws':
+                old_paired_secret = os.environ.get('TRUFFLEHOG_OLD_AWS_SECRET_KEY')
+                if old_paired_secret:
+                    secret_discovery_method = 'explicit_env'
+                    if not args.quiet:
+                        print("INFO: Using old paired secret from TRUFFLEHOG_OLD_AWS_SECRET_KEY environment variable", file=sys.stderr)
+                else:
+                    # Will prompt user during processing if not provided
+                    secret_discovery_method = 'explicit_prompt'
+            else:
+                secret_discovery_method = 'explicit_prompt'
+            paired_secret_identifier = None
+
+        # Get new paired secret (required even for automatic discovery)
+        # SECURITY: Never accept secrets via CLI arguments (visible in shell history and process lists)
+        # Automatically prompt if not provided via environment variable
+        if args.prompt_paired_secret:
+            new_paired_secret = getpass.getpass("Enter new paired secret (input will be hidden): ")
+        else:
+            # Try environment variable (AWS-specific for now)
+            # Note: Environment variables are still visible in process lists, but safer than CLI args
+            if secret_type == 'aws':
+                new_paired_secret = os.environ.get('TRUFFLEHOG_NEW_AWS_SECRET_KEY')
+            if not new_paired_secret:
+                # Automatically prompt if not provided (most secure default)
+                new_paired_secret = getpass.getpass("Enter new paired secret (input will be hidden): ")
+
+        if not new_paired_secret:
+            print("ERROR: New paired secret cannot be empty", file=sys.stderr)
+            sys.exit(1)
+
+        # Note: old_paired_secret will be:
+        # 1. From --paired-secret-identifier (explicit mode)
+        # 2. From TRUFFLEHOG_OLD_AWS_SECRET_KEY environment variable (explicit mode via env)
+        # 3. Discovered per-file during processing (automatic discovery)
+
+    # Get paired secret occurrences if in paired secret mode
+    paired_secret_occurrences_data = None
+    if paired_secret_mode and paired_secret_identifier:
+        if paired_secret_identifier in identifiers:
+            paired_secret_occurrences_data = identifiers[paired_secret_identifier]['occurrences']
+        else:
+            print(f"ERROR: Paired secret identifier not found in report: {paired_secret_identifier}", file=sys.stderr)
+            sys.exit(1)
+
     # Group occurrences by repository
     repos = defaultdict(list)
     for occ in identifier_data['occurrences']:
         repo_key = (occ['repository_url'], occ['repository_name'], occ['organization'])
         repos[repo_key].append(occ)
+
+    # Group paired secret occurrences by repository if in paired secret mode
+    paired_repos = defaultdict(list)
+    if paired_secret_occurrences_data:
+        for occ in paired_secret_occurrences_data:
+            repo_key = (occ['repository_url'], occ['repository_name'], occ['organization'])
+            paired_repos[repo_key].append(occ)
 
     # Apply filters
     skip_repos = set(args.skip_repos.split(',')) if args.skip_repos else set()
@@ -1143,12 +1872,16 @@ Please review and merge when ready.
         if only_repos and repo_name not in only_repos:
             continue
 
+        # Get paired secret occurrences for this repository
+        paired_occs = paired_repos.get((repo_url, repo_name, org), []) if paired_secret_mode else None
+
         repo_list.append({
             'repository_url': repo_url,
             'repository_name': repo_name,
             'organization': org,
             'identifier': args.identifier,
-            'occurrences': occs
+            'occurrences': occs,
+            'paired_secret_occurrences': paired_occs
         })
 
     # Apply limit
@@ -1179,12 +1912,28 @@ Please review and merge when ready.
         print(f"  Repositories will be cloned to: {repos_dir}", file=sys.stderr)
         print(f"  Backup directory: {backup_dir}", file=sys.stderr)
         print("─" * 70, file=sys.stderr)
-        print(f"Processing AWS key rotation for identifier: {args.identifier}", file=sys.stderr)
-        print(f"Old key: {old_key[:8]}... (hidden)", file=sys.stderr)
-        print(f"New key: ******** (hidden)", file=sys.stderr)
+        if paired_secret_mode:
+            print(f"Processing paired secret rotation for identifier: {args.identifier}", file=sys.stderr)
+            print(f"Paired secret identifier: {paired_secret_identifier}", file=sys.stderr)
+            print(f"Old primary key: {old_key[:8]}... (hidden)", file=sys.stderr)
+            print(f"New primary key: ******** (hidden)", file=sys.stderr)
+            print(f"Old paired secret: {old_paired_secret[:8] if old_paired_secret else 'N/A'}... (hidden)", file=sys.stderr)
+            print(f"New paired secret: ******** (hidden)", file=sys.stderr)
+        else:
+            print(f"Processing AWS key rotation for identifier: {args.identifier}", file=sys.stderr)
+            print(f"Old key: {old_key[:8]}... (hidden)", file=sys.stderr)
+            print(f"New key: ******** (hidden)", file=sys.stderr)
         print(f"Repositories to process: {len(repo_list)}", file=sys.stderr)
         print("─" * 70, file=sys.stderr)
     timestamp = datetime.now().isoformat()
+
+    # Create a shared mutable container for old_paired_secret that persists across repositories
+    # This allows us to prompt once and reuse the value for all repositories
+    shared_old_paired_secret_ref = [old_paired_secret] if (paired_secret_mode and old_paired_secret) else []
+
+    # Create a shared mutable container for "confirm all" flag that persists across repositories
+    # This allows users to say "all" once and skip all future confirmations
+    shared_confirm_all_ref = [False]
 
     repositories_status = []
     for i, repo_info in enumerate(repo_list, 1):
@@ -1195,10 +1944,23 @@ Please review and merge when ready.
         if args.commit_message:
             repo_info['commit_message'] = args.commit_message
 
+        # Use the shared mutable containers
+        old_paired_secret_ref = shared_old_paired_secret_ref if paired_secret_mode else None
+        confirm_all_ref = shared_confirm_all_ref if args.debug else None
+
         status = process_repository(
             repo_info, old_key, new_key, work_dir, backup_dir,
             args.branch_prefix, timestamp, args.mode, args.reuse_clones, args.verbose,
-            args.push, args.force_push, args.push_remote, args.skip_if_exists
+            args.push, args.force_push, args.push_remote, args.skip_if_exists,
+            paired_secret_mode=paired_secret_mode,
+            old_paired_secret=old_paired_secret,
+            new_paired_secret=new_paired_secret,
+            secret_type=secret_type,
+            paired_secret_occurrences=repo_info.get('paired_secret_occurrences'),
+            debug=args.debug,
+            quiet=args.quiet,
+            old_paired_secret_ref=old_paired_secret_ref,
+            confirm_all_ref=confirm_all_ref
         )
         repositories_status.append(status)
 
@@ -1305,6 +2067,23 @@ Please review and merge when ready.
             'skipped': sum(1 for r in repositories_status if r['status'] == 'skipped')
         }
     }
+
+    # Add paired secret information if in paired secret mode
+    if paired_secret_mode:
+        new_paired_secret_hash = hashlib.sha256(new_paired_secret.encode()).hexdigest()
+        state['paired_secret_mode'] = True
+        state['secret_type'] = secret_type
+        state['secret_discovery_method'] = secret_discovery_method
+        state['new_paired_secret_hash'] = f'sha256:{new_paired_secret_hash}'
+
+        # Store old paired secret hash only if we have it (explicit mode)
+        if old_paired_secret:
+            old_paired_secret_hash = hashlib.sha256(old_paired_secret.encode()).hexdigest()
+            state['old_paired_secret_hash'] = f'sha256:{old_paired_secret_hash}'
+
+        # Store paired secret identifier only if explicit mode
+        if paired_secret_identifier:
+            state['paired_secret_identifier'] = paired_secret_identifier
 
     state_file = trufflehog_rotate_dir / f"{args.identifier}-{timestamp.replace(':', '-').replace(' ', '_')}.json"
     save_state(state, state_file)

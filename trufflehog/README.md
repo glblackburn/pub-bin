@@ -302,15 +302,17 @@ A Python script that analyzes trufflehog output files (both tokenized and raw) t
 
 ## trufflehog-rotate-aws-key.py
 
-A Python script that automatically rotates AWS keys found in trufflehog analysis reports across multiple repositories. The script clones repositories, creates branches, replaces keys, and optionally commits changes.
+A Python script that automatically rotates AWS keys (and other paired secrets) found in trufflehog analysis reports across multiple repositories. The script clones repositories, creates branches, replaces keys, and optionally commits changes.
 
 **What it does:**
 - Parses markdown reports from `trufflehog-analyze-results.py`
 - Identifies all repositories and file locations for a given identifier (TOKEN_* or RAW_*)
 - Clones repositories and creates timestamped branches
 - Replaces old AWS keys with new key values
+- **NEW:** Supports paired secret rotation (rotates both primary and paired secrets together, e.g., AWS Access Key ID + Secret Access Key)
 - Supports dry-run mode (changes without commit) and commit mode
 - Supports resume mode to continue from where it left off
+- Atomic replacement with rollback on failure (for paired secrets in same file)
 
 **Usage:**
 ```bash
@@ -318,7 +320,7 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
 ```
 
 **Options:**
-- `-r, --report` : Path to trufflehog-analyze-results.py markdown report (Required)
+- `-r, --report` : Path to trufflehog-analyze-results.py markdown report (Required for initial run)
 - `-i, --identifier` : Identifier to rotate (TOKEN_* or RAW_*) (Required)
 - `-k, --new-key` : New AWS key value (or use -p for prompt)
 - `-p, --prompt-key` : Prompt for new key interactively (masked input)
@@ -330,14 +332,39 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
 - `--commit-message` : Custom commit message
 - `--skip-repos` : Comma-separated list of repository names to skip
 - `--only-repos` : Comma-separated list of repository names to process
-- `--work-dir` : Working directory for cloning repositories (Default: /tmp/trufflehog-rotate)
+- `--work-dir` : Working directory for cloning repositories (Default: /tmp/trufflehog-rotate-YYYYMMDD-HHMMSS)
 - `--reuse-clones` : Reuse existing clones if found
 - `--backup-dir` : Directory to store backup copies of modified files
 - `-v, --verbose` : Verbose output (may contain sensitive data)
 - `-q, --quiet` : Quiet mode
 - `-h, --help` : Show help message
 
+**Paired Secret Rotation Options:**
+- `--paired-secret` : Enable paired secret rotation (rotates both primary and paired secrets together)
+- `--paired-secret-identifier` : Paired secret identifier (TOKEN_* or RAW_*) for explicit mode (if the paired secret has its own identifier in the report)
+- `--prompt-paired-secret` : Prompt for new paired secret interactively (masked input) - this is the default if not set via environment variable
+- **Environment Variables:**
+  - `TRUFFLEHOG_NEW_AWS_SECRET_KEY` : New paired secret value (for automation)
+  - `TRUFFLEHOG_OLD_AWS_SECRET_KEY` : Old paired secret value (required - will prompt if not set)
+
+**Security Note:** Secrets should never be passed via CLI arguments as they appear in shell history and process lists. Use environment variables for automation or interactive prompts for manual use.
+
+**Providing the Old Paired Secret:**
+The old paired secret **must** be provided explicitly. The script will always prompt if not provided:
+1. **Explicit Identifier Mode:** Use `--paired-secret-identifier RAW_xxx` if the paired secret has its own identifier in the report
+2. **Environment Variable:** Set `TRUFFLEHOG_OLD_AWS_SECRET_KEY` environment variable (recommended for automation)
+3. **Interactive Prompt:** The script will automatically prompt you to enter the old paired secret (masked input) if not provided via the above methods
+
+**Note:** Automatic discovery has been disabled due to fragility. The discovery code has been isolated for future development. You must explicitly provide the old paired secret value.
+
+**Providing the New Paired Secret:**
+The new paired secret can be provided in two ways:
+1. **Environment Variable:** Set `TRUFFLEHOG_NEW_AWS_SECRET_KEY` environment variable (for automation)
+2. **Interactive Prompt:** The script will automatically prompt if the environment variable is not set (most secure default for manual use)
+
 **Examples:**
+
+**Single Secret Rotation (Default):**
 ```bash
 # Dry-run mode (make changes without committing)
 ./scripts/trufflehog-rotate-aws-key.py \
@@ -356,24 +383,134 @@ A Python script that automatically rotates AWS keys found in trufflehog analysis
 # Resume a previous rotation to commit changes
 ./scripts/trufflehog-rotate-aws-key.py \
     --resume \
+    -i RAW_abc123_def456 \
     --mode commit
+```
 
-# Rotate tokenized identifier (requires lookup table)
-./scripts/trufflehog-rotate-aws-key.py \
-    -r ./trufflehog_report.md \
-    -i TOKEN_abc123_def456 \
-    --lookup-table ./secrets_lookup.json \
-    -k AKIANEWKEYEXAMPLE123 \
-    --mode dry-run
-
-# Limit to first 5 repositories
+**Paired Secret Rotation:**
+```bash
+# Using prompts for both secrets (most secure for manual use)
 ./scripts/trufflehog-rotate-aws-key.py \
     -r ./trufflehog_report.md \
     -i RAW_abc123_def456 \
-    -k AKIANEWKEYEXAMPLE123 \
-    -l 5 \
+    --paired-secret \
+    -p \
     --mode dry-run
+# Will prompt for:
+# - New primary key (if not in env var)
+# - New paired secret (if not in env var)
+# - Old paired secret (if not in env var)
+
+# Explicit mode using environment variable (when automatic discovery fails)
+# Set the old paired secret value via environment variable
+export TRUFFLEHOG_OLD_AWS_SECRET_KEY="wJalrXUt...your-old-secret-key"
+export TRUFFLEHOG_NEW_AWS_SECRET_KEY="wJalrXUt...your-new-secret-key"
+./scripts/trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    --paired-secret \
+    -p \
+    --mode dry-run \
+    --debug
+
+# Explicit mode (when paired secret has its own identifier in report)
+./scripts/trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    --paired-secret \
+    --paired-secret-identifier RAW_xyz789_uvw012 \
+    -p \
+    --mode dry-run
+
+# Using environment variables for automation
+# Note: Environment variables are visible in process lists, but safer than CLI arguments
+export TRUFFLEHOG_NEW_AWS_KEY="AKIANEWKEYEXAMPLE123"
+export TRUFFLEHOG_OLD_AWS_SECRET_KEY="wJalrXUt...OLD_SECRET_KEY"
+export TRUFFLEHOG_NEW_AWS_SECRET_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYNEWKEY"
+./scripts/trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    --paired-secret \
+    --mode dry-run
+
+# Using environment variables for both old and new paired secrets (recommended for automation)
+export TRUFFLEHOG_OLD_AWS_SECRET_KEY="wJalrXUt...your-old-secret-access-key"
+export TRUFFLEHOG_NEW_AWS_SECRET_KEY="wJalrXUt...your-new-secret-access-key"
+./scripts/trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    --paired-secret \
+    -p \
+    --mode dry-run \
+    --debug
+
+# Resume paired secret rotation
+./scripts/trufflehog-rotate-aws-key.py \
+    --resume \
+    -i RAW_abc123_def456 \
+    --paired-secret \
+    --mode commit
 ```
+
+**How Paired Secret Rotation Works:**
+
+1. **Automatic Discovery Mode (Default):**
+   - Script automatically searches for paired secret near primary secret (within ±50 lines in same file)
+   - Uses pattern matching to find AWS Secret Access Key patterns (e.g., `AWS_SECRET_ACCESS_KEY=...`, `"secretAccessKey": "..."`)
+   - Works when paired secret is in the same file as primary secret
+   - If discovery fails, file is skipped with a warning (use explicit mode to handle)
+
+2. **Explicit Mode (Override):**
+   - User provides both identifiers: primary secret (`-i`) and paired secret (`--paired-secret-identifier`)
+   - Script validates both identifiers exist in the report
+   - Works for secrets in same file or different files
+   - Use when automatic discovery fails or secrets are in different files
+   - State file tracks both secret hashes and discovery method
+
+**Key Features:**
+- **Atomic Replacement:** When both secrets are in the same file, they're replaced together with automatic rollback on failure
+- **Cross-File Support:** Handles secrets in different files (replaces both, but not atomic across files)
+- **Security:** Paired secrets never logged or displayed, uses secure input (getpass), stores only hashes in state files
+- **Mode Validation:** Resume mode validates that state file mode matches operation mode (prevents incompatible operations)
+- **Extensible:** Designed to support other secret types (username/password, API key/secret, etc.) in the future
+
+**State File Format:**
+
+Single-secret mode state file:
+```json
+{
+    "identifier": "RAW_abc123_def456",
+    "old_key_hash": "sha256:...",
+    "new_key_hash": "sha256:...",
+    "timestamp": "2025-12-24T10:00:00",
+    "mode": "dry-run",
+    "repositories": [...]
+}
+```
+
+Paired-secret mode state file:
+```json
+{
+    "identifier": "RAW_abc123_def456",
+    "old_key_hash": "sha256:...",
+    "new_key_hash": "sha256:...",
+    "paired_secret_mode": true,
+    "secret_type": "aws",
+    "secret_discovery_method": "explicit",
+    "paired_secret_identifier": "RAW_xyz789_uvw012",
+    "old_paired_secret_hash": "sha256:...",
+    "new_paired_secret_hash": "sha256:...",
+    "timestamp": "2025-12-24T10:00:00",
+    "mode": "dry-run",
+    "repositories": [...]
+}
+```
+
+**Important Notes:**
+- Paired secret mode is opt-in via `--paired-secret` flag (single-secret mode is default)
+- State files are mode-specific: cannot resume paired-secret state with single-secret mode (and vice versa)
+- Secrets are stored as hashes in state files (never plaintext)
+- Actual secret values are provided at runtime (CLI args, prompts, or environment variables)
 
 **Dependencies:**
 - Python 3.8+
