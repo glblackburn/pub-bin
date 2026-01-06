@@ -324,6 +324,7 @@ A Python script that automatically rotates AWS keys (and other paired secrets) f
 - `-i, --identifier` : Identifier to rotate (TOKEN_* or RAW_*) (Required)
 - `-k, --new-key` : New AWS key value (or use -p for prompt)
 - `-p, --prompt-key` : Prompt for new key interactively (masked input)
+- `--credential-loader` : Path to credential loader script (Python module with `load_credentials()` function). Default: `scripts/credential-loaders/file_loader.py` if exists. Can also be set via `TRUFFLEHOG_CREDENTIAL_LOADER` env var.
 - `-l, --limit` : Limit number of repositories to process (Default: 0 = all)
 - `--lookup-table` : Path to secrets lookup table (required for TOKEN_ identifiers)
 - `--mode` : Operation mode: `dry-run` (make changes, don't commit) or `commit` (commit changes) (Default: dry-run)
@@ -347,7 +348,39 @@ A Python script that automatically rotates AWS keys (and other paired secrets) f
   - `TRUFFLEHOG_NEW_AWS_SECRET_KEY` : New paired secret value (for automation)
   - `TRUFFLEHOG_OLD_AWS_SECRET_KEY` : Old paired secret value (required - will prompt if not set)
 
-**Security Note:** Secrets should never be passed via CLI arguments as they appear in shell history and process lists. Use environment variables for automation or interactive prompts for manual use.
+**Credential Loading Priority:**
+The script loads credentials in the following priority order (highest to lowest):
+1. **CLI arguments** (`-k` / `--new-key`) - ⚠️ Insecure (visible in shell history)
+2. **Interactive prompts** (`-p` / `--prompt-key`) - ✅ Secure for manual use
+3. **Credential loader scripts** (`--credential-loader`) - ✅ Secure, pluggable (NEW)
+4. **Environment variables** (`TRUFFLEHOG_NEW_AWS_KEY`) - ⚠️ Visible in process lists
+5. **Automatic prompt** - ✅ Secure default if none of above provided
+
+**Pluggable Credential Loaders:**
+The script supports pluggable credential loaders that can read credentials from external sources (files, vaults, etc.). Loader scripts are Python modules that define a `load_credentials()` function returning a dictionary with `new_aws_key` and `new_aws_secret_key` keys.
+
+**Default File Loader:**
+The script includes a default file-based loader (`scripts/credential-loaders/file_loader.py`) that reads from `~/.secure/trufflehog-aws-keys.sh`:
+```bash
+export TRUFFLEHOG_NEW_AWS_KEY="AKIA..."
+export TRUFFLEHOG_NEW_AWS_SECRET_KEY="wJalr..."
+```
+
+**Using Custom Loaders:**
+```bash
+# Use default file loader (if exists)
+./scripts/trufflehog-rotate-aws-key.py -r report.md -i RAW_abc123
+
+# Use custom loader
+./scripts/trufflehog-rotate-aws-key.py -r report.md -i RAW_abc123 \
+    --credential-loader /path/to/my-loader.py
+
+# Use loader via environment variable
+export TRUFFLEHOG_CREDENTIAL_LOADER=/path/to/my-loader.py
+./scripts/trufflehog-rotate-aws-key.py -r report.md -i RAW_abc123
+```
+
+**Security Note:** Secrets should never be passed via CLI arguments as they appear in shell history and process lists. Use credential loaders or interactive prompts for secure credential handling.
 
 **Providing the Old Paired Secret:**
 The old paired secret **must** be provided explicitly. The script will always prompt if not provided:

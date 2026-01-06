@@ -1290,6 +1290,59 @@ def create_pr_via_api(org: str, repo: str, branch: str, base: str, title: str,
         return False, error_msg
 
 
+def load_credentials_from_script(loader_path: str, quiet: bool = False) -> Optional[Dict[str, Optional[str]]]:
+    """
+    Load credentials from pluggable loader script.
+    
+    Loader scripts should be Python modules that define a load_credentials() function
+    that returns a dictionary with 'new_aws_key' and 'new_aws_secret_key' keys.
+    
+    Args:
+        loader_path: Path to loader script (Python module)
+        quiet: If True, suppress error messages
+    
+    Returns:
+        Dictionary with credentials or None if failed
+        Dictionary format: {'new_aws_key': Optional[str], 'new_aws_secret_key': Optional[str]}
+    """
+    loader_path_obj = Path(loader_path)
+    
+    if not loader_path_obj.exists():
+        if not quiet:
+            print(f"WARNING: Credential loader not found: {loader_path_obj}", file=sys.stderr)
+        return None
+    
+    try:
+        # Import as Python module
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("credential_loader", loader_path_obj)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            if hasattr(module, 'load_credentials'):
+                credentials = module.load_credentials()
+                # Validate return type
+                if isinstance(credentials, dict):
+                    return credentials
+                else:
+                    if not quiet:
+                        print(f"WARNING: Credential loader returned invalid type (expected dict): {type(credentials)}", file=sys.stderr)
+                    return None
+            else:
+                if not quiet:
+                    print(f"WARNING: Credential loader does not define load_credentials() function: {loader_path_obj}", file=sys.stderr)
+                return None
+        else:
+            if not quiet:
+                print(f"WARNING: Failed to load credential loader as Python module: {loader_path_obj}", file=sys.stderr)
+            return None
+    
+    except Exception as e:
+        if not quiet:
+            print(f"WARNING: Failed to load credentials from {loader_path_obj}: {e}", file=sys.stderr)
+        return None
+
+
 def create_pull_request(org: str, repo: str, branch: str, base: str, title: str,
                        body: str, labels: List[str] = None, reviewers: List[str] = None,
                        assignees: List[str] = None, draft: bool = False,
@@ -1381,6 +1434,11 @@ def main():
     parser.add_argument('--github-token', help='GitHub token for API (alternative to gh CLI)')
     parser.add_argument('--use-gh-cli', action='store_true', help='Use GitHub CLI (gh) for PR creation (default if available)')
     parser.add_argument('--use-github-api', action='store_true', help='Use GitHub API directly (requires token)')
+
+    # Credential loader (pluggable)
+    script_dir = Path(__file__).parent
+    default_loader = script_dir / 'credential-loaders' / 'file_loader.py'
+    parser.add_argument('--credential-loader', help=f'Path to credential loader script (Python module with load_credentials() function). Default: {default_loader} if exists. Can also be set via TRUFFLEHOG_CREDENTIAL_LOADER env var.')
 
     args = parser.parse_args()
 
@@ -1694,25 +1752,9 @@ Please review and merge when ready.
 
         sys.exit(0)
 
-    # Get new key (required for initial run, optional for resume)
-    # SECURITY: Prefer interactive prompts over CLI args or env vars
-    if args.prompt_key:
-        new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
-    elif args.new_key:
-        # CLI args are insecure (visible in shell history and process lists)
-        # But allow for backward compatibility - warn user
-        print("WARNING: Passing secrets via CLI arguments is insecure (visible in shell history and process lists).", file=sys.stderr)
-        print("WARNING: Consider using -p (prompt) or environment variables instead.", file=sys.stderr)
-        new_key = args.new_key
-    else:
-        new_key = os.environ.get('TRUFFLEHOG_NEW_AWS_KEY')
-        if not new_key and not args.resume:
-            # Automatically prompt if no key provided (most secure default)
-            new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
-
-    if not new_key and not args.resume:
-        print("ERROR: New key cannot be empty", file=sys.stderr)
-        sys.exit(1)
+    # Validate prerequisites BEFORE prompting for sensitive input (keys)
+    # This prevents prompting for secrets when the script will fail due to missing files/invalid identifiers
+    # BUG-1: Fixed validation order - validate report file and identifier before prompting for key
 
     # Parse report (required for initial run, not for resume with push/PR only)
     if not args.report and not args.resume:
@@ -1736,6 +1778,56 @@ Please review and merge when ready.
     if args.identifier not in identifiers:
         print(f"ERROR: Identifier not found in report: {args.identifier}", file=sys.stderr)
         print(f"Available identifiers: {', '.join(identifiers.keys())}", file=sys.stderr)
+        sys.exit(1)
+
+    # Now that prerequisites are validated, load credentials using priority order:
+    # 1. CLI argument (-k / --new-key)
+    # 2. Interactive prompt (-p / --prompt-key)
+    # 3. Credential loader script (--credential-loader)
+    # 4. Environment variable (TRUFFLEHOG_NEW_AWS_KEY)
+    # 5. Automatic prompt (if none of above)
+    
+    # Determine credential loader script path
+    loader_script = None
+    if args.credential_loader:
+        loader_script = Path(args.credential_loader)
+    elif os.environ.get('TRUFFLEHOG_CREDENTIAL_LOADER'):
+        loader_script = Path(os.environ.get('TRUFFLEHOG_CREDENTIAL_LOADER'))
+    else:
+        # Default: try file_loader.py if it exists
+        script_dir = Path(__file__).parent
+        default_loader = script_dir / 'credential-loaders' / 'file_loader.py'
+        if default_loader.exists():
+            loader_script = default_loader
+    
+    # Load credentials from loader script (if available)
+    loader_credentials = None
+    if loader_script:
+        loader_credentials = load_credentials_from_script(str(loader_script), args.quiet)
+    
+    # Priority 1: CLI argument
+    if args.prompt_key:
+        new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
+    elif args.new_key:
+        # CLI args are insecure (visible in shell history and process lists)
+        # But allow for backward compatibility - warn user
+        print("WARNING: Passing secrets via CLI arguments is insecure (visible in shell history and process lists).", file=sys.stderr)
+        print("WARNING: Consider using -p (prompt) or environment variables instead.", file=sys.stderr)
+        new_key = args.new_key
+    # Priority 2: Credential loader (NEW)
+    elif loader_credentials and loader_credentials.get('new_aws_key'):
+        new_key = loader_credentials['new_aws_key']
+        if not args.quiet:
+            print("INFO: Loaded new AWS key from credential loader", file=sys.stderr)
+    # Priority 3: Environment variable
+    else:
+        new_key = os.environ.get('TRUFFLEHOG_NEW_AWS_KEY')
+        if not new_key and not args.resume:
+            # Priority 4: Automatically prompt if no key provided (most secure default)
+            new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
+
+    if not new_key and not args.resume:
+        print("ERROR: New key cannot be empty", file=sys.stderr)
         sys.exit(1)
 
     identifier_data = identifiers[args.identifier]
@@ -1816,18 +1908,26 @@ Please review and merge when ready.
                 secret_discovery_method = 'explicit_prompt'
             paired_secret_identifier = None
 
-        # Get new paired secret (required even for automatic discovery)
-        # SECURITY: Never accept secrets via CLI arguments (visible in shell history and process lists)
-        # Automatically prompt if not provided via environment variable
+        # Get new paired secret using priority order:
+        # 1. Interactive prompt (--prompt-paired-secret)
+        # 2. Credential loader script (--credential-loader)
+        # 3. Environment variable (TRUFFLEHOG_NEW_AWS_SECRET_KEY)
+        # 4. Automatic prompt (if none of above)
         if args.prompt_paired_secret:
             new_paired_secret = getpass.getpass("Enter new paired secret (input will be hidden): ")
+        # Priority 2: Credential loader (NEW)
+        elif loader_credentials and loader_credentials.get('new_aws_secret_key'):
+            new_paired_secret = loader_credentials['new_aws_secret_key']
+            if not args.quiet:
+                print("INFO: Loaded new paired secret from credential loader", file=sys.stderr)
+        # Priority 3: Environment variable
         else:
             # Try environment variable (AWS-specific for now)
             # Note: Environment variables are still visible in process lists, but safer than CLI args
             if secret_type == 'aws':
                 new_paired_secret = os.environ.get('TRUFFLEHOG_NEW_AWS_SECRET_KEY')
             if not new_paired_secret:
-                # Automatically prompt if not provided (most secure default)
+                # Priority 4: Automatically prompt if not provided (most secure default)
                 new_paired_secret = getpass.getpass("Enter new paired secret (input will be hidden): ")
 
         if not new_paired_secret:
