@@ -360,18 +360,53 @@ The script loads credentials in the following priority order (highest to lowest)
 The script supports pluggable credential loaders that can read credentials from external sources (files, vaults, etc.). Loader scripts are Python modules that define a `load_credentials()` function returning a dictionary with `new_aws_key` and `new_aws_secret_key` keys.
 
 **Default File Loader:**
-The script includes a default file-based loader (`scripts/credential-loaders/file_loader.py`) that reads from `~/.secure/trufflehog-aws-keys.sh`:
+The script includes a default file-based loader (`scripts/credential-loaders/file_loader.py`) that reads from `~/.secure/trufflehog-aws-keys.sh`.
+
+**Creating the Credentials File:**
+Use the helper script to securely create the credentials file:
 ```bash
+./scripts/create-trufflehog-aws-credentials.sh
+```
+This script will:
+- Prompt for new AWS Access Key ID (hidden input)
+- Prompt for new AWS Secret Access Key (hidden input)
+- Prompt for old AWS Secret Access Key (hidden input, optional - for paired secret rotation)
+- Validate key formats
+- Create `~/.secure/trufflehog-aws-keys.sh` with proper permissions (600)
+
+**Manual Creation:**
+You can also create the file manually:
+```bash
+cat > ~/.secure/trufflehog-aws-keys.sh <<EOF
 export TRUFFLEHOG_NEW_AWS_KEY="AKIA..."
 export TRUFFLEHOG_NEW_AWS_SECRET_KEY="wJalr..."
+export TRUFFLEHOG_OLD_AWS_SECRET_KEY="wJalr..."  # Optional, for paired secret rotation
+EOF
+chmod 600 ~/.secure/trufflehog-aws-keys.sh
+```
+
+**Using the Default File Loader:**
+```bash
+# Step 1: Create credentials file using helper script (recommended)
+./scripts/create-trufflehog-aws-credentials.sh
+# This will securely prompt for both keys and create the file with proper permissions
+
+# Step 2: Run script (default loader is used automatically if file exists)
+./scripts/trufflehog-rotate-aws-key.py -r report.md -i RAW_abc123 --mode dry-run
+# The script will automatically load credentials from ~/.secure/trufflehog-aws-keys.sh
+# No need to specify --credential-loader (uses default if file exists)
+
+# Alternative: Create file manually
+cat > ~/.secure/trufflehog-aws-keys.sh <<EOF
+export TRUFFLEHOG_NEW_AWS_KEY="AKIANEWKEYEXAMPLE123"
+export TRUFFLEHOG_NEW_AWS_SECRET_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYNEWKEY"
+EOF
+chmod 600 ~/.secure/trufflehog-aws-keys.sh
 ```
 
 **Using Custom Loaders:**
 ```bash
-# Use default file loader (if exists)
-./scripts/trufflehog-rotate-aws-key.py -r report.md -i RAW_abc123
-
-# Use custom loader
+# Use custom loader explicitly
 ./scripts/trufflehog-rotate-aws-key.py -r report.md -i RAW_abc123 \
     --credential-loader /path/to/my-loader.py
 
@@ -385,15 +420,17 @@ export TRUFFLEHOG_CREDENTIAL_LOADER=/path/to/my-loader.py
 **Providing the Old Paired Secret:**
 The old paired secret **must** be provided explicitly. The script will always prompt if not provided:
 1. **Explicit Identifier Mode:** Use `--paired-secret-identifier RAW_xxx` if the paired secret has its own identifier in the report
-2. **Environment Variable:** Set `TRUFFLEHOG_OLD_AWS_SECRET_KEY` environment variable (recommended for automation)
-3. **Interactive Prompt:** The script will automatically prompt you to enter the old paired secret (masked input) if not provided via the above methods
+2. **Credential Loader:** Include `TRUFFLEHOG_OLD_AWS_SECRET_KEY` in `~/.secure/trufflehog-aws-keys.sh` (NEW - created by `create-trufflehog-aws-credentials.sh`)
+3. **Environment Variable:** Set `TRUFFLEHOG_OLD_AWS_SECRET_KEY` environment variable (recommended for automation)
+4. **Interactive Prompt:** The script will automatically prompt you to enter the old paired secret (masked input) if not provided via the above methods
 
 **Note:** Automatic discovery has been disabled due to fragility. The discovery code has been isolated for future development. You must explicitly provide the old paired secret value.
 
 **Providing the New Paired Secret:**
-The new paired secret can be provided in two ways:
-1. **Environment Variable:** Set `TRUFFLEHOG_NEW_AWS_SECRET_KEY` environment variable (for automation)
-2. **Interactive Prompt:** The script will automatically prompt if the environment variable is not set (most secure default for manual use)
+The new paired secret can be provided in multiple ways (priority order):
+1. **Credential Loader:** Include `TRUFFLEHOG_NEW_AWS_SECRET_KEY` in `~/.secure/trufflehog-aws-keys.sh` (NEW - created by `create-trufflehog-aws-credentials.sh`)
+2. **Environment Variable:** Set `TRUFFLEHOG_NEW_AWS_SECRET_KEY` environment variable (for automation)
+3. **Interactive Prompt:** The script will automatically prompt if not provided via the above methods (most secure default for manual use)
 
 **Examples:**
 
@@ -404,6 +441,16 @@ The new paired secret can be provided in two ways:
     -r ./trufflehog_report.md \
     -i RAW_abc123_def456 \
     -p \
+    --mode dry-run
+
+# Using default credential loader (reads from ~/.secure/trufflehog-aws-keys.sh)
+# First, create the credentials file using helper script:
+./scripts/create-trufflehog-aws-credentials.sh
+
+# Then run the script (loader is used automatically if file exists)
+./scripts/trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
     --mode dry-run
 
 # Commit mode (automatically commit changes)
@@ -433,6 +480,21 @@ The new paired secret can be provided in two ways:
 # - New primary key (if not in env var)
 # - New paired secret (if not in env var)
 # - Old paired secret (if not in env var)
+
+# Using default credential loader for paired secrets
+# Step 1: Create credentials file using helper script (recommended)
+./scripts/create-trufflehog-aws-credentials.sh
+# This will prompt for both new keys and create the file
+
+# Step 2: Set old paired secret (required for paired secret rotation)
+export TRUFFLEHOG_OLD_AWS_SECRET_KEY="wJalrXUt...your-old-secret-key"
+
+# Step 3: Run the script (loader automatically provides both new keys)
+./scripts/trufflehog-rotate-aws-key.py \
+    -r ./trufflehog_report.md \
+    -i RAW_abc123_def456 \
+    --paired-secret \
+    --mode dry-run
 
 # Explicit mode using environment variable (when automatic discovery fails)
 # Set the old paired secret value via environment variable

@@ -1168,6 +1168,80 @@ def check_gh_cli_installed() -> bool:
         return False
 
 
+def validate_repository_exists(org: str, repo: str, github_token: Optional[str] = None,
+                               use_cli: bool = True, verbose: bool = False) -> Tuple[bool, Optional[str]]:
+    """
+    Validate that a repository exists on GitHub.
+    Returns: (exists, error_message)
+    """
+    # Try GitHub CLI first if available
+    if use_cli and check_gh_cli_installed():
+        try:
+            # Use 'gh repo view' to check if repo exists
+            result = subprocess.run(
+                ['gh', 'repo', 'view', f'{org}/{repo}'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                return True, None
+            else:
+                error_msg = result.stderr.strip()
+                error_lower = error_msg.lower()
+                # Check for authentication issues
+                if 'not logged in' in error_lower or 'authentication' in error_lower or 'unauthorized' in error_lower:
+                    return False, f"Authentication required. Run 'gh auth login' or provide --github-token"
+                elif 'not found' in error_lower or 'could not resolve' in error_lower:
+                    return False, f"Repository {org}/{repo} does not exist on GitHub (or you don't have access)"
+                return False, error_msg or "Repository check failed"
+        except subprocess.TimeoutExpired:
+            return False, "Repository check timed out"
+        except Exception as e:
+            if verbose:
+                print(f"  GitHub CLI check failed: {e}, trying API...", file=sys.stderr)
+    
+    # Fall back to GitHub API
+    if GITHUB_API_AVAILABLE:
+        token = github_token or os.environ.get('GITHUB_TOKEN')
+        if token:
+            try:
+                g = Github(token)
+                github_repo = g.get_repo(f'{org}/{repo}')
+                # If we get here, repo exists
+                return True, None
+            except Exception as e:
+                error_msg = str(e)
+                if 'not found' in error_msg.lower() or 'could not resolve' in error_msg.lower():
+                    return False, f"Repository {org}/{repo} does not exist on GitHub"
+                return False, error_msg
+        else:
+            return False, "GitHub token required for API validation. Set GITHUB_TOKEN or use --github-token"
+    
+    # Neither CLI nor API available
+    return False, "Neither GitHub CLI nor PyGithub available for validation"
+
+
+def validate_repositories(repo_list: List[Dict], github_token: Optional[str] = None,
+                           use_cli: bool = True, verbose: bool = False) -> Tuple[bool, List[str]]:
+    """
+    Validate that all repositories in the list exist on GitHub.
+    Returns: (all_valid, list_of_invalid_repos_with_errors)
+    """
+    invalid_repos = []
+    
+    for repo_info in repo_list:
+        org = repo_info['organization']
+        repo_name = repo_info['repository_name']
+        full_name = f"{org}/{repo_name}"
+        
+        exists, error = validate_repository_exists(org, repo_name, github_token, use_cli, verbose)
+        if not exists:
+            invalid_repos.append(f"{full_name}: {error}")
+    
+    return len(invalid_repos) == 0, invalid_repos
+
+
 def create_pr_via_cli(org: str, repo: str, branch: str, base: str, title: str,
                      body: str, labels: List[str] = None, reviewers: List[str] = None,
                      assignees: List[str] = None, draft: bool = False,
@@ -1382,7 +1456,23 @@ def create_pull_request(org: str, repo: str, branch: str, base: str, title: str,
 def main():
     parser = argparse.ArgumentParser(
         description='Rotate AWS keys found in trufflehog analysis reports',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''Examples:
+  # Using default credential loader (reads from ~/.secure/trufflehog-aws-keys.sh)
+  # First create credentials file using helper script:
+  #   ./create-trufflehog-aws-credentials.sh
+  # Then run (loader used automatically):
+  %(prog)s -r report.md -i RAW_abc123_def456 --mode dry-run
+
+  # Using interactive prompt
+  %(prog)s -r report.md -i RAW_abc123_def456 -p --mode dry-run
+
+  # Paired secret rotation with default loader
+  %(prog)s -r report.md -i RAW_abc123_def456 --paired-secret --mode dry-run
+
+  # Resume previous rotation
+  %(prog)s --resume -i RAW_abc123_def456 --mode commit
+'''
     )
 
     parser.add_argument('-r', '--report', required=False, help='Path to trufflehog-analyze-results.py markdown report (not required for --resume with --push or --create-pr)')
@@ -1805,25 +1895,26 @@ Please review and merge when ready.
     if loader_script:
         loader_credentials = load_credentials_from_script(str(loader_script), args.quiet)
     
-    # Priority 1: CLI argument
-    if args.prompt_key:
-        new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
-    elif args.new_key:
+    # Priority 1: CLI argument (-k / --new-key)
+    if args.new_key:
         # CLI args are insecure (visible in shell history and process lists)
         # But allow for backward compatibility - warn user
         print("WARNING: Passing secrets via CLI arguments is insecure (visible in shell history and process lists).", file=sys.stderr)
-        print("WARNING: Consider using -p (prompt) or environment variables instead.", file=sys.stderr)
+        print("WARNING: Consider using -p (prompt) or credential loaders instead.", file=sys.stderr)
         new_key = args.new_key
-    # Priority 2: Credential loader (NEW)
+    # Priority 2: Interactive prompt (-p / --prompt-key)
+    elif args.prompt_key:
+        new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
+    # Priority 3: Credential loader (--credential-loader) (NEW)
     elif loader_credentials and loader_credentials.get('new_aws_key'):
         new_key = loader_credentials['new_aws_key']
         if not args.quiet:
             print("INFO: Loaded new AWS key from credential loader", file=sys.stderr)
-    # Priority 3: Environment variable
+    # Priority 4: Environment variable (TRUFFLEHOG_NEW_AWS_KEY)
     else:
         new_key = os.environ.get('TRUFFLEHOG_NEW_AWS_KEY')
         if not new_key and not args.resume:
-            # Priority 4: Automatically prompt if no key provided (most secure default)
+            # Priority 5: Automatically prompt if no key provided (most secure default)
             new_key = getpass.getpass("Enter new AWS key (input will be hidden): ")
 
     if not new_key and not args.resume:
@@ -1893,11 +1984,18 @@ Please review and merge when ready.
                 print(f"ERROR: Unknown paired identifier format: {paired_secret_identifier}", file=sys.stderr)
                 sys.exit(1)
         else:
-            # Explicit mode: require old paired secret from environment variable or prompt
+            # Explicit mode: require old paired secret from credential loader, environment variable, or prompt
             # Automatic discovery is disabled due to fragility - see find_paired_secret_near_primary()
             if secret_type == 'aws':
-                old_paired_secret = os.environ.get('TRUFFLEHOG_OLD_AWS_SECRET_KEY')
-                if old_paired_secret:
+                # Priority 1: Credential loader (NEW)
+                if loader_credentials and loader_credentials.get('old_aws_secret_key'):
+                    old_paired_secret = loader_credentials['old_aws_secret_key']
+                    secret_discovery_method = 'explicit_loader'
+                    if not args.quiet:
+                        print("INFO: Using old paired secret from credential loader", file=sys.stderr)
+                # Priority 2: Environment variable
+                elif os.environ.get('TRUFFLEHOG_OLD_AWS_SECRET_KEY'):
+                    old_paired_secret = os.environ.get('TRUFFLEHOG_OLD_AWS_SECRET_KEY')
                     secret_discovery_method = 'explicit_env'
                     if not args.quiet:
                         print("INFO: Using old paired secret from TRUFFLEHOG_OLD_AWS_SECRET_KEY environment variable", file=sys.stderr)
@@ -1910,7 +2008,7 @@ Please review and merge when ready.
 
         # Get new paired secret using priority order:
         # 1. Interactive prompt (--prompt-paired-secret)
-        # 2. Credential loader script (--credential-loader)
+        # 2. Credential loader script (--credential-loader) (NEW)
         # 3. Environment variable (TRUFFLEHOG_NEW_AWS_SECRET_KEY)
         # 4. Automatic prompt (if none of above)
         if args.prompt_paired_secret:
@@ -1987,6 +2085,57 @@ Please review and merge when ready.
     # Apply limit
     if args.limit > 0:
         repo_list = repo_list[:args.limit]
+
+    # Early validation: Check repository existence if PRs will be created
+    # This prevents processing files and pushing branches for non-existent repos
+    # Do this BEFORE creating work directories and setting up logging for fast failure
+    if args.create_pr:
+        # Always validate when PRs will be created
+        if not args.quiet:
+            print("Validating repository existence on GitHub (required for PR creation)...", file=sys.stderr)
+        
+        # Check authentication status
+        use_cli = args.use_gh_cli or (not args.use_github_api and check_gh_cli_installed())
+        has_token = bool(args.github_token or os.environ.get('GITHUB_TOKEN'))
+        
+        if use_cli and check_gh_cli_installed():
+            # Check if gh is authenticated
+            try:
+                auth_result = subprocess.run(
+                    ['gh', 'auth', 'status'],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if auth_result.returncode != 0 and not args.quiet:
+                    print("WARNING: GitHub CLI may not be authenticated. Run 'gh auth login'", file=sys.stderr)
+            except Exception:
+                pass  # Ignore auth check failures
+        
+        if not use_cli and not has_token and not args.quiet:
+            print("WARNING: No GitHub authentication found. Private repositories may fail validation.", file=sys.stderr)
+            print("  Set GITHUB_TOKEN environment variable or use --github-token", file=sys.stderr)
+        
+        all_valid, invalid_repos = validate_repositories(
+            repo_list, args.github_token, use_cli, args.verbose
+        )
+        
+        if not all_valid:
+            print("\nERROR: Some repositories could not be validated on GitHub:", file=sys.stderr)
+            for error in invalid_repos:
+                print(f"  ✗ {error}", file=sys.stderr)
+            print("\nPossible causes:", file=sys.stderr)
+            print("  1. Repository names in the report are incorrect", file=sys.stderr)
+            print("  2. Repositories are private and authentication is required", file=sys.stderr)
+            print("     - Run 'gh auth login' for GitHub CLI", file=sys.stderr)
+            print("     - Or set GITHUB_TOKEN environment variable", file=sys.stderr)
+            print("     - Or use --github-token flag", file=sys.stderr)
+            print("  3. Repositories have been renamed or deleted", file=sys.stderr)
+            print("\nYou can skip invalid repositories using --skip-repos <repo1,repo2,...>", file=sys.stderr)
+            sys.exit(1)
+        
+        if not args.quiet:
+            print(f"✓ All {len(repo_list)} repositories validated successfully", file=sys.stderr)
 
     # Process repositories
     work_dir = Path(args.work_dir)

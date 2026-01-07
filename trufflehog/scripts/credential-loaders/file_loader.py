@@ -23,15 +23,18 @@ def load_credentials() -> Dict[str, Optional[str]]:
     Reads from ~/.secure/trufflehog-aws-keys.sh in bash export format:
         export TRUFFLEHOG_NEW_AWS_KEY="AKIA..."
         export TRUFFLEHOG_NEW_AWS_SECRET_KEY="wJalr..."
+        export TRUFFLEHOG_OLD_AWS_SECRET_KEY="wJalr..." (optional)
     
     Returns:
         Dictionary with keys:
         - 'new_aws_key': New AWS Access Key ID (or None if not found)
         - 'new_aws_secret_key': New AWS Secret Access Key (or None if not found)
+        - 'old_aws_secret_key': Old AWS Secret Access Key (or None if not found)
     """
     credentials = {
         'new_aws_key': None,
-        'new_aws_secret_key': None
+        'new_aws_secret_key': None,
+        'old_aws_secret_key': None
     }
     
     if not CREDENTIALS_FILE.exists():
@@ -43,8 +46,9 @@ def load_credentials() -> Dict[str, Optional[str]]:
                 # Match: export TRUFFLEHOG_NEW_AWS_KEY="value"
                 # or: export TRUFFLEHOG_NEW_AWS_KEY=value
                 # or: export TRUFFLEHOG_NEW_AWS_KEY='value'
+                # Also match TRUFFLEHOG_OLD_AWS_SECRET_KEY
                 match = re.match(
-                    r'export\s+(TRUFFLEHOG_NEW_AWS_KEY|TRUFFLEHOG_NEW_AWS_SECRET_KEY)=["\']?([^"\']+)["\']?',
+                    r'export\s+(TRUFFLEHOG_NEW_AWS_KEY|TRUFFLEHOG_NEW_AWS_SECRET_KEY|TRUFFLEHOG_OLD_AWS_SECRET_KEY)=["\']?([^"\']+)["\']?',
                     line.strip()
                 )
                 if match:
@@ -54,6 +58,8 @@ def load_credentials() -> Dict[str, Optional[str]]:
                         credentials['new_aws_key'] = var_value
                     elif var_name == 'TRUFFLEHOG_NEW_AWS_SECRET_KEY':
                         credentials['new_aws_secret_key'] = var_value
+                    elif var_name == 'TRUFFLEHOG_OLD_AWS_SECRET_KEY':
+                        credentials['old_aws_secret_key'] = var_value
     except Exception:
         # Silently fail - caller will fall back to other methods
         pass
