@@ -2,11 +2,11 @@ LinkedIn Posting Automation Part 2: Testing and Automation
 
 After building a style guide for AI-assisted LinkedIn posts, I needed automation: a reliable way to post without manual copy-paste, and tests to verify it works.
 
-I built post-to-linkedin.py to handle OAuth, credential management, and posting. But automation needs tests. So I created a comprehensive test suite with 36 tests covering unit functions, mocked API interactions, and optional real API verification.
+I built post-to-linkedin​.py to handle OAuth, credential management, and posting. But automation needs tests. So I created a comprehensive test suite with 36 tests covering unit functions, mocked API interactions, and optional real API verification.
 
 𝐖𝐡𝐚𝐭 𝐈 𝐛𝐮𝐢𝐥𝐭:
 
-▶ Automated posting script (post-to-linkedin.py) with OAuth flow and credential management
+▶ Automated posting script (post-to-linkedin​.py) with OAuth flow and credential management
 ▶ Complete test suite (36 tests) with unit, integration (mocked), and real API tests
 ▶ Makefile wrapper for test execution, coverage, and code quality checks
 ▶ Testing strategy documentation and README for test usage

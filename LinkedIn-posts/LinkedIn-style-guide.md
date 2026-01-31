@@ -80,7 +80,7 @@ See the example files in `examples/` for complete, properly formatted LinkedIn p
 **Formatting Style:**
 - **Section Headers**: Use Unicode bold characters (𝐖𝐡𝐚𝐭, 𝐓𝐡𝐞, etc.) instead of markdown `**bold**`
 - **Bullet Points**: Use ▶ (black right-pointing triangle) instead of • or *
-- **File Names**: Include zero-width space (​) in file names (e.g., `script​.sh`) to prevent LinkedIn auto-linking
+- **File Names**: Include zero-width space (U+200B, ​) in file names (e.g., `script​.sh`, `post-to-linkedin​.py`) to prevent LinkedIn from auto-linking them as URLs
 - **URLs**: Keep URLs clean (no zero-width spaces) so they remain clickable
 - **Text File**: Generate posts as plain text files (no markdown code blocks) to avoid line numbers when copying
 
@@ -124,7 +124,7 @@ See the example files in `examples/` for complete, properly formatted LinkedIn p
 **URL Handling:**
 - **In Markdown File**: GitHub URLs should NOT have zero-width spaces (for clean, clickable links)
 - **In LinkedIn Post Text**: 
-  - **File Names**: Add zero-width spaces to file names (e.g., `load-ssh-key​.sh`) to prevent LinkedIn from auto-linking them
+  - **File Names**: Add zero-width spaces to file names (e.g., `load-ssh-key​.sh`, `post-to-linkedin​.py`) to prevent LinkedIn from auto-linking them (LinkedIn treats names with extensions like `.py`, `.sh`, `.md` as links)
   - **URLs**: URLs should NOT have zero-width spaces - they should remain clean and clickable (e.g., `https://github.com/glblackburn/pub-bin/blob/main/load-ssh-key.sh`)
   - **Rationale**: LinkedIn auto-links file names with extensions like `.sh`, `.py`, `.md`, etc. Zero-width spaces prevent this auto-linking for file name references in text, but URLs should remain clean to function as clickable links
 

@@ -19,7 +19,7 @@ import sys
 import urllib.parse
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 try:
     import requests
@@ -37,6 +37,11 @@ from linkedin_credentials import load_linkedin_credentials
 
 LINKEDIN_API_BASE = "https://api.linkedin.com/v2"
 MAX_POST_LENGTH = 3000  # LinkedIn character limit for posts
+
+# Zero-width space (U+200B): add before file extensions in post text to prevent LinkedIn auto-linking
+ZWSP = "\u200b"
+# File extensions LinkedIn tends to auto-link as URLs; names with these need ZWSP before the dot
+FILE_EXTENSIONS_LINKEDIN_AUTOLINKS = ("py", "sh", "md", "txt", "js", "ts", "yaml", "yml")
 OAUTH_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 OAUTH_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 DEFAULT_REDIRECT_URI = "http://localhost:8080"
@@ -777,6 +782,42 @@ def get_person_urn(access_token: str) -> Optional[str]:
         return None
 
 
+def find_unguarded_filenames(content: str) -> List[str]:
+    """
+    Find filenames with extensions LinkedIn auto-links that are not guarded by
+    zero-width space (U+200B) before the extension. Such names get turned into
+    links when posted; add ZWSP before the dot to prevent that.
+
+    Skips matches that appear inside URLs (e.g. after ://).
+
+    Returns:
+        List of unguarded filename strings (e.g. ["post-to-linkedin.py"]).
+    """
+    if not content:
+        return []
+    ext_pattern = "|".join(re.escape(e) for e in FILE_EXTENSIONS_LINKEDIN_AUTOLINKS)
+    pattern = re.compile(
+        rf"[a-zA-Z0-9][a-zA-Z0-9_.-]*\.({ext_pattern})\b",
+        re.IGNORECASE,
+    )
+    found: List[str] = []
+    for m in pattern.finditer(content):
+        # Unguarded only if the character immediately before the dot is not ZWSP
+        dot_index = m.start() + m.group(0).rfind(".")
+        if dot_index <= 0:
+            continue
+        if content[dot_index - 1] == ZWSP:
+            continue
+        # Skip if this looks like part of a URL (:// in the preceding context)
+        context_start = max(0, m.start() - 60)
+        if "://" in content[context_start : m.start()]:
+            continue
+        name = m.group(0)
+        if name not in found:
+            found.append(name)
+    return found
+
+
 def validate_content(content: str) -> Tuple[bool, Optional[str]]:
     """
     Validate post content against LinkedIn requirements.
@@ -792,6 +833,16 @@ def validate_content(content: str) -> Tuple[bool, Optional[str]]:
 
     if len(content) > MAX_POST_LENGTH:
         return False, f"Post content exceeds {MAX_POST_LENGTH} character limit ({len(content)} characters)"
+
+    unguarded = find_unguarded_filenames(content)
+    if unguarded:
+        names = ", ".join(repr(n) for n in unguarded)
+        return (
+            False,
+            f"Content contains filenames LinkedIn will auto-link as URLs: {names}. "
+            f"Add a zero-width space (U+200B) before the extension (e.g. script{ZWSP}.py) "
+            "to prevent auto-linking. See LinkedIn-style-guide.md.",
+        )
 
     return True, None
 

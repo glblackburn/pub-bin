@@ -65,6 +65,80 @@ class TestValidateContent:
         assert is_valid is False
         assert "exceeds 3000 character limit" in error_msg
 
+    def test_unguarded_filename_py_fails(self):
+        """Test validation fails when content contains unguarded .py filename"""
+        content = "I built post-to-linkedin.py to handle OAuth."
+        is_valid, error_msg = post_to_linkedin.validate_content(content)
+        assert is_valid is False
+        assert "post-to-linkedin.py" in error_msg
+        assert "auto-link" in error_msg or "zero-width" in error_msg
+
+    def test_unguarded_filename_sh_fails(self):
+        """Test validation fails when content contains unguarded .sh filename"""
+        content = "Run load-ssh-key.sh to load your key."
+        is_valid, error_msg = post_to_linkedin.validate_content(content)
+        assert is_valid is False
+        assert "load-ssh-key.sh" in error_msg
+
+    def test_guarded_filename_passes(self):
+        """Test validation passes when filename has zero-width space before extension"""
+        zwsp = "\u200b"
+        content = f"I built post-to-linkedin{zwsp}.py to handle OAuth."
+        is_valid, error_msg = post_to_linkedin.validate_content(content)
+        assert is_valid is True
+        assert error_msg is None
+
+    def test_filename_in_url_passes(self):
+        """Test validation passes when .py appears only inside a URL"""
+        content = "Test suite: https://github.com/glblackburn/pub-bin/tree/main/LinkedIn-posts/tests"
+        is_valid, error_msg = post_to_linkedin.validate_content(content)
+        assert is_valid is True
+        assert error_msg is None
+
+    def test_multiple_unguarded_filenames_fails(self):
+        """Test validation fails and lists all unguarded filenames"""
+        content = "Use script.py and helper.sh together."
+        is_valid, error_msg = post_to_linkedin.validate_content(content)
+        assert is_valid is False
+        assert "script.py" in error_msg
+        assert "helper.sh" in error_msg
+
+    def test_no_filename_extension_passes(self):
+        """Test validation passes when no file extensions are present"""
+        content = "Sample LinkedIn post content for testing.\nNo scripts or files here."
+        is_valid, error_msg = post_to_linkedin.validate_content(content)
+        assert is_valid is True
+        assert error_msg is None
+
+
+class TestFindUnguardedFilenames:
+    """Test find_unguarded_filenames function"""
+
+    def test_finds_unguarded_py(self):
+        """Test that unguarded .py filename is found"""
+        content = "I use post-to-linkedin.py for posting."
+        found = post_to_linkedin.find_unguarded_filenames(content)
+        assert "post-to-linkedin.py" in found
+
+    def test_ignores_guarded_py(self):
+        """Test that ZWSP before .py is not reported"""
+        zwsp = "\u200b"
+        content = f"I use post-to-linkedin{zwsp}.py for posting."
+        found = post_to_linkedin.find_unguarded_filenames(content)
+        assert "post-to-linkedin.py" not in found
+        assert len(found) == 0
+
+    def test_ignores_filename_in_url(self):
+        """Test that filename inside URL is not reported"""
+        content = "See https://example.com/repo/script.py for code."
+        found = post_to_linkedin.find_unguarded_filenames(content)
+        assert len(found) == 0
+
+    def test_empty_content_returns_empty(self):
+        """Test empty content returns empty list"""
+        assert post_to_linkedin.find_unguarded_filenames("") == []
+        assert post_to_linkedin.find_unguarded_filenames("   ") == []
+
 
 class TestReadPostFile:
     """Test read_post_file function"""
@@ -536,6 +610,58 @@ class TestPostCreationWorkflow:
         
         assert result is not None
         assert result['id'] == 'urn:li:ugcPost:987654321'
+
+    @responses.activate
+    def test_workflow_fails_when_content_has_unguarded_filename(
+        self, mock_credentials, tmp_path
+    ):
+        """Test that workflow fails and does not call API when content has unguarded filename"""
+        post_file = tmp_path / "bad-post.txt"
+        post_file.write_text(
+            "I built post-to-linkedin.py to handle OAuth and posting.",
+            encoding="utf-8",
+        )
+        # No API mocks added - we expect validation to fail before any request
+
+        with patch("sys.argv", ["post-to-linkedin.py", str(post_file)]):
+            exit_code = post_to_linkedin.main()
+
+        assert exit_code == 1
+        assert len(responses.calls) == 0
+
+    @responses.activate
+    @patch("post_to_linkedin.webbrowser.open")
+    def test_workflow_succeeds_when_filename_guarded(
+        self, mock_browser, mock_credentials, tmp_path
+    ):
+        """Test that workflow succeeds when filename has zero-width space"""
+        zwsp = "\u200b"
+        post_file = tmp_path / "good-post.txt"
+        post_file.write_text(
+            f"I built post-to-linkedin{zwsp}.py to handle OAuth.",
+            encoding="utf-8",
+        )
+        responses.add(
+            responses.GET,
+            "https://api.linkedin.com/v2/userinfo",
+            json={"sub": "123456789"},
+            status=200,
+        )
+        responses.add(
+            responses.POST,
+            "https://api.linkedin.com/v2/ugcPosts",
+            json={
+                "id": "urn:li:ugcPost:987654321",
+                "activity": "https://www.linkedin.com/feed/update/987654321",
+            },
+            status=201,
+        )
+
+        with patch("sys.argv", ["post-to-linkedin.py", str(post_file)]):
+            exit_code = post_to_linkedin.main()
+
+        assert exit_code == 0
+        assert len(responses.calls) == 2  # GET userinfo, POST ugcPosts
 
 
 ################################################################################
