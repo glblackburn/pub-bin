@@ -1,2 +1,1 @@
-cursor-agent --resume=a4c0e211-da47-40a3-b733-e92dfbe85043
-
+cursor-agent --resume=54a706a8-9845-4100-bf54-dc6266b1a3ca
