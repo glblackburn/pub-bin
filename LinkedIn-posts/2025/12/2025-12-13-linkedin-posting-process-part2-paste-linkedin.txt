@@ -1,11 +1,3 @@
-# December 18, 2025
-
-**LinkedIn Posting Automation Part 2: Testing and Automation**
-
-**LinkedIn:** [https://www.linkedin.com/posts/activity-7423442641062637568-0ZpG/](https://www.linkedin.com/posts/activity-7423442641062637568-0ZpG/)
-
----
-
 LinkedIn Posting Automation Part 2: Testing and Automation
 
 After building a style guide for AI-assisted LinkedIn posts, I needed automation: a reliable way to post without manual copy-paste, and tests to verify it works.

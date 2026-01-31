@@ -9,7 +9,6 @@
 
 ### Draft Posts
 
-- ⏳ [LinkedIn Posting Automation Part 2: Testing and Automation](2025/12/2025-12-13-linkedin-posting-process-part2.md) - After building a style guide, I needed automation and tests to verify it works.
 - ⏳ [React2Shell Server Part 3: Performance Optimization](2025/12/2025-12-09-react2shell-server-part3.txt)
 - ⏳ [React2Shell Server Part 4: Lessons Learned](2025/12/2025-12-09-react2shell-server-part4.txt)
 
@@ -20,6 +19,7 @@
 - ✅ [December 24, 2025](2025/12/2025-12-24-ai-agents-train-wreck.md) - AI Agents Working in the Same Folder: A Comedy of Errors
 - ✅ [December 22, 2025](2025/12/2025-12-22-react2shell-server-debugging-rabbit-hole.md) - React2Shell Server: AI Debugging Rabbit Hole - When AI Agents Miss Obvious Errors
 - ✅ [December 18, 2025](2025/12/18/2025-12-18-linkedin-posting-process-part1.md) - LinkedIn Posting Automation Part 1: Building a Style Guide for AI-Assisted Content
+- ✅ [December 18, 2025](2025/12/2025-12-13-linkedin-posting-process-part2.md) - LinkedIn Posting Automation Part 2: Testing and Automation
 - ✅ [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) - React2Shell Server Part 2: Framework-Aware Architecture
 - ✅ [December 14, 2025](2025/12/2025-12-14-test-post.md) - Test Post: LinkedIn API Integration
 - ✅ [December 12, 2025](2025/12/2025-12-12-network-capture-analysis-tools.md) - A Basic Tool for Analyzing tcpdump Output
@@ -51,7 +51,6 @@
 
 | Title | Status |
 |-------|--------|
-| [LinkedIn Posting Automation Part 2: Testing and Automation](2025/12/2025-12-13-linkedin-posting-process-part2.md) | ⏳ Draft |
 | [React2Shell Server Part 3: Performance Optimization](2025/12/2025-12-09-react2shell-server-part3.txt) | ⏳ Draft |
 | [React2Shell Server Part 4: Lessons Learned](2025/12/2025-12-09-react2shell-server-part4.txt) | ⏳ Draft |
 
@@ -62,6 +61,7 @@
 | [December 24, 2025](2025/12/2025-12-24-ai-agents-train-wreck.md) | AI Agents Working in the Same Folder: A Comedy of Errors | ✅ Published |
 | [December 22, 2025](2025/12/2025-12-22-react2shell-server-debugging-rabbit-hole.md) | React2Shell Server: AI Debugging Rabbit Hole - When AI Agents Miss Obvious Errors | ✅ Published |
 | [December 18, 2025](2025/12/18/2025-12-18-linkedin-posting-process-part1.md) | LinkedIn Posting Automation Part 1: Building a Style Guide for AI-Assisted Content | ✅ Published |
+| [December 18, 2025](2025/12/2025-12-13-linkedin-posting-process-part2.md) | LinkedIn Posting Automation Part 2: Testing and Automation | ✅ Published |
 | [December 15, 2025](2025/12/2025-12-15-react2shell-server-part2.md) | React2Shell Server Part 2: Framework-Aware Architecture | ✅ Published |
 | [December 14, 2025](2025/12/2025-12-14-test-post.md) | Test Post: LinkedIn API Integration | ✅ Published |
 | [December 12, 2025](2025/12/2025-12-12-network-capture-analysis-tools.md) | A Basic Tool for Analyzing tcpdump Output | ✅ Published |
