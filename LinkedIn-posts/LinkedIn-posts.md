@@ -47,13 +47,6 @@
 
 ## Quick Index
 
-### Draft Posts
-
-| Title | Status |
-|-------|--------|
-| [React2Shell Server Part 3: Performance Optimization](2025/12/2025-12-09-react2shell-server-part3.txt) | ⏳ Draft |
-| [React2Shell Server Part 4: Lessons Learned](2025/12/2025-12-09-react2shell-server-part4.txt) | ⏳ Draft |
-
 ### Published Posts
 
 | Date | Title | Status |
