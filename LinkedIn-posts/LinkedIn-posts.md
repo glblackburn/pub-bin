@@ -9,8 +9,8 @@
 
 ### Draft Posts
 
-- ⏳ [React2Shell Server Part 3: Performance Optimization](2025/12/2025-12-09-react2shell-server-part3.txt)
-- ⏳ [React2Shell Server Part 4: Lessons Learned](2025/12/2025-12-09-react2shell-server-part4.txt)
+- ⏳ [React2Shell Server Part 3: Performance Optimization](drafts/react2shell-server-part3.txt)
+- ⏳ [React2Shell Server Part 4: Lessons Learned](drafts/react2shell-server-part4.txt)
 
 ### Published Posts
 

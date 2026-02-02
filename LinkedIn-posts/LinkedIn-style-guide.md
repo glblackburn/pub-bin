@@ -39,12 +39,14 @@ LinkedIn-posts/
 │   ├── 2025-12-12-network-capture-analysis-tools.txt
 │   └── test-post.txt                   # Manual testing example
 │
-└── 2025/                                # Year directories for posts
+├── drafts/                              # Draft posts (not yet published; no dates in path)
+│   └── *.txt                            # Draft post files (e.g. react2shell-server-part3.txt)
+│
+└── 2025/                                # Year directories for published posts only
     ├── 11/                              # Month directories
-    │   └── 2025-11-*.md                 # Individual post files
+    │   └── 2025-11-*.md                 # Published post files
     └── 12/
         ├── 2025-12-*.md                 # Published posts
-        ├── 2025-12-*.txt                # Draft posts (ready to post)
         └── 2025-12-*_*.png              # Post-related images
 ```
 
@@ -55,7 +57,8 @@ LinkedIn-posts/
 - **`images/`:** Screenshot and image files used in posts
 - **`examples/`:** Reference examples of properly formatted posts
 - **`test/`:** Test files for development
-- **`YYYY/`:** Year directories containing monthly subdirectories with individual post files
+- **`drafts/`:** Draft posts (not yet published); no dates in path or filename; move to `YYYY/MM/` when published
+- **`YYYY/`:** Year directories for published posts only; monthly subdirectories with post files dated by publication
 
 ## Example Posts
 
