@@ -1,4 +1,4 @@
-# December 18, 2025
+# January 31, 2026
 
 **LinkedIn Posting Automation Part 2: Testing and Automation**
 
