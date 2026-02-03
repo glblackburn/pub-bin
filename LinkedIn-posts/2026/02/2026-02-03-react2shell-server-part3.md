@@ -2,7 +2,7 @@
 
 **React2Shell Server Part 3: Performance Optimization**
 
-**LinkedIn:** *(paste URL after publishing)*
+**LinkedIn:** [https://www.linkedin.com/posts/activity-7424455532335325184-weah](https://www.linkedin.com/posts/activity-7424455532335325184-weah)
 
 ---
 
