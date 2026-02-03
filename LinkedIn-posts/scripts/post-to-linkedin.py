@@ -808,9 +808,9 @@ def find_unguarded_filenames(content: str) -> List[str]:
             continue
         if content[dot_index - 1] == ZWSP:
             continue
-        # Skip if this looks like part of a URL (:// in the preceding context)
-        context_start = max(0, m.start() - 60)
-        if "://" in content[context_start : m.start()]:
+        # Skip if this looks like part of a URL: from start of line to match, "://" means it's a real URL
+        line_start = content.rfind("\n", 0, m.start()) + 1
+        if "://" in content[line_start : m.start()]:
             continue
         name = m.group(0)
         if name not in found:
