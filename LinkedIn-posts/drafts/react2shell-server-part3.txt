@@ -18,4 +18,6 @@ The results: Parallel tests 29% faster (38.74s → 27.61s), version switch tests
 
 The lesson: measure before optimizing. Tracking actual metrics (5m33s → 2m27s) validates the work and shows where to focus. But building the tracking system first enabled data-driven optimization - I could see exactly which tests were slow and where to invest effort.
 
+Run the full performance suite with one command: make test-performance. Repo: https://github.com/glblackburn/react2shell-server | Performance tracking guide: https://github.com/glblackburn/react2shell-server/blob/main/tests/PERFORMANCE_TRACKING.md
+
 #TestAutomation #Performance #Selenium #Python #PerformanceTracking
