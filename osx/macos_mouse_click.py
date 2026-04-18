@@ -291,8 +291,15 @@ def read_raw_key() -> str:
                 return "other"
             if ch2 == "[":
                 buf: List[str] = []
+                # DEF-006: A fixed 0.25s per-byte timeout can split CSI arrows when the
+                # TTY delivers bytes slowly (Bluetooth, remote desktop, scheduling). Use a
+                # single deadline for the whole tail after "[".
+                deadline = time.monotonic() + 1.0
                 while len(buf) < 32:
-                    c = wait_char(0.25)
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    c = wait_char(min(0.5, remaining))
                     if c == "":
                         break
                     buf.append(c)
@@ -305,7 +312,9 @@ def read_raw_key() -> str:
                     return "down"
                 return "other"
             if ch2 == "O":
-                ch3 = wait_char(0.25)
+                deadline = time.monotonic() + 1.0
+                remaining = deadline - time.monotonic()
+                ch3 = wait_char(min(0.5, remaining)) if remaining > 0 else ""
                 if ch3 == "A":
                     return "up"
                 if ch3 == "B":
