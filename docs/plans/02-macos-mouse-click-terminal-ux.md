@@ -54,6 +54,9 @@ todos:
   - id: defect-def-005-rich-tui-terminal-resize
     content: "DEF-005: Rich TUI does not reflow on resize — closed deferred to plan 06"
     status: completed
+  - id: defect-def-006-tui-arrow-multi-press
+    content: "DEF-006: Rich table Up/Down needs multiple presses — CSI inter-byte timeout"
+    status: completed
   - id: plan-02-v1-closure
     content: "Plan 02 v1 closed; DEF-003 manual verification signed off at plan close-out"
     status: completed
@@ -95,6 +98,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
   - [DEF-003: Mouse wheel / unknown ESC cancels TUI](#def-003-mouse-wheel--unknown-esc-cancels-tui)
   - [DEF-004: TUI edit prompts echo or capture special characters](#def-004-tui-edit-prompts-echo-or-capture-special-characters)
   - [DEF-005: Rich TUI does not reflow on terminal resize](#def-005-rich-tui-does-not-reflow-on-terminal-resize)
+- [DEF-006: Multiple Up/Down presses per row (CSI timeout)](#def-006-multiple-updown-presses-per-row-csi-timeout)
 - [Manual QA checklist (after implementation)](#manual-qa-checklist-after-implementation)
 - [Out of scope (v1)](#out-of-scope-v1)
 - [Implementation order](#implementation-order)
@@ -325,8 +329,9 @@ Traceability: each code fix should have its own **git commit**, then this docume
 | DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` | **Passed** |
 | DEF-004 | 2026-04-18 | **Closed (deferred)** | TUI row **Enter** → `Console.input` prompts **echo** or **capture** stray / special characters; validation rejects bad values but UX is noisy (**acceptable for now**) | MT-01, MT-02 | — | **N/A** |
 | DEF-005 | 2026-04-18 | **Closed (deferred)** | Rich pre-run TUI **does not reflow** on terminal resize: shrink → bad wrap; expand → layout stays at old effective width (**MT-08**) | MT-08; `run_rich_pre_run_editor` | — | **N/A** |
+| DEF-006 | 2026-04-18 | **Fixed** (script) | On the main Rich table, **Up**/**Down** sometimes need **several** presses per row: **CSI** arrow bytes can arrive **>250 ms** apart; `read_raw_key` timed out mid-sequence → **`other`** + orphan tail (**DEF-002**-class timing, distinct symptom) | MT-01, MT-02; `read_raw_key` | `7cfec5161c20ee36db2fe5f95b2ebe8cc92bfd3c` | **Pending** |
 
-**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **DEF-003** subsection for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals).
+**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **DEF-003** subsection for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient.
 
 ### DEF-001: `Console.input(highlight=…)` on older Rich
 
@@ -487,6 +492,34 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 **Regression check (after plan 06)**
 
 - Re-run **MT-08**: resize narrow → wide → narrow; table/panel should track terminal size or show a clear “too narrow” mode without escape soup.
+
+### DEF-006: Multiple Up/Down presses per row (CSI timeout)
+
+- **Frontmatter todo:** `defect-def-006-tui-arrow-multi-press` (completed when fix landed).
+- **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) (`read_raw_key`).
+- **Manual verification:** **Pending** — run **MT-01** / **MT-02** table navigation on a real TTY when convenient; automated guard: [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py) (`test_read_raw_key_csi_down_slow_inter_byte_gap`).
+- **Severity:** Medium — row highlight does not follow **Up**/**Down** reliably; feels “stuck” until the user presses again.
+- **Environment:** Reported on macOS Rich pre-run table (`run_rich_pre_run_editor`); worst when the TTY delivers **CSI** bytes slowly (Bluetooth, remote desktop, or scheduling gaps).
+
+**Observed**
+
+- On the **main settings** table, **several** **Up** or **Down** presses are sometimes needed to move the highlight by **one** row.
+
+**Root cause**
+
+1. After **`ESC` `[`**, `read_raw_key` read each following byte with **`wait_char(0.25)`**. If the final **`A`** / **`B`** (arrow) arrived **more than 250 ms** after the previous CSI byte, the loop **timed out**, returned **`other`** (no row move), and left **orphan** bytes for the next read — again **`other`**. Distinct from **DEF-002** (post-**ESC** wait before **`[`**) and **DEF-003** (cancel / wheel policy).
+
+**Resolution**
+
+1. Read the **CSI** tail after **`[`** under a **single ~1 s budget** (`time.monotonic()` deadline), each `select` capped at **0.5 s**, so a **300 ms** gap before **`B`** still completes **`ESC [ B`** as **Down**.
+2. Apply the same **deadline** pattern for **SS3** **`ESC O A` / `ESC O B`** (final byte after **`O`**).
+3. **Git:** `7cfec5161c20ee36db2fe5f95b2ebe8cc92bfd3c` (full SHA recorded in the defect summary table on the same commit as this doc update).
+4. **Files:** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py), [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py)
+
+**Regression check**
+
+- **pytest** (macOS): `pytest osx/tests/test_read_raw_key_csi.py -c osx/pytest.ini -v`
+- **MT-01** / **MT-02**: **Up**/**Down** moves exactly **one** row per key on the main table under normal typing.
 
 ## Manual QA checklist (after implementation)
 
