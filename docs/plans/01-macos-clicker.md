@@ -48,6 +48,8 @@ python3 osx/macos_mouse_click.py -x 400 -y 300 -n 3 -Y
 
 The script is executable (`chmod +x osx/macos_mouse_click.py`) with shebang `#!/usr/bin/env python3`, so **`./osx/macos_mouse_click.py …`** also works. Use **`python3 …`** when the file is not marked executable.
 
+**TTY UX overlay (colors + pre-run editor):** see **[`02-macos-mouse-click-terminal-ux.md`](02-macos-mouse-click-terminal-ux.md)**. Plan 01 remains the source of truth for click semantics; plan 02 covers Rich-based presentation on an interactive terminal. **What shipped and what to verify by hand** is summarized in plan 02 under **[Implementation status](02-macos-mouse-click-terminal-ux.md#implementation-status)**.
+
 ---
 
 ## Language / runtime options (reference and roadmap)
