@@ -70,6 +70,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [Implementation touchpoints](#implementation-touchpoints)
 - [Plan 03: TUI automation (related)](03-macos-mouse-click-tui-automation.md)
 - [Plan 04: Run progress UI (related)](04-macos-mouse-click-run-progress-ui.md)
+- [Plan 05: Target preview before run (related)](05-macos-mouse-click-target-preview.md)
 - [Todos](#todos)
   - [Implementation and docs (closed)](#implementation-and-docs-closed)
   - [Manual tests (operator checklist)](#manual-tests-operator-checklist)
@@ -174,6 +175,7 @@ flowchart TD
 - **Accessibility:** unchanged; Rich only affects **before** Quartz runs.
 - **Automated TUI / pre-Quartz testing (future):** **[`03-macos-mouse-click-tui-automation.md`](03-macos-mouse-click-tui-automation.md)** — PTY tests, dry-run hook, CI; defers implementation until picked up.
 - **Run-time Rich output (after Start):** **[`04-macos-mouse-click-run-progress-ui.md`](04-macos-mouse-click-run-progress-ui.md)** — settings summary + progress during the click loop; defers implementation until picked up.
+- **Click target preview (spatial):** **[`05-macos-mouse-click-target-preview.md`](05-macos-mouse-click-target-preview.md)** — dry preview-only + show-before-run so fixed **`-x`/`-y`** is interpretable on real displays; defers implementation until picked up.
 
 ## Todos
 
