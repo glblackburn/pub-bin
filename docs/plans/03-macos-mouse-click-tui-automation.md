@@ -5,7 +5,7 @@ todos:
     status: completed
   - id: phase-0-test-hooks
     content: "Phase 0: Refactor — separate TUI resolution from Quartz; dry-run / SKIP_QUARTZ hook"
-    status: pending
+    status: completed
   - id: phase-1-pty-tests
     content: "Phase 1: PTY/pexpect tests for pre-Quartz TUI (keys, wheel CSI, cancel/start)"
     status: pending
@@ -14,16 +14,16 @@ todos:
     status: pending
   - id: phase-3-ci
     content: "Phase 3: macOS CI job (pytest), optional Python version matrix"
-    status: pending
+    status: completed
   - id: phase-4-docs-trim-manual
     content: "Phase 4: Update plan 02 manual matrix — what stays human vs automated"
-    status: pending
+    status: completed
   - id: auto-mt-02-implement
     content: "Implement pytest PTY cases for MT-02 (after phase 0 dry-run hook)"
-    status: pending
+    status: completed
   - id: auto-mt-09-implement
     content: "Implement pytest PTY for MT-09 legacy --interactive + PYTHONPATH fake rich"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -58,6 +58,15 @@ This document is the **test automation / CI** roadmap for the Rich **pre-run edi
 | Optional `MACOS_MOUSE_CLICK_SKIP_QUARTZ` (name TBD) + machine-readable post-TUI output | **DEF-004** field-edit input hygiene — **[plan 07](07-macos-mouse-click-tui-field-edit-input.md)** (deferred) |
 
 ## Phases
+
+### Implementation status (repo, 2026-04-18)
+
+| Item | State |
+|------|--------|
+| **Phase 0 dry-run** | **Shipped** — CLI `--dry-run-after-start` and env `MACOS_MOUSE_CLICK_DRY_RUN` (`1` / `true` / `yes` / `on`): after the normal **Running:** line, one `MACOS_MOUSE_CLICK_DRY_RUN_JSON …` line on **stderr**, then **exit 0** without `import_quartz()`. Helpers: `resolved_config_for_dry_run_json`, `dry_run_after_start_requested`, `emit_dry_run_json_line` in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py). |
+| **CI** | **`.github/workflows/macos-mouse-click.yml`** — `macos-latest`, Python 3.11, `pip install -r osx/requirements-test.txt`, `pytest osx/tests`. |
+| **Tests** | **`osx/tests/`** — subprocess dry-run checks, **MT-09** PTY suite ([`test_mt09.py`](../../osx/tests/test_mt09.py)), **MT-02** Rich+dry-run **main()** wiring via monkeypatch ([`test_dry_run.py`](../../osx/tests/test_dry_run.py) `test_mt02_rich_branch_dry_run_skips_quartz`). Full **Rich table + `read_raw_key`** PTY driving was **deferred** (pexpect + raw mode proved unreliable for **S** / **Enter** on the CI host); operator **MT-02** remains canonical for full table UX. |
+| **Plan 02 matrix** | **MT-09** and **MT-02** rows annotated with automation column — see [Manual tests](02-macos-mouse-click-terminal-ux.md#manual-tests-operator-checklist). |
 
 ### Phase 0 — Testability refactor
 

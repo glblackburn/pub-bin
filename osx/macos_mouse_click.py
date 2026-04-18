@@ -13,6 +13,9 @@ terminal (or app) running this script. Screen Recording is not required.
 
 Stop automated clicking: Ctrl+C (SIGINT) or kill -INT/-TERM <pid>.
 
+Tests / CI: use --dry-run-after-start or env MACOS_MOUSE_CLICK_DRY_RUN=1 to print
+MACOS_MOUSE_CLICK_DRY_RUN_JSON on stderr and exit after Running without Quartz.
+
 Coordinates are Quartz global display points (logical points); multi-monitor
 layouts can shift expected positions.
 
@@ -25,6 +28,8 @@ Non-interactive automation: use -Y/--yes (not -y, which is the Y coordinate).
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import signal
 import sys
 import termios
@@ -186,6 +191,34 @@ class ResolvedConfig:
     def set_field(self, name: str, value: Any, source: str) -> None:
         setattr(self, name, value)
         self.sources[name] = source
+
+
+def resolved_config_for_dry_run_json(cfg: ResolvedConfig) -> Dict[str, Any]:
+    """Serializable resolved config for MACOS_MOUSE_CLICK_DRY_RUN_JSON (tests / CI)."""
+    return {
+        "mode": cfg.mode,
+        "count": cfg.count,
+        "delay": cfg.delay,
+        "x": None if cfg.x is None else float(cfg.x),
+        "y": None if cfg.y is None else float(cfg.y),
+    }
+
+
+def dry_run_after_start_requested(ns: argparse.Namespace) -> bool:
+    """True if we should exit after the Running line without importing Quartz."""
+    if getattr(ns, "dry_run_after_start", False):
+        return True
+    v = os.environ.get("MACOS_MOUSE_CLICK_DRY_RUN", "").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
+def emit_dry_run_json_line(cfg: ResolvedConfig) -> None:
+    payload = resolved_config_for_dry_run_json(cfg)
+    print(
+        "MACOS_MOUSE_CLICK_DRY_RUN_JSON "
+        + json.dumps(payload, sort_keys=True, separators=(",", ":")),
+        file=sys.stderr,
+    )
 
 
 def try_import_rich() -> Any:
@@ -619,6 +652,16 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         default=False,
         help="Skip prompts and confirmation; mode must be fully on CLI",
     )
+    p.add_argument(
+        "--dry-run-after-start",
+        action="store_true",
+        default=False,
+        help=(
+            "After printing Running, emit one MACOS_MOUSE_CLICK_DRY_RUN_JSON line "
+            "on stderr and exit 0 without importing Quartz or posting clicks. "
+            "Same when env MACOS_MOUSE_CLICK_DRY_RUN is 1/true/yes/on."
+        ),
+    )
     return p
 
 
@@ -929,6 +972,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             f"Running: mode={cfg.mode} count={count_label(cfg.count)} delay={cfg.delay}s",
             file=sys.stderr,
         )
+
+    if dry_run_after_start_requested(ns):
+        emit_dry_run_json_line(cfg)
+        return 0
 
     qz = import_quartz()
     install_signal_handlers()

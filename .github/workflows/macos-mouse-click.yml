@@ -1,0 +1,27 @@
+name: macOS mouse click tests
+
+on:
+  push:
+    paths:
+      - "osx/**"
+      - ".github/workflows/macos-mouse-click.yml"
+  pull_request:
+    paths:
+      - "osx/**"
+      - ".github/workflows/macos-mouse-click.yml"
+
+jobs:
+  pytest-osx:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps and run tests (osx Makefile)
+        run: |
+          make -C osx test-setup
+          make -C osx test
