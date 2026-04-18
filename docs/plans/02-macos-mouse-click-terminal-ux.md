@@ -17,7 +17,7 @@ todos:
     status: completed
   - id: manual-mt-02-tty-rich-partial-cli
     content: "MT-02: TTY+Rich partial CLI; editor fills missing fields (no --interactive text flow)"
-    status: pending
+    status: completed
   - id: manual-mt-03-y-learn-minimal
     content: "MT-03: -Y --learn minimal; no Rich TUI; stderr one-liner then run"
     status: pending
@@ -198,7 +198,7 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 | ID | Frontmatter `id` | Status | Command / scenario | Pass criteria |
 |----|------------------|--------|-------------------|---------------|
 | MT-01 | `manual-mt-01-tty-rich-learn` | **completed** | Real TTY, `rich` installed: `./osx/macos_mouse_click.py --learn -n 2000 -d 0` (no `-Y`; count/delay edited in TUI) | Rich table; edits to count/delay; **S** starts; synthetic click count matches edited value; Accessibility OK |
-| MT-02 | `manual-mt-02-tty-rich-partial-cli` | pending | TTY + `rich`: omit mode (e.g. `./osx/macos_mouse_click.py` with only `-n 3` if valid) or minimal flags so editor fills gaps | No legacy `--interactive` text prompts; TUI supplies missing fields |
+| MT-02 | `manual-mt-02-tty-rich-partial-cli` | **completed** | TTY + `rich`: **no CLI mode** (`./osx/macos_mouse_click.py` alone) and variants with partial flags; set **Mode**, **Count**, **Delay** in TUI | Rich TUI (not legacy `--interactive` prompts); all required fields settable before **S** |
 | MT-03 | `manual-mt-03-y-learn-minimal` | pending | `./osx/macos_mouse_click.py --learn -Y` | No Rich UI; immediate “Running:” then learn tap + loop per plan 01 |
 | MT-04 | `manual-mt-04-y-learn-cli-args` | completed | `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y` | No TUI; count/delay from CLI honored; learn + loop behaves as expected |
 | MT-05 | `manual-mt-05-y-fixed` | pending | `./osx/macos_mouse_click.py -x 400 -y 300 -n 2 -d 0 -Y` (adjust coords) | Fixed mode, no TUI, clicks at given point |
@@ -210,7 +210,7 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 **Checkbox copy (same order as table)**
 
 - [x] **MT-01** (`manual-mt-01-tty-rich-learn`) — TTY + Rich learn: editor, edits, **S**, real clicks.
-- [ ] **MT-02** (`manual-mt-02-tty-rich-partial-cli`) — TTY + Rich partial CLI; editor fills gaps.
+- [x] **MT-02** (`manual-mt-02-tty-rich-partial-cli`) — TTY + Rich partial CLI; editor fills gaps.
 - [ ] **MT-03** (`manual-mt-03-y-learn-minimal`) — `./osx/macos_mouse_click.py --learn -Y`.
 - [x] **MT-04** (`manual-mt-04-y-learn-cli-args`) — `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y`.
 - [ ] **MT-05** (`manual-mt-05-y-fixed`) — `-Y` fixed coordinates run.
@@ -219,7 +219,7 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 - [ ] **MT-08** (`manual-mt-08-resize-narrow`) — narrow terminal + Rich TUI readability.
 - [ ] **MT-09** (`manual-mt-09-interactive-legacy`) — no `rich`, `--interactive` legacy path.
 
-**Remaining manual work (pending only):** **MT-02**, **MT-03**, **MT-05**, **MT-06**, **MT-07**, **MT-08**, **MT-09**. **Done:** **MT-01**, **MT-04**. **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
+**Remaining manual work (pending only):** **MT-03**, **MT-05**, **MT-06**, **MT-07**, **MT-08**, **MT-09**. **Done:** **MT-01**, **MT-02**, **MT-04**. **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
 
 ## Pre-run editor: controls (normative)
 
@@ -445,6 +445,7 @@ This section records what was implemented and verified in the repo, and what rem
 ### Completed manual checks (log)
 
 - **2026-04-18** — **MT-01** — `./osx/macos_mouse_click.py --learn -n 2000 -d 0` — Rich TUI: edited **Count** to **2**, **Delay** to **1**, **S** to start; run completed with **2** synthetic clicks at learned anchor as expected (Accessibility).
+- **2026-04-18** — **MT-02** — Operator: **no CLI params** (`./osx/macos_mouse_click.py` alone) and other partial-CLI mixes; Rich TUI used to set **Mode**, **Count**, and **Delay**; no legacy `--interactive` text flow; no spurious exit before **S** (Accessibility for full run).
 - **2026-04-18** — **MT-04** — `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y` — operator run: `-Y` learn path (no Rich TUI), count and delay from CLI (`-n 200`, `-d 0`), synthetic click loop.
 
 ### Remaining manual QA (operator)
