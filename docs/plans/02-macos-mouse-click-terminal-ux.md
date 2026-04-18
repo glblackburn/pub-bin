@@ -513,7 +513,7 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 
 1. Read the **CSI** tail after **`[`** under a **single ~1 s budget** (`time.monotonic()` deadline), each `select` capped at **0.5 s**, so a **300 ms** gap before **`B`** still completes **`ESC [ B`** as **Down**.
 2. Apply the same **deadline** pattern for **SS3** **`ESC O A` / `ESC O B`** (final byte after **`O`**).
-3. **Git:** `7cfec5161c20ee36db2fe5f95b2ebe8cc92bfd3c` (full SHA recorded in the defect summary table on the same commit as this doc update).
+3. **Git:** `7cfec5161c20ee36db2fe5f95b2ebe8cc92bfd3c` (script + tests commit; plan row updated in a follow-up docs commit per project workflow).
 4. **Files:** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py), [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py)
 
 **Regression check**
