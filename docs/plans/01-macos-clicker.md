@@ -39,14 +39,14 @@ python3 osx/macos_mouse_click.py --help
 # Learn mode: confirmation sheet (Proceed?) then wait for first real click; Ctrl+C stops repeats
 python3 osx/macos_mouse_click.py --learn
 # Skip prompts and confirmation (automation / scripts)
-python3 osx/macos_mouse_click.py --learn --yes
+python3 osx/macos_mouse_click.py --learn -Y
 # Prompt for anything omitted on the CLI, then confirmation sheet
 python3 osx/macos_mouse_click.py --interactive
 # Fixed coordinates, finite count, non-interactive
-python3 osx/macos_mouse_click.py -x 400 -y 300 -n 3 --yes
+python3 osx/macos_mouse_click.py -x 400 -y 300 -n 3 -Y
 ```
 
-Optional later: `chmod +x` + shebang for `./osx/macos_mouse_click.py`. v1 assumes **`python3 …/macos_mouse_click.py`** unless you add a `PATH` install story.
+The script is executable (`chmod +x osx/macos_mouse_click.py`) with shebang `#!/usr/bin/env python3`, so **`./osx/macos_mouse_click.py …`** also works. Use **`python3 …`** when the file is not marked executable.
 
 ---
 
@@ -134,7 +134,7 @@ Three layers; implement in this order after initial **`argparse`** parse.
 
 ### 3. Confirmation sheet unless `--yes`
 
-- If **`--yes`** / **`-y`** is **not** passed: print a **human-readable summary** of **every** resolved parameter (mode, coordinates if any, count, delay, and any other options), each with its **source**: **`cli`**, **`default`**, or **`prompt`** (if **`--interactive`** supplied that value).
+- If **`--yes`** / **`-Y`** is **not** passed: print a **human-readable summary** of **every** resolved parameter (mode, coordinates if any, count, delay, and any other options), each with its **source**: **`cli`**, **`default`**, or **`prompt`** (if **`--interactive`** supplied that value).
 - Then print **`Proceed? [y/N]`** (default **N**). Only if the user enters a clear affirmative (**`y`**, **`yes`**, case-insensitive per your preference—document the exact accepted tokens) continue to **event tap / synthetic** execution. Anything else → exit **`0`** without performing clicks (treat as “cancelled,” not an error), or exit **`1`** if you prefer “cancelled” distinct from success—**pick one and document**.
 - If **`--yes`** is passed: **skip** the confirmation sheet entirely and proceed immediately after validation (still print a **one-line stderr summary** of mode + anchor strategy optional but useful for logs).
 
@@ -144,9 +144,9 @@ Three layers; implement in this order after initial **`argparse`** parse.
 |-------|----------------------------------|-------------------------------------|
 | *(neither)* | No | **Yes** — list all resolved values + sources, then **Proceed?** |
 | `--interactive` | **Yes** (TTY required) | **Yes** (unless you later add `--yes`—with both forbidden) |
-| `--yes` | No | **No** — run immediately; all required targeting must come from CLI |
+| `-Y` / `--yes` | No | **No** — run immediately; all required targeting must come from CLI |
 
-**Scripting contract:** **`--learn --yes`** (or fixed coords + **`--yes`**) is the supported non-interactive entry point for automation.
+**Scripting contract:** **`--learn -Y`** / **`--learn --yes`** (or fixed coords + **`-Y`/`--yes`**) is the supported non-interactive entry point for automation. Short form is **`-Y`** (not **`-y`**, which is the Y coordinate).
 
 ---
 
@@ -161,7 +161,7 @@ Three layers; implement in this order after initial **`argparse`** parse.
 | `-d` / `--delay` | Seconds **between synthetic clicks** (and **warmup** after learn = one interval of **`delay`** before first synthetic). **Default: `5.0`** |
 | `--at-cursor` | One-shot or repeat from current position without tap—optional |
 | `--interactive` | Prompt on stdin for any option **not** given on CLI; TTY required; **incompatible with `--yes`** |
-| `--yes` / `-y` | Non-interactive: no missing-arg prompts, **no** confirmation sheet; **requires** targeting mode (and coordinates if fixed) **fully on CLI** |
+| `-Y` / `--yes` | Non-interactive: no missing-arg prompts, **no** confirmation sheet; **requires** targeting mode (and coordinates if fixed) **fully on CLI** |
 
 **Validation:** exactly one targeting mode after resolution; reject invalid combos with stderr + exit **2**. **`--yes`** without a resolved mode (or fixed coords incomplete) → stderr + exit **2**.
 
@@ -217,7 +217,7 @@ Global Quartz **points**; multi-monitor quirks documented briefly in docstring.
 2. **`--interactive`** prompts (TTY check) + **`--yes`** / mutual exclusion + **confirmation sheet** (sources: cli / default / prompt).
 3. **Signal handlers** + main loop **shutdown checks**.
 4. **Learn tap** + **warmup** + **synthetic loop**; then **fixed/snapshot** paths.
-5. Manual tests: **`--learn --yes`**; partial CLI + confirm **N**; **`--interactive`** fill + confirm **Y**; **`--yes`** + missing mode → error.
+5. Manual tests: **`--learn -Y`**; partial CLI + confirm **N**; **`--interactive`** fill + confirm **Y**; **`-Y`/`--yes`** + missing mode → error.
 6. Git per **`README-AI-CODING-STANDARDS.md`**.
 
 ---
@@ -228,3 +228,55 @@ Global Quartz **points**; multi-monitor quirks documented briefly in docstring.
 - Avoiding Accessibility
 - stdin “press q to quit” (optional future if stdin is a tty)
 - Swallowing vs forwarding the anchor click (document chosen behavior; no extra modes)
+
+---
+
+## Consistency review: `osx/macos_mouse_click.py` vs this plan
+
+Captured review comparing the implemented script to this document.
+
+### Aligned with the plan
+
+| Plan area | Script behavior |
+|-----------|------------------|
+| Single file `osx/macos_mouse_click.py` | Yes |
+| Python 3 + `pyobjc-framework-Quartz`, install hint | Yes (Quartz imported only when running, after confirm / validation) |
+| Modes: `--learn`, fixed `-x`/`-y`, `--at-cursor` | Yes; mutually exclusive + validation |
+| `CGEventTapCreate` at `kCGHIDEventTap`, first `kCGEventLeftMouseDown`, disable tap in callback, return event (pass-through) | Yes |
+| Synthetic: `CGEventCreateMouseEvent` + `CGEventPost` HID tap, down then up | Yes |
+| Default `-d` **5.0**; used for inter-click delay and learn warmup | Yes (`sleep_interruptible` for warmup and delays; still honors shutdown) |
+| `-n`: **0** = infinite; default **0** learn, **1** fixed / at-cursor | Yes |
+| Loop: full click, then sleep between; no sleep after last finite click | Yes |
+| SIGINT + SIGTERM → flag; checks around loop + interruptible sleep; `KeyboardInterrupt` → 130 | Yes |
+| stderr `Stopped.` on cooperative stop; exit **130** on interrupt-style paths | Yes |
+| `--interactive`: TTY check; prompts mode, x/y (fixed), count, delay when missing | Yes |
+| `--yes` incompatible with `--interactive` | Yes |
+| `--yes` requires targeting mode fully on CLI | Yes (`mode_fully_on_cli`) |
+| Without `--yes`: summary + sources + `Proceed? [y/N]`; `y`/`yes`; cancel **exit 0** | Yes (plan allowed exit 0 for cancel) |
+| With `--yes`: one-line stderr summary, no confirmation | Yes |
+| Accessibility error when tap is `None` | Yes |
+
+### Intentional deviation (plan doc updated above)
+
+1. **`--yes` short form**  
+   The plan CLI table previously said **`--yes` / `-y`**, but **`-y` is already Y coordinate** in the same table. The script correctly uses **`-Y` / `--yes`** and explains that in the docstring and epilog.  
+   **Verdict:** implementation is right; the **plan text was corrected** to use **`-Y`** for the short “yes” flag.
+
+2. **Examples in the plan**  
+   Examples now use **`./osx/…` and `-Y`** where appropriate alongside `python3 …`.  
+   **Verdict:** cosmetic doc alignment; behavior matches **`--yes`** or **`-Y`**.
+
+### Optional / minor gaps (plan allowed or underspecified)
+
+| Item | Notes |
+|------|--------|
+| **`--max-clicks` safety valve** | Plan calls it optional (“recommended”); **not implemented** — consistent with “optional v1”. |
+| **Confirmation sheet “every” option** | Plan mentions “any other options”; sheet lists **mode, x/y (fixed), count, delay** only — not `--interactive` / `-Y`. Small omission. |
+| **“Print usage” when mode missing** | Plan suggests usage or `--help` hint; script prints a **short error** instead of `parser.print_usage()`. Same intent, slightly different UX. |
+| **Plan frontmatter todos** | Still **pending** while the script exists — tracking only, not a script/plan logic mismatch. |
+
+### Summary
+
+**Behaviorally**, the script matches the plan: modes, Quartz usage, defaults, learn warmup, infinite `count`, signals, interactive flow, confirmation, and **`-Y`/`--yes`** semantics (with **`-y` reserved** for the Y coordinate).
+
+**Documentation:** this plan’s CLI table and examples now use **`-Y`/`--yes`** consistently with **`osx/macos_mouse_click.py`**.
