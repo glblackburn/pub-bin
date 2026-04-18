@@ -69,6 +69,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
   - [Keybinding summary (v1)](#keybinding-summary-v1)
 - [Implementation touchpoints](#implementation-touchpoints)
 - [Plan 03: TUI automation (related)](03-macos-mouse-click-tui-automation.md)
+- [Plan 04: Run progress UI (related)](04-macos-mouse-click-run-progress-ui.md)
 - [Todos](#todos)
   - [Implementation and docs (closed)](#implementation-and-docs-closed)
   - [Manual tests (operator checklist)](#manual-tests-operator-checklist)
@@ -172,6 +173,7 @@ flowchart TD
 - **Dependencies:** document `python3 -m pip install pyobjc-framework-Quartz rich`. **Lazy-import `rich`** only on the TTY non-`-Y` path so `--help` stays fast and Quartz-free until run.
 - **Accessibility:** unchanged; Rich only affects **before** Quartz runs.
 - **Automated TUI / pre-Quartz testing (future):** **[`03-macos-mouse-click-tui-automation.md`](03-macos-mouse-click-tui-automation.md)** — PTY tests, dry-run hook, CI; defers implementation until picked up.
+- **Run-time Rich output (after Start):** **[`04-macos-mouse-click-run-progress-ui.md`](04-macos-mouse-click-run-progress-ui.md)** — settings summary + progress during the click loop; defers implementation until picked up.
 
 ## Todos
 
