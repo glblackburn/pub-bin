@@ -48,6 +48,9 @@ todos:
   - id: defect-def-003-wheel-esc-cancel
     content: "DEF-003: scroll / unknown ESC mis-cancel; cancel = Q Ctrl+C Ctrl+D only"
     status: completed
+  - id: defect-def-004-tui-edit-echo-special-chars
+    content: "DEF-004: TUI field edit echoes/captures special chars (open — document only)"
+    status: pending
 isProject: false
 ---
 
@@ -73,6 +76,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
   - [DEF-001: `Console.input(highlight=…)` on older Rich](#def-001-consoleinputhighlight-on-older-rich)
   - [DEF-002: Arrow keys mis-read as cancel (Escape)](#def-002-arrow-keys-mis-read-as-cancel-escape)
   - [DEF-003: Mouse wheel / unknown ESC cancels TUI](#def-003-mouse-wheel--unknown-esc-cancels-tui)
+  - [DEF-004: TUI edit prompts echo or capture special characters](#def-004-tui-edit-prompts-echo-or-capture-special-characters)
 - [Manual QA checklist (after implementation)](#manual-qa-checklist-after-implementation)
 - [Out of scope (v1)](#out-of-scope-v1)
 - [Implementation order](#implementation-order)
@@ -252,10 +256,11 @@ Traceability: each code fix should have its own **git commit**, then this docume
 | ID | Opened | Status | Summary | Affects (MT / area) | Fix commit | Manual verification |
 |----|--------|--------|---------|---------------------|------------|---------------------|
 | DEF-001 | 2026-04-18 | **Fixed** (script) | Pressing Enter to edit **Mode** crashed: `Console.input()` got unexpected keyword `highlight` | MT-01, MT-02, MT-08 (any TUI field edit via `_prompt_cooked`) | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Passed** |
-| DEF-002 | 2026-04-18 | **Fixed** (script) | **Down**/**Up** after returning from mode edit was treated as lone **Esc** → spurious **Cancel**; mode edit also reset **Count** when re-confirming **learn** | MT-01, MT-02, MT-08; `read_raw_key` / `_edit_row` | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Pending** |
+| DEF-002 | 2026-04-18 | **Fixed** (script) | **Down**/**Up** after returning from mode edit was treated as lone **Esc** → spurious **Cancel**; mode edit also reset **Count** when re-confirming **learn** | MT-01, MT-02, MT-08; `read_raw_key` / `_edit_row` | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Passed** |
 | DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` | **Pending** |
+| DEF-004 | 2026-04-18 | **Open** (docs) | TUI row **Enter** → `Console.input` prompts **echo** or **capture** stray / special characters; validation rejects bad values but UX is noisy | MT-01, MT-02 | — | **N/A** |
 
-**Needs manual verification now:** **DEF-002** and **DEF-003** (**Pending**). **DEF-001** is **Passed**. Close each remaining DEF by running its **Regression check** and updating the table + DEF subsection to **Passed**.
+**Needs manual verification now:** **DEF-003** (**Pending**). **DEF-001** and **DEF-002** are **Passed**. **DEF-004** is **open** (no **Fix commit** until implemented); **Manual verification** is **N/A** until a code fix lands.
 
 ### DEF-001: `Console.input(highlight=…)` on older Rich
 
@@ -298,7 +303,7 @@ Stack pointed to `_prompt_cooked` → `_edit_row` → `run_rich_pre_run_editor`.
 
 - **Frontmatter todo:** `defect-def-002-arrow-misread-as-esc` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py).
-- **Manual verification:** **Pending** — run **Regression check** (mode re-save + **Down**/**Up** + **`-n`** preserved); then set the summary column to **Passed** and note date + environment here.
+- **Manual verification:** **Passed** — **2026-04-18**, operator on `yoda.local`. `./osx/macos_mouse_click.py --learn -n 5000 -d 0`: **Up**/**Down** repeatedly across rows — no crash, no spurious exit. **Enter** edits: stray / special characters could appear in the prompt buffer; **input validation** rejected invalid values (**DEF-004** tracks cleaner input handling).
 - **Severity:** High — looks like an accidental cancel; also **Count** flipped from CLI **`-n 200`** to learn default **infinite** after re-confirming mode.
 - **Environment (reporter):** `yoda.local`, 2026-04-18 06:33, repo `…/pub-bin`.
 
@@ -371,6 +376,22 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 **Regression check**
 
 - **MT-01** / **MT-08**: wheel / incidental **ESC** sequences do not exit; **Q**, **Ctrl+C**, and **Ctrl+D** still cancel with exit **0**.
+
+### DEF-004: TUI edit prompts echo or capture special characters
+
+- **Frontmatter todo:** `defect-def-004-tui-edit-echo-special-chars` (**pending** — documentation only this cycle).
+- **Status:** **Open** — recorded for a future code change; **no fix** applied in the commit that closed **DEF-002** manual verification.
+- **Manual verification:** **N/A** (no **Fix commit**). After a fix ships, use **Git workflow** above, then set **Manual verification** to **Passed** when regression is done.
+- **Severity:** Medium (UX) — mis-keys or escape artifacts can show up in the cooked `Console.input` line; existing validation blocks invalid **count** / **delay** / coordinates / mode tokens from being applied.
+- **Environment (reporter):** `yoda.local`, same **MT-01**-style session as **DEF-002** verification (`--learn -n 5000 -d 0`).
+
+**Observed**
+
+- While editing settings after **Enter** on a row, **special characters** were **captured or echoed** in the prompt. **Input validation** prevented bad values from taking effect.
+
+**Desired behavior (future fix)**
+
+- Do not feed raw control / CSI bytes into the visible prompt where possible, or mask/filter input so operators do not see garbage characters while editing **Mode**, **Count**, **Delay**, or fixed **X**/**Y**.
 
 ## Manual QA checklist (after implementation)
 
