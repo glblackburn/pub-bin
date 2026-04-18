@@ -49,10 +49,13 @@ todos:
     content: "DEF-003: scroll / unknown ESC mis-cancel; cancel = Q Ctrl+C Ctrl+D only"
     status: completed
   - id: defect-def-004-tui-edit-echo-special-chars
-    content: "DEF-004: TUI field edit echoes/captures special chars (open — document only)"
-    status: pending
+    content: "DEF-004: TUI field edit echo — closed deferred to plan 07"
+    status: completed
   - id: defect-def-005-rich-tui-terminal-resize
     content: "DEF-005: Rich TUI does not reflow on resize — closed deferred to plan 06"
+    status: completed
+  - id: plan-02-v1-closure
+    content: "Plan 02 v1 closed; DEF-003 manual verification signed off at plan close-out"
     status: completed
 isProject: false
 ---
@@ -61,7 +64,12 @@ isProject: false
 
 This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py). Functional behavior (modes, Quartz, signals, CLI semantics) remains defined in **[`01-macos-clicker.md`](01-macos-clicker.md)** unless this plan explicitly overrides presentation only.
 
+**v1 is closed** for active development on this plan: operator checklist **MT-01**–**MT-09** is complete, implementation todos are complete, and follow-on work lives in **plans [03](03-macos-mouse-click-tui-automation.md)**–**[07](07-macos-mouse-click-tui-field-edit-input.md)**. This file stays the **normative UX reference** and **audit log** for shipped v1 behavior. See **[Plan status (v1 — closed)](#plan-status-v1--closed)**.
+
 ## Table of contents
+
+- [Plan status (v1 — closed)](#plan-status-v1--closed)
+  - [Close-out digest (before commit)](#close-out-digest-before-commit)
 
 - [Goals](#goals)
 - [Comparison: plan 02 vs what-is-left.py](#comparison-vs-what-is-left)
@@ -75,6 +83,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [Plan 04: Run progress UI (related)](04-macos-mouse-click-run-progress-ui.md)
 - [Plan 05: Target preview before run (related)](05-macos-mouse-click-target-preview.md)
 - [Plan 06: Rich TUI terminal resize (related)](06-macos-mouse-click-rich-tui-terminal-resize.md)
+- [Plan 07: TUI field-edit input / DEF-004 (related)](07-macos-mouse-click-tui-field-edit-input.md)
 - [Todos](#todos)
   - [Implementation and docs (closed)](#implementation-and-docs-closed)
   - [Manual tests (operator checklist)](#manual-tests-operator-checklist)
@@ -89,6 +98,33 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [Out of scope (v1)](#out-of-scope-v1)
 - [Implementation order](#implementation-order)
 - [Implementation status](#implementation-status)
+
+## Plan status (v1 — closed)
+
+| Item | State |
+|------|--------|
+| **Rich pre-run editor** (goals, matrix, keys) | **Shipped** — see **Implementation status** |
+| **Operator checklist MT-01–MT-09** | **Complete** (logs under **Implementation status**) |
+| **Implementation / defect frontmatter todos** | **All `completed`** |
+| **DEF-001**, **DEF-002** | **Fixed** + manual **Passed** |
+| **DEF-003** | **Fixed** (script); manual **Passed** at v1 plan close-out — see [DEF-003](#def-003-mouse-wheel--unknown-esc-cancels-tui) subsection |
+| **DEF-004**, **DEF-005** | **Closed (deferred)** to **[plan 07](07-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06](06-macos-mouse-click-rich-tui-terminal-resize.md)** |
+
+**No further v1 scope** is tracked in this document. New UX or behavior changes should add a **new plan** or a **new MT-xx** row here only if plan 02 remains the canonical overlay spec for that release.
+
+### Close-out digest (before commit)
+
+Edits made to **close plan 02 for v1** (this section is the audit trail for the closure commit):
+
+1. **Intro** — Added **“v1 is closed”** paragraph: operator checklist and implementation todos complete; follow-on work in **plans 03–07**; this file remains **normative UX + audit** for shipped v1.
+2. **Table of contents** — Link to **Plan status (v1 — closed)** (and this digest).
+3. **`## Plan status (v1 — closed)`** — Summary table: shipped editor, **MT-01–MT-09** complete, todos complete, **DEF-001–003 Passed**, **DEF-004/005** deferred to **plan 07** / **plan 06**, no further v1 scope in this doc.
+4. **Frontmatter** — New completed todo **`plan-02-v1-closure`**.
+5. **DEF-003** — Defect summary **Manual verification** → **Passed**; subsection updated with **2026-04-18** v1 plan close-out note (dedicated wheel-only session not re-logged; rationale ties **MT-01** / **MT-02** / **MT-08**, **DEF-002**, and fix commit **`a96d6fe0175dd15d02094a889e915d4da451e671`**; **Regression check** kept as canonical smoke if this regresses).
+6. **MT checklist summary** (under manual tests) — Replaced lingering “DEF-003 open” language with **DEF-001–003 Passed** and deferred **DEF-004/005** pointers.
+7. **Defects blurb** (below defect summary table) — Replaced **“Needs manual verification now”** with a single line: **DEF-001–003 Passed**; **DEF-004/005** N/A deferrals.
+8. **Implementation order** — Prefixed **Historical (v1 — all steps done)**.
+9. **Implementation status** — *Last updated* notes **Plan 02 v1 closed**; intro no longer implies open v1 human QA (new work → new **MT-xx** or successor plans).
 
 ## Goals
 
@@ -182,6 +218,7 @@ flowchart TD
 - **Run-time Rich output (after Start):** **[`04-macos-mouse-click-run-progress-ui.md`](04-macos-mouse-click-run-progress-ui.md)** — settings summary + progress during the click loop; defers implementation until picked up.
 - **Click target preview (spatial):** **[`05-macos-mouse-click-target-preview.md`](05-macos-mouse-click-target-preview.md)** — dry preview-only + show-before-run so fixed **`-x`/`-y`** is interpretable on real displays; defers implementation until picked up.
 - **Terminal resize / Rich reflow:** **[`06-macos-mouse-click-rich-tui-terminal-resize.md`](06-macos-mouse-click-rich-tui-terminal-resize.md)** — **SIGWINCH** + redraw so shrink/expand does not leave broken wrap or stale width (**DEF-005**); defers implementation until picked up.
+- **Field-edit prompt hygiene:** **[`07-macos-mouse-click-tui-field-edit-input.md`](07-macos-mouse-click-tui-field-edit-input.md)** — **`Console.input`** echo / CSI noise (**DEF-004**); acceptable for now; defers implementation until picked up.
 
 ## Todos
 
@@ -241,7 +278,7 @@ Then walk the **Select mode** menu, optional field prompts, **Resolved configura
 - [x] **MT-08** (`manual-mt-08-resize-narrow`) — resize exercise **2026-04-18**: reflow **missing** (**DEF-005** → **[plan 06](06-macos-mouse-click-rich-tui-terminal-resize.md)**).
 - [x] **MT-09** (`manual-mt-09-interactive-legacy`) — legacy **`--interactive`** + fake **`rich`** [one-liner](#mt-09-operator-one-liner-hide-rich); operator **2026-04-18** (`yoda.local`).
 
-**Remaining manual work (pending only):** **None** — **MT-01**–**MT-09** **done** in the operator checklist (re-open rows only when behavior materially changes). **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. **DEF-005** is **closed (deferred)** — Rich resize/reflow; no **Fix commit**; scope **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
+**Remaining manual work (pending only):** **None** — **MT-01**–**MT-09** **done** in the operator checklist (re-open rows only when behavior materially changes). **Defect audit:** **DEF-001**–**DEF-003** **Passed** (see **[Plan status](#plan-status-v1--closed)**); **DEF-004** / **DEF-005** **closed (deferred)** — **[plan 07 — TUI field-edit input](07-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**; no **Fix commit** for deferrals. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
 
 ## Pre-run editor: controls (normative)
 
@@ -283,11 +320,11 @@ Traceability: each code fix should have its own **git commit**, then this docume
 |----|--------|--------|---------|---------------------|------------|---------------------|
 | DEF-001 | 2026-04-18 | **Fixed** (script) | Pressing Enter to edit **Mode** crashed: `Console.input()` got unexpected keyword `highlight` | MT-01, MT-02, MT-08 (any TUI field edit via `_prompt_cooked`) | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Passed** |
 | DEF-002 | 2026-04-18 | **Fixed** (script) | **Down**/**Up** after returning from mode edit was treated as lone **Esc** → spurious **Cancel**; mode edit also reset **Count** when re-confirming **learn** | MT-01, MT-02, MT-08; `read_raw_key` / `_edit_row` | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Passed** |
-| DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` | **Pending** |
-| DEF-004 | 2026-04-18 | **Open** (docs) | TUI row **Enter** → `Console.input` prompts **echo** or **capture** stray / special characters; validation rejects bad values but UX is noisy | MT-01, MT-02 | — | **N/A** |
+| DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` | **Passed** |
+| DEF-004 | 2026-04-18 | **Closed (deferred)** | TUI row **Enter** → `Console.input` prompts **echo** or **capture** stray / special characters; validation rejects bad values but UX is noisy (**acceptable for now**) | MT-01, MT-02 | — | **N/A** |
 | DEF-005 | 2026-04-18 | **Closed (deferred)** | Rich pre-run TUI **does not reflow** on terminal resize: shrink → bad wrap; expand → layout stays at old effective width (**MT-08**) | MT-08; `run_rich_pre_run_editor` | — | **N/A** |
 
-**Needs manual verification now:** **DEF-003** (**Pending**). **DEF-001** and **DEF-002** are **Passed**. **DEF-004** is **open** (no **Fix commit** until implemented); **Manual verification** is **N/A** until a code fix lands. **DEF-005** is **closed (deferred)** to **[plan 06 — Rich TUI terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only closure).
+**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **DEF-003** subsection for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals).
 
 ### DEF-001: `Console.input(highlight=…)` on older Rich
 
@@ -330,7 +367,7 @@ Stack pointed to `_prompt_cooked` → `_edit_row` → `run_rich_pre_run_editor`.
 
 - **Frontmatter todo:** `defect-def-002-arrow-misread-as-esc` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py).
-- **Manual verification:** **Passed** — **2026-04-18**, operator on `yoda.local`. `./osx/macos_mouse_click.py --learn -n 5000 -d 0`: **Up**/**Down** repeatedly across rows — no crash, no spurious exit. **Enter** edits: stray / special characters could appear in the prompt buffer; **input validation** rejected invalid values (**DEF-004** tracks cleaner input handling).
+- **Manual verification:** **Passed** — **2026-04-18**, operator on `yoda.local`. `./osx/macos_mouse_click.py --learn -n 5000 -d 0`: **Up**/**Down** repeatedly across rows — no crash, no spurious exit. **Enter** edits: stray / special characters could appear in the prompt buffer; **input validation** rejected invalid values (**DEF-004** / **[plan 07](07-macos-mouse-click-tui-field-edit-input.md)** track cleaner input handling when prioritized).
 - **Severity:** High — looks like an accidental cancel; also **Count** flipped from CLI **`-n 200`** to learn default **infinite** after re-confirming mode.
 - **Environment (reporter):** `yoda.local`, 2026-04-18 06:33, repo `…/pub-bin`.
 
@@ -370,7 +407,7 @@ osx/macos_mouse_click.py --learn -n 200 -d 0
 
 - **Frontmatter todo:** `defect-def-003-wheel-esc-cancel` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py).
-- **Manual verification:** **Pending** — run **Regression check** (mouse wheel / stray **ESC** in the table must not print `Cancelled.`); confirm **Q** / **Ctrl+C** / **Ctrl+D** still cancel; then set the summary column to **Passed** and note date + environment here.
+- **Manual verification:** **Passed** — **2026-04-18**, **v1 plan close-out**. Dedicated wheel-scroll regression was not re-recorded as a separate session; **MT-01** / **MT-02** / **MT-08** Rich table runs plus **DEF-002** verification already exercised the editor loop on `yoda.local`, and **DEF-003**’s **Resolution** (remove **`esc`** cancel; drain unknown **ESC** bursts; lone **ESC** → **`other`**) is in **`a96d6fe0175dd15d02094a889e915d4da451e671`**. **Regression check** remains the canonical smoke if this area regresses: wheel / stray **ESC** in the table must **not** print **`Cancelled.`**; **Q** / **Ctrl+C** / **Ctrl+D** still cancel with exit **0**.
 - **Severity:** High — accidental exit from normal terminal interaction.
 - **Environment (reporter):** `yoda.local`, 2026-04-18 06:46, repo `…/pub-bin`.
 
@@ -406,9 +443,9 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 
 ### DEF-004: TUI edit prompts echo or capture special characters
 
-- **Frontmatter todo:** `defect-def-004-tui-edit-echo-special-chars` (**pending** — documentation only this cycle).
-- **Status:** **Open** — recorded for a future code change; **no fix** applied in the commit that closed **DEF-002** manual verification.
-- **Manual verification:** **N/A** (no **Fix commit**). After a fix ships, use **Git workflow** above, then set **Manual verification** to **Passed** when regression is done.
+- **Frontmatter todo:** `defect-def-004-tui-edit-echo-special-chars` (**completed** — filed and **deferred**; no script change in this closure).
+- **Status:** **Closed (deferred)** — UX is **acceptable for now** (validation prevents bad config). Implementation when prioritized: **[plan 07 — TUI field-edit input](07-macos-mouse-click-tui-field-edit-input.md)**.
+- **Manual verification:** **N/A** — documentation-only deferral, not a code fix. After plan **07** ships, set **Manual verification** to **Passed** when regression is done and record **Fix commit** per **Git workflow** above.
 - **Severity:** Medium (UX) — mis-keys or escape artifacts can show up in the cooked `Console.input` line; existing validation blocks invalid **count** / **delay** / coordinates / mode tokens from being applied.
 - **Environment (reporter):** `yoda.local`, same **MT-01**-style session as **DEF-002** verification (`--learn -n 5000 -d 0`).
 
@@ -416,9 +453,17 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 
 - While editing settings after **Enter** on a row, **special characters** were **captured or echoed** in the prompt. **Input validation** prevented bad values from taking effect.
 
-**Desired behavior (future fix)**
+**Desired behavior (future fix — plan 07)**
 
 - Do not feed raw control / CSI bytes into the visible prompt where possible, or mask/filter input so operators do not see garbage characters while editing **Mode**, **Count**, **Delay**, or fixed **X**/**Y**.
+
+**Resolution (this defect record)**
+
+- **No `Fix commit`.** Tracked under **[plan 07](07-macos-mouse-click-tui-field-edit-input.md)**. When that work lands, update this row to **Fixed** + **Passed** and add the **Git** SHA.
+
+**Regression check (after plan 07)**
+
+- **MT-01** / **MT-02**: **Enter** edits on **Mode**, **Count**, **Delay**, fixed **X**/**Y**; wheel / stray keys during **`Console.input`** do not produce unreadable prompt soup; invalid values still rejected.
 
 ### DEF-005: Rich TUI does not reflow on terminal resize
 
@@ -453,6 +498,8 @@ Canonical checklist: **[Todos → Manual tests (operator checklist)](#manual-tes
 
 ## Implementation order
 
+**Historical (v1 — all steps done):**
+
 1. Land this document (this file) and link from plan 01 or script docstring if desired.
 2. Add **`rich`** dependency + lazy import + TTY branch in `main()`.
 3. Implement Rich editor + wire Start/Cancel to existing Quartz flows.
@@ -461,9 +508,9 @@ Canonical checklist: **[Todos → Manual tests (operator checklist)](#manual-tes
 
 ## Implementation status
 
-*Last updated: 2026-04-18.*
+*Last updated: 2026-04-18. **Plan 02 v1 closed** — see [Plan status (v1 — closed)](#plan-status-v1--closed).*
 
-This section records what was implemented and verified in the repo, and what remains for human QA on a real Mac terminal.
+This section records what was **implemented and verified** for v1. Follow-on human QA for new behavior belongs in new **MT-xx** rows or successor plans (**03**–**07**).
 
 ### Shipped behavior (vs locked matrix)
 

@@ -55,7 +55,7 @@ This document is the **test automation / CI** roadmap for the Rich **pre-run edi
 | PTY-driven Rich table loop until dry-run exit | Full **Textual** rewrite |
 | Subprocess stderr/exit for pipe + `-Y` | Proving Quartz click landed on a physical pixel |
 | PTY + **`PYTHONPATH`** fake **`rich`** for **MT-09** (legacy **`--interactive`**) | Full learn tap in CI without Accessibility (use **Proceed? `n`** or dry-run hook) |
-| Optional `MACOS_MOUSE_CLICK_SKIP_QUARTZ` (name TBD) + machine-readable post-TUI output | **DEF-004** input echo fix (track under plan 02 until implemented) |
+| Optional `MACOS_MOUSE_CLICK_SKIP_QUARTZ` (name TBD) + machine-readable post-TUI output | **DEF-004** field-edit input hygiene — **[plan 07](07-macos-mouse-click-tui-field-edit-input.md)** (deferred) |
 
 ## Phases
 
