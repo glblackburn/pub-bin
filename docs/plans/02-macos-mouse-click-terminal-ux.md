@@ -68,6 +68,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [UX design](#ux-design)
   - [Keybinding summary (v1)](#keybinding-summary-v1)
 - [Implementation touchpoints](#implementation-touchpoints)
+- [Plan 03: TUI automation (related)](03-macos-mouse-click-tui-automation.md)
 - [Todos](#todos)
   - [Implementation and docs (closed)](#implementation-and-docs-closed)
   - [Manual tests (operator checklist)](#manual-tests-operator-checklist)
@@ -170,6 +171,7 @@ flowchart TD
 - **File:** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) — refactor **post-parse** path: a **resolve UI** step chooses **TTY Rich path** vs **legacy** (`run_interactive_prompts`, `print_confirmation_sheet`, `confirm_or_abort` today).
 - **Dependencies:** document `python3 -m pip install pyobjc-framework-Quartz rich`. **Lazy-import `rich`** only on the TTY non-`-Y` path so `--help` stays fast and Quartz-free until run.
 - **Accessibility:** unchanged; Rich only affects **before** Quartz runs.
+- **Automated TUI / pre-Quartz testing (future):** **[`03-macos-mouse-click-tui-automation.md`](03-macos-mouse-click-tui-automation.md)** — PTY tests, dry-run hook, CI; defers implementation until picked up.
 
 ## Todos
 
@@ -216,6 +218,8 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 - [ ] **MT-07** (`manual-mt-07-pipe-y`) — piped stdin + `-Y` non-learn.
 - [ ] **MT-08** (`manual-mt-08-resize-narrow`) — narrow terminal + Rich TUI readability.
 - [ ] **MT-09** (`manual-mt-09-interactive-legacy`) — no `rich`, `--interactive` legacy path.
+
+**Remaining manual work (pending only):** **MT-02**, **MT-03**, **MT-05**, **MT-06**, **MT-07**, **MT-08**, **MT-09**. **Done:** **MT-01**, **MT-04**. **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
 
 ## Pre-run editor: controls (normative)
 
