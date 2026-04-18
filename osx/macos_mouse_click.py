@@ -215,6 +215,21 @@ def _restore_terminal(fd: int, attrs: List) -> None:
     termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
 
+def _drain_stdin_burst(max_bytes: int = 256, idle_timeout: float = 0.05) -> None:
+    """Discard pending stdin bytes (tail of an unknown ESC / mouse / wheel sequence)."""
+    import select
+
+    n = 0
+    while n < max_bytes:
+        r, _, _ = select.select([sys.stdin], [], [], idle_timeout)
+        if not r:
+            break
+        chunk = sys.stdin.read(max_bytes - n)
+        if not chunk:
+            break
+        n += len(chunk)
+
+
 def read_raw_key() -> str:
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
@@ -223,6 +238,8 @@ def read_raw_key() -> str:
         ch = sys.stdin.read(1)
         if ch == "":
             return ""
+        if ch == "\x04":
+            return "ctrl_d"
         if ch == "\x1b":
             import select
 
@@ -237,7 +254,8 @@ def read_raw_key() -> str:
             # "cancel". Use generous waits and full CSI tails (e.g. ESC [ 1 ; 3 B).
             ch2 = wait_char(0.4)
             if ch2 == "":
-                return "esc"
+                # Lone ESC: do not cancel (DEF-003); wheel / meta can look similar.
+                return "other"
             if ch2 == "[":
                 buf: List[str] = []
                 while len(buf) < 32:
@@ -260,7 +278,9 @@ def read_raw_key() -> str:
                 if ch3 == "B":
                     return "down"
                 return "other"
-            return "esc"
+            # Unknown ESC prefix (e.g. mouse / wheel `ESC [ < …`, `ESC ]`, `ESC >`).
+            _drain_stdin_burst()
+            return "other"
         if ch == "\x03":
             return "ctrl_c"
         if ch in ("\r", "\n"):
@@ -488,13 +508,13 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
                 title="[bold cyan]macOS mouse click[/] — review / edit",
                 subtitle=(
                     "[dim]Up/Down  Enter=edit  S=start  "
-                    "Q=cancel  Esc alone=cancel  R=reset row  Ctrl+C=cancel[/]"
+                    "Q=cancel  Ctrl+D=cancel  R=reset row  Ctrl+C=cancel[/]"
                 ),
                 border_style="cyan",
             )
         )
         key = read_raw_key()
-        if key in ("q", "ctrl_c", "esc"):
+        if key in ("q", "ctrl_c", "ctrl_d"):
             return False
         if key == "s":
             if not cfg.mode:
@@ -529,6 +549,7 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
             row_keys = editor_row_keys(cfg)
             _prompt_cooked(console, "\nPress Enter to return to the editor…")
             continue
+        continue
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
