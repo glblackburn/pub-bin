@@ -45,6 +45,9 @@ todos:
   - id: defect-def-002-arrow-misread-as-esc
     content: "DEF-002: Down/Up arrow mis-read as lone Esc → false cancel — fixed in script"
     status: completed
+  - id: defect-def-003-wheel-esc-cancel
+    content: "DEF-003: scroll / unknown ESC mis-cancel; cancel = Q Ctrl+C Ctrl+D only"
+    status: completed
 isProject: false
 ---
 
@@ -69,6 +72,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [Defects](#defects)
   - [DEF-001: `Console.input(highlight=…)` on older Rich](#def-001-consoleinputhighlight-on-older-rich)
   - [DEF-002: Arrow keys mis-read as cancel (Escape)](#def-002-arrow-keys-mis-read-as-cancel-escape)
+  - [DEF-003: Mouse wheel / unknown ESC cancels TUI](#def-003-mouse-wheel--unknown-esc-cancels-tui)
 - [Manual QA checklist (after implementation)](#manual-qa-checklist-after-implementation)
 - [Out of scope (v1)](#out-of-scope-v1)
 - [Implementation order](#implementation-order)
@@ -127,7 +131,7 @@ So the “look” there is **Rich panels + colored borders + structured text**, 
 
 - **Entry:** After `argparse` + validation of **mutually exclusive** mode flags (same rules as plan 01), build **`ResolvedConfig`** from CLI + defaults.
 - **Editor screen:** `rich` **Table** (or stacked **Panels**) of rows: **Mode**, **X / Y** (only when mode is fixed), **Count**, **Delay**; highlight **current row**; show **value** and **source** (`cli` / `default` / `prompt` / missing).
-- **v1 key model (recommended):** **Up / Down** move between rows; **Enter** on a row opens a short **prompt** to edit that field (still framed with `rich`). **S** = Start, **Q** = Cancel (exit `0`, same as today’s cancel), **R** = reset current row to plan default (optional but useful).
+- **v1 key model (recommended):** **Up / Down** move between rows; **Enter** on a row opens a short **prompt** to edit that field (still framed with `rich`). **S** = Start, **Q** / **Ctrl+C** / **Ctrl+D** = Cancel (exit `0`, same as today’s cancel), **R** = reset current row to plan default (optional but useful). **Esc** does **not** cancel (avoids mouse-wheel / focus CSI noise); see **DEF-003**.
 - **v2 (optional later):** in-place digit edit with **Left / Right** without Enter, using `termios`/`tty` arrow sequences—more fragile across terminals; document only after v1 is stable.
 - **Colors:** explicit styles, e.g. `error` red, `warning` yellow, `title` bold cyan, `value` green, `muted` dim.
 
@@ -139,6 +143,7 @@ So the “look” there is **Rich panels + colored borders + structured text**, 
 | Enter | Edit selected field (prompt) |
 | S | Start run (after validation) |
 | Q | Quit without running (exit 0) |
+| Ctrl+C / Ctrl+D | Quit without running (exit 0) |
 | R | Reset selected row to default (optional) |
 
 ```mermaid
@@ -217,12 +222,13 @@ Behavior for the Rich table in [`osx/macos_mouse_click.py`](../../osx/macos_mous
 | **Up** / **Down** | Move highlight only. **Must not** exit the script or stop the editor. |
 | **Enter** | Open the prompt for the **selected** row (mode, count, delay, or x/y in fixed mode). After edits, use the **“Press Enter to return…”** line to go back to the table. |
 | **S** | **Start:** validate (mode set; fixed needs x/y), then leave the editor and run the Quartz flow (learn / fixed / at-cursor). This is the only key that **starts** clicking from the table screen. |
-| **Q** | **Cancel:** exit editor without running; process exits **0** (`Cancelled.` on stderr). |
-| **Esc** sent **alone** (no continuation bytes within the reader timeout) | **Cancel**, same as **Q** (exit **0**). |
-| **Ctrl+C** | **Cancel** while in the editor (SIGINT may still apply during Quartz; unchanged from plan 01). |
+| **Q** (either case) | **Cancel:** exit editor without running; process exits **0** (`Cancelled.` on stderr). |
+| **Ctrl+C** | **Cancel** in the editor (exit **0**); SIGINT handling during Quartz unchanged from plan 01. |
+| **Ctrl+D** (EOT, `\x04`) | **Cancel** in the editor (exit **0**). |
+| **Esc** | **Ignored** in the editor table (does not cancel). Many sequences begin with **ESC** (mouse wheel, CSI); treating lone **Esc** as cancel caused false exits (**DEF-003**). |
 | **R** | Reset the **selected** row toward plan defaults (see script `_apply_row_reset`). |
 
-CSI / SS3 arrow sequences (`ESC [ A` / `ESC [ B`, optional numeric middle, and `ESC O A` / `ESC O B`) are **not** cancel — they must resolve to **Up** / **Down** only.
+CSI / SS3 arrow sequences (`ESC [ A` / `ESC [ B`, optional numeric middle, and `ESC O A` / `ESC O B`) map to **Up** / **Down** only. Other **ESC**-led bursts are drained or ignored — they **must not** cancel.
 
 ## Defects
 
@@ -244,6 +250,7 @@ Traceability: each code fix should have its own **git commit**, then this docume
 |----|--------|--------|---------|---------------------|------------|
 | DEF-001 | 2026-04-18 | **Fixed** (script) | Pressing Enter to edit **Mode** crashed: `Console.input()` got unexpected keyword `highlight` | MT-01, MT-02, MT-08 (any TUI field edit via `_prompt_cooked`) | `2319207007b2c65703e192250e3cb13ae54a16a6` |
 | DEF-002 | 2026-04-18 | **Fixed** (script) | **Down**/**Up** after returning from mode edit was treated as lone **Esc** → spurious **Cancel**; mode edit also reset **Count** when re-confirming **learn** | MT-01, MT-02, MT-08; `read_raw_key` / `_edit_row` | `2319207007b2c65703e192250e3cb13ae54a16a6` |
+| DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` |
 
 ### DEF-001: `Console.input(highlight=…)` on older Rich
 
@@ -311,14 +318,51 @@ osx/macos_mouse_click.py --learn -n 200 -d 0
 
 1. Wait longer after **ESC** for the next byte; read a full **CSI** tail (up to 32 bytes) ending in a terminator, then map **endswith `A`/`B`** to **Up**/**Down**; support **SS3** `ESC O A` / `ESC O B`.
 2. Only `pop("count")` and call `apply_defaults` when **mode actually changes** (`cfg.mode != old_mode` before/after the prompt).
-3. Panel subtitle text: **Esc alone** = cancel (to contrast with arrow keys, which include **ESC** as prefix).
+3. Panel subtitle originally said **Esc alone** = cancel; **DEF-003** removed **Esc** from cancel (wheel / CSI noise). Subtitle now: **Q**, **Ctrl+D**, **Ctrl+C** only.
 4. **Git:** `2319207007b2c65703e192250e3cb13ae54a16a6` (includes **DEF-001** in the same commit).
 5. **Files:** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py)
 
 **Regression check**
 
-- **MT-01** / **MT-02**: after mode edit + return, **Down**/**Up** only move the row; **S** starts the run; **Q** or **Esc** alone still cancels with exit **0**.
+- **MT-01** / **MT-02**: after mode edit + return, **Down**/**Up** only move the row; **S** starts the run; **Q**, **Ctrl+C**, or **Ctrl+D** cancels with exit **0** (**Esc** does not cancel; see **DEF-003**).
 - Re-run with **`-n 200`**, edit mode with default learn, confirm **Count** stays **200** / **cli** (unless you change mode or count).
+
+### DEF-003: Mouse wheel / unknown ESC cancels TUI
+
+- **Frontmatter todo:** `defect-def-003-wheel-esc-cancel` (completed when fix landed).
+- **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py).
+- **Severity:** High — accidental exit from normal terminal interaction.
+- **Environment (reporter):** `yoda.local`, 2026-04-18 06:46, repo `…/pub-bin`.
+
+**Reproduction (pre-fix)**
+
+```bash
+osx/macos_mouse_click.py --learn -n 2000 -d 0
+```
+
+At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctrl+C**).
+
+**Observed**
+
+- Stderr printed `Cancelled.` and the process exited **0**.
+
+**Root cause**
+
+1. `read_raw_key` returned **`esc`** (cancel) for **ESC** + a byte that was not **`[`** or **`O`** — common for **mouse**, **wheel**, or **focus** reporting (e.g. **`ESC >`**, **`ESC ]`**, etc.).
+2. **`esc`** was treated like **Q** in `run_rich_pre_run_editor`. A **lone ESC** timeout path also mapped to cancel, which is easy to mis-fire.
+
+**Resolution**
+
+1. **Cancel** only on **`q`**, **`ctrl_c`**, or **`ctrl_d`** (`\x04`); remove **`esc`** from the cancel set.
+2. After **ESC**, if the next byte is not **`[`** / **`O`**, drain a short stdin burst then return **`other`** (ignored). If no byte arrives within the wait window, return **`other`** (lone **ESC** ignored).
+3. Subtitle: **Ctrl+D** documented; **Esc alone** removed.
+
+4. **Git:** `a96d6fe0175dd15d02094a889e915d4da451e671`
+5. **Files:** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py)
+
+**Regression check**
+
+- **MT-01** / **MT-08**: wheel / incidental **ESC** sequences do not exit; **Q**, **Ctrl+C**, and **Ctrl+D** still cancel with exit **0**.
 
 ## Manual QA checklist (after implementation)
 
@@ -348,7 +392,7 @@ This section records what was implemented and verified in the repo, and what rem
 
 | Condition | Actual behavior |
 |-----------|-----------------|
-| TTY stdin **and** TTY stdout, not `-Y`/`--yes`, **`rich` installed** | Rich `Panel` + `Table`: Up/Down move focus only; Enter edits; **S** starts Quartz; **Q**, **Esc alone**, or **Ctrl+C** cancel (exit 0); **R** resets row; legacy “Resolved configuration” + `Proceed?` sheet is skipped. |
+| TTY stdin **and** TTY stdout, not `-Y`/`--yes`, **`rich` installed** | Rich `Panel` + `Table`: Up/Down move focus only; Enter edits; **S** starts Quartz; **Q**, **Ctrl+C**, or **Ctrl+D** cancel (exit 0); **Esc** ignored; **R** resets row; legacy “Resolved configuration” + `Proceed?` sheet is skipped. |
 | **`-Y`/`--yes`** | No Rich TUI; stderr “Running:” one-liner then existing Quartz flow; no duplicate `apply_defaults` oddities from the TUI merge. |
 | **Non-TTY** or **missing `rich`** | Legacy path: `--interactive` uses text prompts when selected; otherwise errors or post-sheet confirmation per plan 01; stderr tip to `python3 -m pip install rich` when stdin/stdout are a TTY but Rich is not importable. |
 
