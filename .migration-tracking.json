@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-12-22T08:36:14.293936",
+  "last_updated": "2026-04-18T05:51:47.281920",
   "migrations": {
     "clean-emacs-files.sh": {
       "old_path": "clean_emacs_files.sh",
@@ -164,6 +164,12 @@
       "new_path": "trufflehog/scripts/trufflehog-sum-uniq-raw-results.sh",
       "date": "2025-12-18T20:26:28-05:00",
       "detected_date": "2025-12-22T08:36:14.293922"
+    },
+    "install-cursor-agent.sh": {
+      "old_path": "cursor/install-cursor-agent.sh",
+      "new_path": "install-cursor-agent.sh",
+      "date": "2026-04-18T04:52:33-04:00",
+      "detected_date": "2026-04-18T05:51:47.281897"
     }
   }
 }
