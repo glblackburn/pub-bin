@@ -21,6 +21,9 @@ todos:
   - id: auto-mt-02-implement
     content: "Implement pytest PTY cases for MT-02 (after phase 0 dry-run hook)"
     status: pending
+  - id: auto-mt-09-implement
+    content: "Implement pytest PTY for MT-09 legacy --interactive + PYTHONPATH fake rich"
+    status: pending
 isProject: false
 ---
 
@@ -40,6 +43,7 @@ This document is the **test automation / CI** roadmap for the Rich **pre-run edi
 - [Scope](#scope)
 - [Phases](#phases)
 - [MT-02 automation plan: partial CLI and Rich TUI](#mt-02-automation-plan-partial-cli-and-rich-tui)
+- [MT-09 automation plan: legacy interactive without Rich](#mt-09-automation-plan-legacy-interactive-without-rich)
 - [Mapping to plan 02 manual tests (MT-xx)](#mapping-to-plan-02-manual-tests-mt-xx)
 - [Out of scope (v1)](#out-of-scope-v1)
 
@@ -50,6 +54,7 @@ This document is the **test automation / CI** roadmap for the Rich **pre-run edi
 | `read_raw_key` / CSI parsing (pure unit tests after extraction) | Pixel-perfect screenshot diff |
 | PTY-driven Rich table loop until dry-run exit | Full **Textual** rewrite |
 | Subprocess stderr/exit for pipe + `-Y` | Proving Quartz click landed on a physical pixel |
+| PTY + **`PYTHONPATH`** fake **`rich`** for **MT-09** (legacy **`--interactive`**) | Full learn tap in CI without Accessibility (use **Proceed? `n`** or dry-run hook) |
 | Optional `MACOS_MOUSE_CLICK_SKIP_QUARTZ` (name TBD) + machine-readable post-TUI output | **DEF-004** input echo fix (track under plan 02 until implemented) |
 
 ## Phases
@@ -68,7 +73,7 @@ This document is the **test automation / CI** roadmap for the Rich **pre-run edi
 ### Phase 2 — Subprocess tests (minimal TTY)
 
 - **Piped stdin**, **`-Y`**, **non-TTY** error messages: assert stderr substrings and exit codes (many cases **without** a PTY).
-- **`--interactive`** without **Rich**: assert legacy prompt flow (may need TTY in subprocess).
+- **MT-09** — **`--interactive`** with **`rich` import disabled** (see **[§ MT-09 automation plan](#mt-09-automation-plan-legacy-interactive-without-rich)**): PTY + scripted stdin; prefer **Proceed? `n`** for a no-Quartz smoke, or **Phase 0** dry-run after **`y`** once the hook exists.
 
 ### Phase 3 — CI
 
@@ -119,6 +124,44 @@ Exact argv rows depend on `validate_ns` / `main()` rules—trim or extend the ma
 
 **Todo:** `auto-mt-02-implement` (frontmatter) tracks implementation; this section is the **spec** only.
 
+## MT-09 automation plan: legacy interactive without Rich
+
+**Manual baseline:** plan 02 **[MT-09](02-macos-mouse-click-terminal-ux.md#mt-09-operator-one-liner-hide-rich)** — operator verified **legacy stdin** flow (**Tip:**, **Select mode**, counts, **Resolved configuration**, **`Proceed?`**, **Running:**) using a **one-liner** that shadows **`rich`** via **`PYTHONPATH`** (no uninstall).
+
+### Goal
+
+Automate regression coverage for **`run_interactive_prompts`** + **`print_confirmation_sheet`** + **`confirm_or_abort`** when **`try_import_rich()`** returns **`None`**, without requiring operators to uninstall **Rich**.
+
+### Preconditions
+
+- **macOS** host (script entrypoint is macOS-specific for full runs; pre-Quartz assertions are still useful on the same OS the tool ships for).
+- Child process attached to a **PTY** (`pexpect` or **`pty` + subprocess**): **stdin must be a TTY** for **`--interactive`** (`run_interactive_prompts` exits **2** if not).
+- **`PYTHONPATH`** prefix containing a throwaway **`rich.py`** that raises **`ImportError`** (same pattern as plan 02 one-liner); set **`PYTHONUNBUFFERED=1`**.
+- **Optional (preferred after Phase 0):** dry-run / **`SKIP_QUARTZ`** hook so the driver can answer **`Proceed? y`** and assert machine-readable output **without** Accessibility / learn tap.
+
+### PTY scenarios (implement as `pytest` cases)
+
+| Case ID | stdin script (outline) | Pass criteria |
+|---------|------------------------|-----------------|
+| **MT-09-A** | Choice **`1`** (learn), accept defaults or small **count** / **delay**, then **`n`** at **`Proceed?`** | Stderr contains **`Select mode:`**, **`Resolved configuration:`**, **`Proceed?`**, then **`Cancelled.`**; **no** **`Running:`** line (confirm aborts before Quartz); exit **0**; **no** Rich panel markers (e.g. no **`review / edit`**); **no** **`Waiting for your first left click`**. |
+| **MT-09-B** | Same prompts, **`y`** at **`Proceed?`**, then **Phase 0** dry-run env active | After **`Running:`**, child prints stable **dry-run** line / JSON and **exits 0** without **`import_quartz()`** (requires Phase 0 hook in `main()`). |
+| **MT-09-C** (negative) | Same **`PYTHONPATH`** trick but **omit** **`--interactive`** and **omit** mode flags | Child prints **`Error: specify --learn`** … **`or use --interactive`** …; exit **2**. |
+
+**Synchronization:** wait for **`Tip: install rich`** (stderr) or **`Select mode:`** before sending the first choice — avoids flake on slow startup.
+
+### Driver mechanics
+
+1. `tmpdir = tempfile.mkdtemp()`; write `rich.py` with `raise ImportError("mt09 test")`; `env = {**os.environ, "PYTHONPATH": tmpdir, "PYTHONUNBUFFERED": "1"}` (prepend `tmpdir` to any existing **`PYTHONPATH`** with `os.pathsep` if tests need to preserve it).
+2. Spawn: `./osx/macos_mouse_click.py --interactive` from **repo root** with PTY + `env`.
+3. Feed **cooked** lines (`1\n`, `2\n`, `1.0\n`, …) matching `prompt_str` / `prompt_int_count` prompts.
+4. Tear down: assert log does **not** contain Rich table path strings unless the fake **`rich`** import was misconfigured.
+
+### CI and ownership
+
+- Run under **`macos-latest`** with the **MT-09** cases tagged (e.g. `@pytest.mark.mt09`).
+- **Done when:** **MT-09-A** (and **MT-09-C**) green in CI without Accessibility; **MT-09-B** enabled once Phase 0 lands.
+- **Todo:** `auto-mt-09-implement` (frontmatter).
+
 ## Mapping to plan 02 manual tests (MT-xx)
 
 | MT | Automation potential (after phases) |
@@ -131,7 +174,7 @@ Exact argv rows depend on `validate_ns` / `main()` rules—trim or extend the ma
 | MT-06 | **High** — pipe + assert stderr |
 | MT-07 | **High** — pipe + `-Y` |
 | MT-08 | **Partial** — set `COLUMNS`/`LINES` in PTY; human for subjective readability |
-| MT-09 | **Medium** — subprocess TTY without `rich` |
+| MT-09 | **High** — PTY + **`PYTHONPATH`** fake **`rich`** + scripted stdin — see **[§ MT-09 automation plan](#mt-09-automation-plan-legacy-interactive-without-rich)**; operator checklist **completed** **2026-04-18** |
 
 ## Out of scope (v1)
 

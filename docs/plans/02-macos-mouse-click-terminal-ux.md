@@ -38,7 +38,7 @@ todos:
     status: completed
   - id: manual-mt-09-interactive-legacy
     content: "MT-09: TTY without rich + --interactive; legacy prompts + confirmation sheet"
-    status: pending
+    status: completed
   - id: defect-def-001-rich-input-highlight
     content: "DEF-001: Console.input(highlight=) crash on older Rich — fixed in script"
     status: completed
@@ -215,7 +215,19 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 | MT-06 | `manual-mt-06-pipe-no-y-hint` | completed | `echo ""` piped to `./osx/macos_mouse_click.py --learn` (no `-Y`) | No TUI; **Resolved configuration** on stderr, then **`Error: confirmation requires a TTY stdin. Use -Y/--yes for non-interactive runs.`**; exit **2** (**manually verified** 2026-04-18) |
 | MT-07 | `manual-mt-07-pipe-y` | completed | **A:** `echo ""` piped to `./osx/macos_mouse_click.py --at-cursor -n 1 -d 0 -Y` (or fixed `-x/-y`). **B:** `echo ""` piped to `./osx/macos_mouse_click.py --learn -Y` | No TUI; **`-Y`** path runs without confirmation; no Rich table. **B** verified **2026-04-18**: **Running:** line, learn wait + anchor + warmup; operator **Ctrl+C** during warmup (**Stopped.**, exit **130**) |
 | MT-08 | `manual-mt-08-resize-narrow` | completed | Shrink Terminal width/height; open TUI (`--learn` without `-Y`, with `rich`) | **Manually verified** **2026-04-18** (`yoda.local`): **no dynamic reflow** — shrink → awkward wrap; expand → layout **stays** narrow. Filed as **DEF-005** (**closed deferred**); improvement work: **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)** |
-| MT-09 | `manual-mt-09-interactive-legacy` | pending | Temporarily run **without** `rich` on a TTY: `./osx/macos_mouse_click.py --interactive` | Plain prompts + “Resolved configuration” + `Proceed?` path still works |
+| MT-09 | `manual-mt-09-interactive-legacy` | completed | **TTY** + **no `rich` for this process** (see [MT-09 one-liner](#mt-09-operator-one-liner-hide-rich)); **`--interactive`** so missing mode is filled via stdin | **Manually verified** **2026-04-18** (`yoda.local`): **Tip:** line, **Select mode** menu, prompts, **Resolved configuration**, **`Proceed?`**, **Running:** then learn path. Automated slice spec: **[plan 03 § MT-09](03-macos-mouse-click-tui-automation.md#mt-09-automation-plan-legacy-interactive-without-rich)** |
+
+#### MT-09 operator one-liner hide Rich
+
+**`--interactive` alone is not enough** if **`rich` is installed**: the script will still use the Rich table on a TTY. To exercise the **legacy text prompts** without uninstalling anything, shadow **`rich`** for **one process** using a throwaway module on **`PYTHONPATH`** (must be a **real TTY**, not piped stdin).
+
+From **repo root**:
+
+```bash
+d=$(mktemp -d) && printf '%s\n' 'raise ImportError("no rich for MT-09 test")' >"$d/rich.py" && PYTHONPATH="$d" ./osx/macos_mouse_click.py --interactive
+```
+
+Then walk the **Select mode** menu, optional field prompts, **Resolved configuration**, and **`Proceed? [y/N]`** (answer **`n`** to exit without Quartz if you only need the path).
 
 **Checkbox copy (same order as table)**
 
@@ -227,9 +239,9 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 - [x] **MT-06** (`manual-mt-06-pipe-no-y-hint`) — piped stdin, no `-Y`: resolved summary + TTY confirmation error + **`-Y`** hint; exit **2** (operator **2026-04-18**).
 - [x] **MT-07** (`manual-mt-07-pipe-y`) — piped stdin + **`-Y`**: non-learn (**`--at-cursor`** / fixed) per table **A**; **learn** variant **B** verified **2026-04-18** (`echo "" | … --learn -Y`, anchor + warmup, **Ctrl+C** → **Stopped.**).
 - [x] **MT-08** (`manual-mt-08-resize-narrow`) — resize exercise **2026-04-18**: reflow **missing** (**DEF-005** → **[plan 06](06-macos-mouse-click-rich-tui-terminal-resize.md)**).
-- [ ] **MT-09** (`manual-mt-09-interactive-legacy`) — no `rich`, `--interactive` legacy path.
+- [x] **MT-09** (`manual-mt-09-interactive-legacy`) — legacy **`--interactive`** + fake **`rich`** [one-liner](#mt-09-operator-one-liner-hide-rich); operator **2026-04-18** (`yoda.local`).
 
-**Remaining manual work (pending only):** **MT-09**. **Done:** **MT-01**–**MT-08**. **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. **DEF-005** is **closed (deferred)** — Rich resize/reflow; no **Fix commit**; scope **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
+**Remaining manual work (pending only):** **None** — **MT-01**–**MT-09** **done** in the operator checklist (re-open rows only when behavior materially changes). **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. **DEF-005** is **closed (deferred)** — Rich resize/reflow; no **Fix commit**; scope **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
 
 ## Pre-run editor: controls (normative)
 
@@ -484,7 +496,8 @@ This section records what was implemented and verified in the repo, and what rem
 - **2026-04-18** — **MT-06** — `echo "" | ./osx/macos_mouse_click.py --learn` (08:14:18) — no Rich TUI; stderr shows **Resolved configuration** (mode **learn**, default count/delay), then **`Error: confirmation requires a TTY stdin. Use -Y/--yes for non-interactive runs.`**; exit code **2**.
 - **2026-04-18** — **MT-07** (variant **B**, `yoda.local`) — `echo "" | ./osx/macos_mouse_click.py --learn -Y` (08:16:33) — no TUI; **Running:** `mode=learn` + default count/delay; learn tap recorded anchor **`(1622.8, -2.7)`**; **Warmup: sleeping 5.0s…**; operator **Ctrl+C** → **`Stopped.`** (exit **130**). Table **A** (`--at-cursor` / fixed `-x/-y` with pipe + **`-Y`**) still recommended as a quick finite check when convenient.
 - **2026-04-18** — **MT-08** (`yoda.local`) — `./osx/macos_mouse_click.py --learn` (Rich TUI): resize **shrink** → awkward wrap; resize **wider** → UI **did not** expand with the window. **DEF-005** filed and **closed (deferred)** to **[plan 06 — Rich TUI terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**.
+- **2026-04-18** — **MT-09** (`yoda.local`, 08:35:27) — [One-liner](#mt-09-operator-one-liner-hide-rich) + **`--interactive`**: **Tip:** install **rich**; **Select mode** (choice **1** learn); count **2**, delay **1.0**; **Resolved configuration** with **(prompt)** sources; **`Proceed? y`**; **Running:** `mode=learn count=2 delay=1.0s`; learn anchor **`(1588.5, 43.9)`** + warmup (**Accessibility**). Pytest target: **[plan 03 § MT-09](03-macos-mouse-click-tui-automation.md#mt-09-automation-plan-legacy-interactive-without-rich)**.
 
 ### Remaining manual QA (operator)
 
-See **[Todos → Manual tests (operator checklist)](#manual-tests-operator-checklist)** for **MT-01**–**MT-09** and frontmatter ids. Mark each `manual-mt-*` entry `completed` in YAML when the matching checkbox is checked.
+Checklist **MT-01**–**MT-09** is **complete** as of **2026-04-18**; add new **MT-xx** rows if new scenarios are introduced. **Plan 03** tracks which cases move to **CI** (see **[Mapping to plan 02 manual tests](03-macos-mouse-click-tui-automation.md#mapping-to-plan-02-manual-tests-mt-xx)**).
