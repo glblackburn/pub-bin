@@ -5,8 +5,8 @@ macos_mouse_click.py — synthetic left clicks on macOS via Quartz (PyObjC).
 The shebang (#!/usr/bin/env python3) allows running without typing python3,
 e.g. ./osx/macos_mouse_click.py --help after: chmod +x osx/macos_mouse_click.py
 
-Requires: Python 3.9+, pyobjc-framework-Quartz
-  python3 -m pip install pyobjc-framework-Quartz
+Requires: Python 3.9+, pyobjc-framework-Quartz; optional rich (TTY UI)
+  python3 -m pip install pyobjc-framework-Quartz rich
 
 Permissions: System Settings → Privacy & Security → Accessibility for the
 terminal (or app) running this script. Screen Recording is not required.
@@ -27,11 +27,15 @@ from __future__ import annotations
 import argparse
 import signal
 import sys
+import termios
+import tty
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 Quartz: Any = None
+_rich_module: Any = None
+_rich_import_attempted: bool = False
 
 
 def import_quartz() -> Any:
@@ -184,6 +188,349 @@ class ResolvedConfig:
         self.sources[name] = source
 
 
+def try_import_rich() -> Any:
+    global _rich_module, _rich_import_attempted
+    if _rich_import_attempted:
+        return _rich_module
+    _rich_import_attempted = True
+    try:
+        import rich  # type: ignore[import-not-found]
+
+        _rich_module = rich
+        return rich
+    except ImportError:
+        _rich_module = None
+        return None
+
+
+def tty_can_use_rich_editor(cfg: ResolvedConfig) -> bool:
+    return (
+        not cfg.assume_yes
+        and sys.stdin.isatty()
+        and sys.stdout.isatty()
+    )
+
+
+def _restore_terminal(fd: int, attrs: List) -> None:
+    termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
+
+
+def read_raw_key() -> str:
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+        if ch == "":
+            return ""
+        if ch == "\x1b":
+            import select
+
+            def wait_char(timeout: float) -> str:
+                r, _, _ = select.select([sys.stdin], [], [], timeout)
+                if not r:
+                    return ""
+                return sys.stdin.read(1) or ""
+
+            # Arrow keys are ESC [ A / ESC [ B (CSI) or ESC O A / ESC O B (SS3).
+            # A short select after ESC mis-reads the prefix as lone Escape → false
+            # "cancel". Use generous waits and full CSI tails (e.g. ESC [ 1 ; 3 B).
+            ch2 = wait_char(0.4)
+            if ch2 == "":
+                return "esc"
+            if ch2 == "[":
+                buf: List[str] = []
+                while len(buf) < 32:
+                    c = wait_char(0.25)
+                    if c == "":
+                        break
+                    buf.append(c)
+                    if c in "ABCDEFGHZab~":
+                        break
+                tail = "".join(buf)
+                if tail.endswith("A"):
+                    return "up"
+                if tail.endswith("B"):
+                    return "down"
+                return "other"
+            if ch2 == "O":
+                ch3 = wait_char(0.25)
+                if ch3 == "A":
+                    return "up"
+                if ch3 == "B":
+                    return "down"
+                return "other"
+            return "esc"
+        if ch == "\x03":
+            return "ctrl_c"
+        if ch in ("\r", "\n"):
+            return "enter"
+        oc = ch.lower()
+        if oc == "s":
+            return "s"
+        if oc == "q":
+            return "q"
+        if oc == "r":
+            return "r"
+        return "other"
+    finally:
+        _restore_terminal(fd, old)
+
+
+def editor_row_keys(cfg: ResolvedConfig) -> List[str]:
+    keys: List[str] = ["mode"]
+    if cfg.mode == "fixed":
+        keys.extend(["x", "y"])
+    keys.extend(["count", "delay"])
+    return keys
+
+
+def _row_display(cfg: ResolvedConfig, key: str) -> Tuple[str, str]:
+    if key == "mode":
+        v = cfg.mode if cfg.mode else "(not set)"
+        return "Mode", v
+    if key == "x":
+        return "Anchor X", "-" if cfg.x is None else str(cfg.x)
+    if key == "y":
+        return "Anchor Y", "-" if cfg.y is None else str(cfg.y)
+    if key == "count":
+        if not cfg.mode:
+            return "Count", "(set mode first)"
+        return "Count", count_label(cfg.count)
+    if key == "delay":
+        if not cfg.mode:
+            return "Delay (s)", "(set mode first)"
+        return "Delay (s)", str(cfg.delay)
+    return key, ""
+
+
+def _source_style(src: str) -> str:
+    if src == "cli":
+        return "green"
+    if src == "default":
+        return "dim"
+    if src == "prompt":
+        return "yellow"
+    if src == "tui":
+        return "cyan"
+    return "dim"
+
+
+def _field_source(cfg: ResolvedConfig, key: str) -> str:
+    if key == "mode":
+        return cfg.sources.get("mode", "default") if cfg.mode else "—"
+    if key == "x":
+        return cfg.sources.get("x", "default") if cfg.x is not None else "—"
+    if key == "y":
+        return cfg.sources.get("y", "default") if cfg.y is not None else "—"
+    return cfg.sources.get(key, "default")
+
+
+def _apply_row_reset(cfg: ResolvedConfig, key: str) -> None:
+    if key == "mode":
+        cfg.set_field("mode", "learn", "default")
+        cfg.x = None
+        cfg.y = None
+        for k in ("x", "y"):
+            cfg.sources.pop(k, None)
+        return
+    if key == "x":
+        cfg.set_field("x", 0.0, "default")
+        return
+    if key == "y":
+        cfg.set_field("y", 0.0, "default")
+        return
+    if key == "count":
+        cfg.set_field("count", default_count_for_mode(cfg.mode or "learn"), "default")
+        return
+    if key == "delay":
+        cfg.set_field("delay", 5.0, "default")
+
+
+def _prompt_cooked(console: Any, prompt: str) -> str:
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    _restore_terminal(fd, old)
+    # Older Rich: Console.input() has no highlight= kwarg; omit for compatibility.
+    return console.input(prompt).strip()
+
+
+def _edit_row(console: Any, cfg: ResolvedConfig, key: str) -> None:
+    from rich.panel import Panel
+    from rich.text import Text
+
+    if key == "mode":
+        old_mode = cfg.mode
+        console.print(
+            Panel(
+                "[cyan]Enter mode[/]: [bold]learn[/] | [bold]fixed[/] | [bold]at-cursor[/]",
+                title="Edit mode",
+                border_style="cyan",
+            )
+        )
+        raw = _prompt_cooked(
+            console,
+            "Mode [learn/fixed/at-cursor, default learn]: ",
+        ).lower()
+        if raw in ("", "learn", "l", "1"):
+            cfg.set_field("mode", "learn", "tui")
+            cfg.x = None
+            cfg.y = None
+            cfg.sources.pop("x", None)
+            cfg.sources.pop("y", None)
+        elif raw in ("fixed", "f", "2"):
+            cfg.set_field("mode", "fixed", "tui")
+            if cfg.x is None:
+                cfg.set_field("x", 0.0, "tui")
+            if cfg.y is None:
+                cfg.set_field("y", 0.0, "tui")
+        elif raw in ("at-cursor", "at_cursor", "a", "c", "3"):
+            cfg.set_field("mode", "at_cursor", "tui")
+            cfg.x = None
+            cfg.y = None
+            cfg.sources.pop("x", None)
+            cfg.sources.pop("y", None)
+        else:
+            console.print(Text(f"Unrecognized mode: {raw!r}", style="red"))
+        # Re-apply mode-specific count default only when mode actually changes,
+        # so re-confirming learn does not wipe a CLI -n count.
+        if cfg.mode != old_mode:
+            cfg.sources.pop("count", None)
+            apply_defaults(cfg)
+        return
+    if key == "x":
+        raw = _prompt_cooked(console, f"Anchor X [{cfg.x}]: ")
+        if raw == "":
+            return
+        try:
+            cfg.set_field("x", float(raw), "tui")
+        except ValueError:
+            console.print(Text(f"Invalid number: {raw!r}", style="red"))
+        return
+    if key == "y":
+        raw = _prompt_cooked(console, f"Anchor Y [{cfg.y}]: ")
+        if raw == "":
+            return
+        try:
+            cfg.set_field("y", float(raw), "tui")
+        except ValueError:
+            console.print(Text(f"Invalid number: {raw!r}", style="red"))
+        return
+    if key == "count":
+        raw = _prompt_cooked(
+            console,
+            f"Count (0=infinite) [{cfg.count}]: ",
+        )
+        if raw == "":
+            return
+        try:
+            v = int(raw, 10)
+            if v < 0:
+                raise ValueError
+            cfg.set_field("count", v, "tui")
+        except ValueError:
+            console.print(Text(f"Invalid count: {raw!r}", style="red"))
+        return
+    if key == "delay":
+        raw = _prompt_cooked(console, f"Delay seconds [{cfg.delay}]: ")
+        if raw == "":
+            return
+        try:
+            v = float(raw)
+            if v < 0:
+                raise ValueError
+            cfg.set_field("delay", v, "tui")
+        except ValueError:
+            console.print(Text(f"Invalid delay: {raw!r}", style="red"))
+
+
+def _build_editor_table(cfg: ResolvedConfig, row_keys: List[str], selected: int) -> Any:
+    from rich.table import Table
+    from rich.text import Text
+
+    table = Table(show_header=True, header_style="bold cyan", expand=True)
+    table.add_column("Setting", style="white", no_wrap=True)
+    table.add_column("Value", style="green")
+    table.add_column("Source", style="dim")
+    for i, key in enumerate(row_keys):
+        label, val = _row_display(cfg, key)
+        src = _field_source(cfg, key)
+        sel = i == selected
+        hl = "bold black on bright_cyan" if sel else ""
+        src_st = hl if sel else _source_style(str(src))
+        table.add_row(
+            Text(label, style=hl or "white"),
+            Text(str(val), style=hl or "green"),
+            Text(str(src), style=src_st),
+        )
+    return table
+
+
+def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
+    """TTY review/edit. Returns True to run clicks, False if user cancelled."""
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.text import Text
+
+    console = Console()
+    row_keys = editor_row_keys(cfg)
+    selected = 0
+
+    while True:
+        if not row_keys:
+            row_keys = editor_row_keys(cfg)
+        selected = max(0, min(selected, len(row_keys) - 1))
+        table = _build_editor_table(cfg, row_keys, selected)
+        console.clear()
+        console.print(
+            Panel(
+                table,
+                title="[bold cyan]macOS mouse click[/] — review / edit",
+                subtitle=(
+                    "[dim]Up/Down  Enter=edit  S=start  "
+                    "Q=cancel  Esc alone=cancel  R=reset row  Ctrl+C=cancel[/]"
+                ),
+                border_style="cyan",
+            )
+        )
+        key = read_raw_key()
+        if key in ("q", "ctrl_c", "esc"):
+            return False
+        if key == "s":
+            if not cfg.mode:
+                console.print(Text("Set mode before starting (Enter on Mode).", style="red"))
+                time.sleep(1.2)
+                continue
+            if cfg.mode == "fixed" and (cfg.x is None or cfg.y is None):
+                console.print(Text("Fixed mode needs Anchor X and Y.", style="red"))
+                time.sleep(1.2)
+                continue
+            apply_defaults(cfg)
+            if cfg.count < 0 or cfg.delay < 0:
+                console.print(Text("Count and delay must be >= 0.", style="red"))
+                time.sleep(1.2)
+                continue
+            return True
+        if key == "r":
+            rk = row_keys[selected]
+            _apply_row_reset(cfg, rk)
+            row_keys = editor_row_keys(cfg)
+            continue
+        if key == "up":
+            selected = max(0, selected - 1)
+            continue
+        if key == "down":
+            selected = min(len(row_keys) - 1, selected + 1)
+            continue
+        if key == "enter":
+            rk = row_keys[selected]
+            console.clear()
+            _edit_row(console, cfg, rk)
+            row_keys = editor_row_keys(cfg)
+            _prompt_cooked(console, "\nPress Enter to return to the editor…")
+            continue
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Synthetic left mouse clicks on macOS (Quartz / PyObjC).",
@@ -195,8 +542,8 @@ Examples (from repo root; the script is executable: chmod +x osx/macos_mouse_cli
   ./osx/macos_mouse_click.py --interactive
   ./osx/macos_mouse_click.py -x 400 -y 300 -n 3 -Y
 
-Install dependency:
-  python3 -m pip install pyobjc-framework-Quartz
+Install dependencies:
+  python3 -m pip install pyobjc-framework-Quartz rich
 
 Stop repeats: Ctrl+C   (Accessibility required for Terminal)
 Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
@@ -238,7 +585,10 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         "--interactive",
         action="store_true",
         default=False,
-        help="Prompt for missing options (stdin must be a TTY)",
+        help=(
+            "Prompt for missing options (TTY stdin). If stdout is also a TTY "
+            "and rich is installed, a table editor is used instead of plain prompts."
+        ),
     )
     p.add_argument(
         "-Y",
@@ -373,6 +723,8 @@ def run_interactive_prompts(cfg: ResolvedConfig) -> None:
 
 
 def apply_defaults(cfg: ResolvedConfig) -> None:
+    if not cfg.mode:
+        return
     if "count" not in cfg.sources:
         cfg.set_field("count", default_count_for_mode(cfg.mode), "default")
     if "delay" not in cfg.sources:
@@ -490,23 +842,46 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
 
     cfg = namespace_to_cfg(ns)
+    rich_mod = try_import_rich()
+    can_tui = tty_can_use_rich_editor(cfg) and rich_mod is not None
 
-    if cfg.used_interactive:
-        run_interactive_prompts(cfg)
-
-    if cfg.mode == "":
+    if tty_can_use_rich_editor(cfg) and rich_mod is None:
         print(
-            "Error: specify --learn, --at-cursor, or both -x and -y, "
-            "or use --interactive.",
+            "Tip: install rich for a colored TTY editor: "
+            "python3 -m pip install rich",
             file=sys.stderr,
         )
+
+    if cfg.used_interactive and not can_tui:
+        run_interactive_prompts(cfg)
+
+    if cfg.mode == "" and not can_tui:
+        print(
+            "Error: specify --learn, --at-cursor, or both -x and -y, "
+            "or use --interactive, or install rich and rerun without -Y.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if cfg.mode == "fixed" and (cfg.x is None or cfg.y is None) and not can_tui:
+        print("Error: fixed mode requires both x and y.", file=sys.stderr)
+        return 2
+
+    if can_tui:
+        if not run_rich_pre_run_editor(cfg, rich_mod):
+            print("Cancelled.", file=sys.stderr)
+            return 0
+        apply_defaults(cfg)
+    elif cfg.mode != "":
+        apply_defaults(cfg)
+
+    if cfg.mode == "":
+        print("Error: mode was not set.", file=sys.stderr)
         return 2
 
     if cfg.mode == "fixed" and (cfg.x is None or cfg.y is None):
         print("Error: fixed mode requires both x and y.", file=sys.stderr)
         return 2
-
-    apply_defaults(cfg)
 
     if cfg.count < 0:
         print("Error: count must be >= 0", file=sys.stderr)
@@ -515,13 +890,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("Error: delay must be >= 0", file=sys.stderr)
         return 2
 
-    if not cfg.assume_yes:
+    if not cfg.assume_yes and not can_tui:
         print_confirmation_sheet(cfg)
         if not confirm_or_abort():
             print("Cancelled.", file=sys.stderr)
             return 0
 
-    if cfg.assume_yes:
+    if can_tui:
+        from rich.console import Console
+
+        Console(stderr=True).print(
+            f"[green]Running:[/] mode={cfg.mode} count={count_label(cfg.count)} "
+            f"delay={cfg.delay}s"
+        )
+    else:
         print(
             f"Running: mode={cfg.mode} count={count_label(cfg.count)} delay={cfg.delay}s",
             file=sys.stderr,
