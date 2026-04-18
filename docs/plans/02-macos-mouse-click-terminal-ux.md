@@ -26,16 +26,16 @@ todos:
     status: completed
   - id: manual-mt-05-y-fixed
     content: "MT-05: -Y fixed mode (-x/-y) finite run"
-    status: pending
+    status: completed
   - id: manual-mt-06-pipe-no-y-hint
     content: "MT-06: piped stdin without -Y; sensible error and -Y hint; no TUI"
-    status: pending
+    status: completed
   - id: manual-mt-07-pipe-y
-    content: "MT-07: piped stdin + -Y non-learn path (e.g. -x/-y or --at-cursor)"
-    status: pending
+    content: "MT-07: piped stdin + -Y (--at-cursor/fixed and --learn -Y)"
+    status: completed
   - id: manual-mt-08-resize-narrow
     content: "MT-08: narrow/shallow terminal; Rich editor layout still readable"
-    status: pending
+    status: completed
   - id: manual-mt-09-interactive-legacy
     content: "MT-09: TTY without rich + --interactive; legacy prompts + confirmation sheet"
     status: pending
@@ -51,6 +51,9 @@ todos:
   - id: defect-def-004-tui-edit-echo-special-chars
     content: "DEF-004: TUI field edit echoes/captures special chars (open — document only)"
     status: pending
+  - id: defect-def-005-rich-tui-terminal-resize
+    content: "DEF-005: Rich TUI does not reflow on resize — closed deferred to plan 06"
+    status: completed
 isProject: false
 ---
 
@@ -71,6 +74,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [Plan 03: TUI automation (related)](03-macos-mouse-click-tui-automation.md)
 - [Plan 04: Run progress UI (related)](04-macos-mouse-click-run-progress-ui.md)
 - [Plan 05: Target preview before run (related)](05-macos-mouse-click-target-preview.md)
+- [Plan 06: Rich TUI terminal resize (related)](06-macos-mouse-click-rich-tui-terminal-resize.md)
 - [Todos](#todos)
   - [Implementation and docs (closed)](#implementation-and-docs-closed)
   - [Manual tests (operator checklist)](#manual-tests-operator-checklist)
@@ -80,6 +84,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
   - [DEF-002: Arrow keys mis-read as cancel (Escape)](#def-002-arrow-keys-mis-read-as-cancel-escape)
   - [DEF-003: Mouse wheel / unknown ESC cancels TUI](#def-003-mouse-wheel--unknown-esc-cancels-tui)
   - [DEF-004: TUI edit prompts echo or capture special characters](#def-004-tui-edit-prompts-echo-or-capture-special-characters)
+  - [DEF-005: Rich TUI does not reflow on terminal resize](#def-005-rich-tui-does-not-reflow-on-terminal-resize)
 - [Manual QA checklist (after implementation)](#manual-qa-checklist-after-implementation)
 - [Out of scope (v1)](#out-of-scope-v1)
 - [Implementation order](#implementation-order)
@@ -176,6 +181,7 @@ flowchart TD
 - **Automated TUI / pre-Quartz testing (future):** **[`03-macos-mouse-click-tui-automation.md`](03-macos-mouse-click-tui-automation.md)** — PTY tests, dry-run hook, CI; defers implementation until picked up.
 - **Run-time Rich output (after Start):** **[`04-macos-mouse-click-run-progress-ui.md`](04-macos-mouse-click-run-progress-ui.md)** — settings summary + progress during the click loop; defers implementation until picked up.
 - **Click target preview (spatial):** **[`05-macos-mouse-click-target-preview.md`](05-macos-mouse-click-target-preview.md)** — dry preview-only + show-before-run so fixed **`-x`/`-y`** is interpretable on real displays; defers implementation until picked up.
+- **Terminal resize / Rich reflow:** **[`06-macos-mouse-click-rich-tui-terminal-resize.md`](06-macos-mouse-click-rich-tui-terminal-resize.md)** — **SIGWINCH** + redraw so shrink/expand does not leave broken wrap or stale width (**DEF-005**); defers implementation until picked up.
 
 ## Todos
 
@@ -205,10 +211,10 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 | MT-02 | `manual-mt-02-tty-rich-partial-cli` | **completed** | TTY + `rich`: **no CLI mode** (`./osx/macos_mouse_click.py` alone) and variants with partial flags; set **Mode**, **Count**, **Delay** in TUI | Rich TUI (not legacy `--interactive` prompts); all required fields settable before **S** |
 | MT-03 | `manual-mt-03-y-learn-minimal` | **completed** | `./osx/macos_mouse_click.py --learn -Y` | No Rich UI; immediate “Running:” then learn tap + loop per plan 01 |
 | MT-04 | `manual-mt-04-y-learn-cli-args` | completed | `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y` | No TUI; count/delay from CLI honored; learn + loop behaves as expected |
-| MT-05 | `manual-mt-05-y-fixed` | pending | `./osx/macos_mouse_click.py -x 400 -y 300 -n 2 -d 0 -Y` (adjust coords) | Fixed mode, no TUI, clicks at given point |
-| MT-06 | `manual-mt-06-pipe-no-y-hint` | pending | `echo ""` piped to `./osx/macos_mouse_click.py --learn` (no `-Y`) | No TUI; stderr explains TTY/`Proceed` or `-Y`; non-zero exit |
-| MT-07 | `manual-mt-07-pipe-y` | pending | `echo ""` piped to `./osx/macos_mouse_click.py --at-cursor -n 1 -d 0 -Y` (or fixed `-x/-y`) | No TUI; non-interactive run completes or fails only for Quartz/env reasons |
-| MT-08 | `manual-mt-08-resize-narrow` | pending | Shrink Terminal width/height; open TUI (`--learn` without `-Y`, with `rich`) | Table/panel readable; no garbled escape soup |
+| MT-05 | `manual-mt-05-y-fixed` | completed | `./osx/macos_mouse_click.py -x 400 -y 300 -n 2 -d 0 -Y` (adjust coords) | Fixed mode, no TUI, clicks at given point (**manually verified**). Interpreting raw **`-x`/`-y`** on screen is still weak UX — see **[plan 05 — target preview](05-macos-mouse-click-target-preview.md)** |
+| MT-06 | `manual-mt-06-pipe-no-y-hint` | completed | `echo ""` piped to `./osx/macos_mouse_click.py --learn` (no `-Y`) | No TUI; **Resolved configuration** on stderr, then **`Error: confirmation requires a TTY stdin. Use -Y/--yes for non-interactive runs.`**; exit **2** (**manually verified** 2026-04-18) |
+| MT-07 | `manual-mt-07-pipe-y` | completed | **A:** `echo ""` piped to `./osx/macos_mouse_click.py --at-cursor -n 1 -d 0 -Y` (or fixed `-x/-y`). **B:** `echo ""` piped to `./osx/macos_mouse_click.py --learn -Y` | No TUI; **`-Y`** path runs without confirmation; no Rich table. **B** verified **2026-04-18**: **Running:** line, learn wait + anchor + warmup; operator **Ctrl+C** during warmup (**Stopped.**, exit **130**) |
+| MT-08 | `manual-mt-08-resize-narrow` | completed | Shrink Terminal width/height; open TUI (`--learn` without `-Y`, with `rich`) | **Manually verified** **2026-04-18** (`yoda.local`): **no dynamic reflow** — shrink → awkward wrap; expand → layout **stays** narrow. Filed as **DEF-005** (**closed deferred**); improvement work: **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)** |
 | MT-09 | `manual-mt-09-interactive-legacy` | pending | Temporarily run **without** `rich` on a TTY: `./osx/macos_mouse_click.py --interactive` | Plain prompts + “Resolved configuration” + `Proceed?` path still works |
 
 **Checkbox copy (same order as table)**
@@ -217,13 +223,13 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 - [x] **MT-02** (`manual-mt-02-tty-rich-partial-cli`) — TTY + Rich partial CLI; editor fills gaps.
 - [x] **MT-03** (`manual-mt-03-y-learn-minimal`) — `./osx/macos_mouse_click.py --learn -Y`.
 - [x] **MT-04** (`manual-mt-04-y-learn-cli-args`) — `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y`.
-- [ ] **MT-05** (`manual-mt-05-y-fixed`) — `-Y` fixed coordinates run.
-- [ ] **MT-06** (`manual-mt-06-pipe-no-y-hint`) — piped stdin, no `-Y`; error + hint.
-- [ ] **MT-07** (`manual-mt-07-pipe-y`) — piped stdin + `-Y` non-learn.
-- [ ] **MT-08** (`manual-mt-08-resize-narrow`) — narrow terminal + Rich TUI readability.
+- [x] **MT-05** (`manual-mt-05-y-fixed`) — `-Y` fixed coordinates run (operator verified). Spatial “where will this land?” feedback is deferred to **[plan 05 — target preview](05-macos-mouse-click-target-preview.md)**.
+- [x] **MT-06** (`manual-mt-06-pipe-no-y-hint`) — piped stdin, no `-Y`: resolved summary + TTY confirmation error + **`-Y`** hint; exit **2** (operator **2026-04-18**).
+- [x] **MT-07** (`manual-mt-07-pipe-y`) — piped stdin + **`-Y`**: non-learn (**`--at-cursor`** / fixed) per table **A**; **learn** variant **B** verified **2026-04-18** (`echo "" | … --learn -Y`, anchor + warmup, **Ctrl+C** → **Stopped.**).
+- [x] **MT-08** (`manual-mt-08-resize-narrow`) — resize exercise **2026-04-18**: reflow **missing** (**DEF-005** → **[plan 06](06-macos-mouse-click-rich-tui-terminal-resize.md)**).
 - [ ] **MT-09** (`manual-mt-09-interactive-legacy`) — no `rich`, `--interactive` legacy path.
 
-**Remaining manual work (pending only):** **MT-05**, **MT-06**, **MT-07**, **MT-08**, **MT-09**. **Done:** **MT-01**, **MT-02**, **MT-03**, **MT-04**. **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
+**Remaining manual work (pending only):** **MT-09**. **Done:** **MT-01**–**MT-08**. **Defect regression still open:** **DEF-003** — **Manual verification** = **Pending** (wheel / ESC). **DEF-004** is **open** (docs); no **Fix commit** yet. **DEF-005** is **closed (deferred)** — Rich resize/reflow; no **Fix commit**; scope **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
 
 ## Pre-run editor: controls (normative)
 
@@ -267,8 +273,9 @@ Traceability: each code fix should have its own **git commit**, then this docume
 | DEF-002 | 2026-04-18 | **Fixed** (script) | **Down**/**Up** after returning from mode edit was treated as lone **Esc** → spurious **Cancel**; mode edit also reset **Count** when re-confirming **learn** | MT-01, MT-02, MT-08; `read_raw_key` / `_edit_row` | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Passed** |
 | DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` | **Pending** |
 | DEF-004 | 2026-04-18 | **Open** (docs) | TUI row **Enter** → `Console.input` prompts **echo** or **capture** stray / special characters; validation rejects bad values but UX is noisy | MT-01, MT-02 | — | **N/A** |
+| DEF-005 | 2026-04-18 | **Closed (deferred)** | Rich pre-run TUI **does not reflow** on terminal resize: shrink → bad wrap; expand → layout stays at old effective width (**MT-08**) | MT-08; `run_rich_pre_run_editor` | — | **N/A** |
 
-**Needs manual verification now:** **DEF-003** (**Pending**). **DEF-001** and **DEF-002** are **Passed**. **DEF-004** is **open** (no **Fix commit** until implemented); **Manual verification** is **N/A** until a code fix lands.
+**Needs manual verification now:** **DEF-003** (**Pending**). **DEF-001** and **DEF-002** are **Passed**. **DEF-004** is **open** (no **Fix commit** until implemented); **Manual verification** is **N/A** until a code fix lands. **DEF-005** is **closed (deferred)** to **[plan 06 — Rich TUI terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only closure).
 
 ### DEF-001: `Console.input(highlight=…)` on older Rich
 
@@ -401,6 +408,27 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 
 - Do not feed raw control / CSI bytes into the visible prompt where possible, or mask/filter input so operators do not see garbage characters while editing **Mode**, **Count**, **Delay**, or fixed **X**/**Y**.
 
+### DEF-005: Rich TUI does not reflow on terminal resize
+
+- **Frontmatter todo:** `defect-def-005-rich-tui-terminal-resize` (**completed** — filed and **deferred**; no script change in this closure).
+- **Status:** **Closed (deferred)** — no in-repo fix for the Rich editor resize behavior in the cycle that recorded **MT-08**; tracked as product/implementation work under **[plan 06 — Rich TUI terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**.
+- **Manual verification:** **N/A** — closure is **documentation-only** (deferral), not a code fix.
+- **Severity:** Medium (UX) — confusing layout when resizing; does not corrupt config or cause spurious cancel by itself.
+- **Environment (reporter):** `yoda.local`, **2026-04-18**, **MT-08** (`./osx/macos_mouse_click.py --learn` without **`-Y`**, **`rich`**).
+
+**Observed**
+
+- **Shrink** terminal width/height: **weird wrapping**, readability suffers.
+- **Expand** terminal: UI **does not grow**; effective layout **stays** as if dimensions were still the smaller size.
+
+**Resolution (this defect record)**
+
+- **No `Fix commit`.** Work is **out of scope** for immediate script changes; implement reflow / **SIGWINCH** / redraw per **[plan 06](06-macos-mouse-click-rich-tui-terminal-resize.md)**. When plan **06** ships, add a **Fix commit** row here (or supersede with a new DEF if the behavior changes materially).
+
+**Regression check (after plan 06)**
+
+- Re-run **MT-08**: resize narrow → wide → narrow; table/panel should track terminal size or show a clear “too narrow” mode without escape soup.
+
 ## Manual QA checklist (after implementation)
 
 Canonical checklist: **[Todos → Manual tests (operator checklist)](#manual-tests-operator-checklist)** (table + checkboxes + frontmatter ids). Keep that section in sync when recording runs (see also [Completed manual checks (log)](#completed-manual-checks-log) under **Implementation status**).
@@ -452,6 +480,10 @@ This section records what was implemented and verified in the repo, and what rem
 - **2026-04-18** — **MT-02** — Operator: **no CLI params** (`./osx/macos_mouse_click.py` alone) and other partial-CLI mixes; Rich TUI used to set **Mode**, **Count**, and **Delay**; no legacy `--interactive` text flow; no spurious exit before **S** (Accessibility for full run).
 - **2026-04-18** — **MT-03** — `./osx/macos_mouse_click.py --learn -Y` — operator run: no Rich table; **Running:** one-liner then learn anchor + synthetic loop per plan 01.
 - **2026-04-18** — **MT-04** — `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y` — operator run: `-Y` learn path (no Rich TUI), count and delay from CLI (`-n 200`, `-d 0`), synthetic click loop.
+- **2026-04-18** — **MT-05** — `./osx/macos_mouse_click.py -x 400 -y 300 -n 2 -d 0 -Y` (coords adjusted to a safe test point) — operator run: fixed **`-Y`**, no TUI, **2** synthetics at the given global point as expected. **Note:** CLI-only coords are still hard to map mentally to the desktop; follow-up UX is **[plan 05 — target preview](05-macos-mouse-click-target-preview.md)**.
+- **2026-04-18** — **MT-06** — `echo "" | ./osx/macos_mouse_click.py --learn` (08:14:18) — no Rich TUI; stderr shows **Resolved configuration** (mode **learn**, default count/delay), then **`Error: confirmation requires a TTY stdin. Use -Y/--yes for non-interactive runs.`**; exit code **2**.
+- **2026-04-18** — **MT-07** (variant **B**, `yoda.local`) — `echo "" | ./osx/macos_mouse_click.py --learn -Y` (08:16:33) — no TUI; **Running:** `mode=learn` + default count/delay; learn tap recorded anchor **`(1622.8, -2.7)`**; **Warmup: sleeping 5.0s…**; operator **Ctrl+C** → **`Stopped.`** (exit **130**). Table **A** (`--at-cursor` / fixed `-x/-y` with pipe + **`-Y`**) still recommended as a quick finite check when convenient.
+- **2026-04-18** — **MT-08** (`yoda.local`) — `./osx/macos_mouse_click.py --learn` (Rich TUI): resize **shrink** → awkward wrap; resize **wider** → UI **did not** expand with the window. **DEF-005** filed and **closed (deferred)** to **[plan 06 — Rich TUI terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**.
 
 ### Remaining manual QA (operator)
 
