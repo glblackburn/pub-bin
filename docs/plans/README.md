@@ -23,6 +23,10 @@ Design and roadmap documents for the **macOS mouse click** tooling (primarily [`
 
 When adding a new plan, use the next free number (`09-…`), link it from **plan 02** *Implementation touchpoints* if it affects terminal UX, add a row here, and pick a **Status** from the table above (or extend the legend).
 
+## Cursor / agent session plans
+
+Machine-generated or working-session plans (Create Plan, handoffs) live under **[`agent/`](agent/README.md)** with **kebab-case, no spaces** filenames. Do **not** treat `~/.cursor/plans/` as the canonical location for pub-bin work — copy or author plans in **`docs/plans/agent/`** instead.
+
 ## Plan 01 (**Shipped**) vs plan 02 (**Closed (v1)**)
 
 Both statuses align with **code you can run today**, but they answer **different questions**.

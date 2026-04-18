@@ -495,6 +495,7 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 
 ### DEF-006: Multiple Up/Down presses per row (CSI timeout)
 
+- **Agent plan (design notes):** [`agent/def-006-tui-arrow-keys.plan.md`](agent/def-006-tui-arrow-keys.plan.md)
 - **Frontmatter todo:** `defect-def-006-tui-arrow-multi-press` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) (`read_raw_key`).
 - **Manual verification:** **Pending** — run **MT-01** / **MT-02** table navigation on a real TTY when convenient; automated guard: [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py) (`test_read_raw_key_csi_down_slow_inter_byte_gap`).

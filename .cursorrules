@@ -25,9 +25,11 @@ After reading the full standards, remember these are the most frequently violate
 
 2. **File Creation:** "Review X" means provide review in conversation, NOT create a review document file. Only create documentation files when explicitly requested.
 
-3. **Code Quality:** No trailing whitespace, files must end with newline, remove backup files.
+3. **Plan files:** Store Cursor/agent session plans under **`docs/plans/agent/`** using **kebab-case ASCII** names only (no spaces, no shell-metacharacters in paths). Do not leave the repo’s canonical plan under **`~/.cursor/plans/`** — copy or write it into **`docs/plans/agent/`** and link from [`docs/plans/agent/README.md`](docs/plans/agent/README.md).
 
-4. **Security:** NEVER commit sensitive data (API keys, tokens, passwords, etc.)
+4. **Code Quality:** No trailing whitespace, files must end with newline, remove backup files.
+
+5. **Security:** NEVER commit sensitive data (API keys, tokens, passwords, etc.)
 
 ## Protocol for Commits
 
