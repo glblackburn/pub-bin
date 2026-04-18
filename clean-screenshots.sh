@@ -77,6 +77,39 @@ function find-screenshots {
     find . -maxdepth 1 -name "${prefix}" -type f 2>/dev/null
 }
 
+function create-archive-dir {
+    timestamp=$(date +%Y-%m-%d_%H%M%S)
+    archive_dir="${SCREENSHOT_DIR}/${timestamp}"
+
+    if [ "${DRY_RUN}" = "true" ] ; then
+	cat<<EOF
+--------------------------------------------------------------------------------
+DRY RUN: Would create archive directory: ${archive_dir}
+--------------------------------------------------------------------------------
+EOF
+	return 0
+    fi
+
+    cat<<EOF
+Creating archive directory: ${archive_dir}
+EOF
+
+    mkdir -p "${archive_dir}" || {
+	echo "Warning: Failed to create archive directory: ${archive_dir}" >&2
+        #this fails when the target of the symlink does not exist.  try a different top level directory path to see if that will work.
+        archive_dir="${SCREENSHOT_DIR}_temp/${timestamp}"
+        mkdir -p "${archive_dir}" || {
+	    echo "Error: Failed to create archive directory: ${archive_dir}" >&2
+            exit 1
+        }
+    }
+
+    cat<<EOF
+Created archive dir: ${archive_dir}
+EOF
+    return 0
+}
+
 function move-screenshots {
     local src_dir=$1
     local archive_dir=$2
@@ -120,25 +153,11 @@ EOF
     if [ "${DRY_RUN}" = "true" ] ; then
 	cat<<EOF
 --------------------------------------------------------------------------------
-DRY RUN: Would create archive directory: ${archive_dir}
 DRY RUN: Would move ${screenshot_count} screenshot(s) to archive
 --------------------------------------------------------------------------------
 EOF
 	return 0
     fi
-
-    cat<<EOF
-Creating archive directory: ${archive_dir}
-EOF
-    mkdir -p "${archive_dir}" || {
-	echo "Error: Failed to create archive directory: ${archive_dir}" >&2
-	return 1
-    }
-
-    cat<<EOF
-Create archive dir: ${archive_dir}"
---------------------------------------------------------------------------------
-EOF
 
     cat<<EOF
 Move screenshots to archive
@@ -201,9 +220,6 @@ fi
 # Main script logic
 ################################################################################
 
-timestamp=$(date +%Y-%m-%d_%H%M%S)
-archive_dir="${SCREENSHOT_DIR}/${timestamp}"
-
 # Change to source directory
 original_dir=$(pwd)
 cd "${SRC_DIR}" || {
@@ -220,19 +236,18 @@ cat<<EOF
 Configuration
 ================================================================================
 src_dir=[${SRC_DIR}]
-archive_dir=[${archive_dir}]
 screenshot_prefix=[${SCREENSHOT_PREFIX}]
 dry_run=[${DRY_RUN}]
 ================================================================================
 EOF
 
+
+# Create archive dir
+create-archive-dir
+
 # Show init vars (matching old script)
 cat<<EOF
-Init vars
---------------------------------------------------------------------------------
-src_dir=[${SRC_DIR}]
 archive_dir=[${archive_dir}]
-screenshot_prefix=[${SCREENSHOT_PREFIX}]
 EOF
 
 # Move screenshots
