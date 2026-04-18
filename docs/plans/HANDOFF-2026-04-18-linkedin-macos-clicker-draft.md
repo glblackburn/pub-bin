@@ -84,10 +84,10 @@ Newest first:
 
 ## What the posting draft says (high level)
 
-- **First line (hook):** “Small scope, on purpose.”
-- **Through-line:** Perspective **“scaffolding, not software”** — a small macOS script that sends clicks **to Cookie Clicker** is the **focus object** for getting back into **AI-assisted development**; the substantive work called out is **iterating plan documents and a roadmap** (easy doc wins vs items deferred as numbered plan/feature follow-ons so nothing is lost).
+- **First line (hook):** Cookie Clicker as a **deliberate bounded target** (one tab, low-prestige scope)—then the script as the small mechanism and the game as the playground.
+- **Through-line:** Still perspective **“scaffolding, not software”** in substance: **plan documents and a roadmap** did the heavy lifting (easy wins per pass vs numbered follow-ons); bullets are phrased as **outcomes** (closed pre-run work when checks matched reality, index clarifies shipped vs closed editor, roadmap honesty about human-in-the-loop) rather than plan-number sprint notes.
 - **Tone:** Straight, not self-deprecating; earlier “Don’t judge me!” / heavy footgun thread was replaced over revisions.
-- **Links in post:** `docs/plans` on GitHub, Cookie Clicker official + web tab URLs; hashtags include **`#Planning`**.
+- **Links in post:** `docs/plans` and **`osx/macos_mouse_click.py`** on GitHub, Cookie Clicker official + web tab URLs; hashtags include **`#Planning`**.
 
 The **`.md`** file contains an **indented mirror** of the **`.txt`** (strip four leading spaces per line to diff against the posting file). **Revision notes** and **five possible perspectives** (reference) live there too.
 
@@ -113,8 +113,9 @@ This section records **what we worked on together in this session**, how decisio
    - Removed **“later” guilt** framing; deferrals are **intentional capture on the roadmap**, not emotional debt.
    - Broke up the **“hero product” / em-dash run-on**; removed **“hero product”**; later split **narrow scope** into two sentences.
    - Made the script’s target explicit: **clicks to Cookie Clicker**; adjusted the opening paragraph so Cookie is not double-introduced.
-   - Moved **“Don’t judge me!”** to **line 1** as the LinkedIn hook, then removed it when the user asked for **less comedy and less self-deprecation**; **first line became “Small scope, on purpose.”**
-7. **Final public spine:** professional hook → Cookie Clicker as the stated automation target → scaffolding → plan/roadmap rhythm → three repo bullets → punchline (**narrow utility** vs **plans helping settle back**), links, **`#Planning`**.
+   - Moved **“Don’t judge me!”** to **line 1** as the LinkedIn hook, then removed it when the user asked for **less comedy and less self-deprecation**; **first line became “Small scope, on purpose.”** (later superseded by rev 4).
+7. **Final public spine (rev 3):** professional hook → Cookie Clicker as the stated automation target → scaffolding → plan/roadmap rhythm → three repo bullets → closing beat (**narrow utility** vs **plans helping settle back**), links, **`#Planning`**.
+8. **Fourth revision (post-review):** scene-first Cookie open; shorter paragraphs; outcome-shaped bullets; **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** instead of “punchline”; script URL added; removed “links at the end” parenthetical.
 
 ### Markdown and mirror mechanics (analysis)
 
