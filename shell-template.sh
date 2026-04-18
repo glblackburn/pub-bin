@@ -216,8 +216,8 @@ fi
 
 ${VERBOSE} && echo "display verbose output another way"
 
-${VERBOSE} && cat<<EOF
-display verbose output a third way
+${VERBOSE} && cat<<EOF >&2
+display verbose output a third way and send to stderr
 EOF
 
 cat<<EOF
