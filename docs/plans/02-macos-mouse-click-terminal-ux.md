@@ -84,6 +84,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [Plan 05: Target preview before run (related)](05-macos-mouse-click-target-preview.md)
 - [Plan 06: Rich TUI terminal resize (related)](06-macos-mouse-click-rich-tui-terminal-resize.md)
 - [Plan 07: TUI field-edit input / DEF-004 (related)](07-macos-mouse-click-tui-field-edit-input.md)
+- [Plan 08: Stop during run without terminal focus (related)](08-macos-mouse-click-stop-during-run.md)
 - [Todos](#todos)
   - [Implementation and docs (closed)](#implementation-and-docs-closed)
   - [Manual tests (operator checklist)](#manual-tests-operator-checklist)
@@ -219,6 +220,7 @@ flowchart TD
 - **Click target preview (spatial):** **[`05-macos-mouse-click-target-preview.md`](05-macos-mouse-click-target-preview.md)** — dry preview-only + show-before-run so fixed **`-x`/`-y`** is interpretable on real displays; defers implementation until picked up.
 - **Terminal resize / Rich reflow:** **[`06-macos-mouse-click-rich-tui-terminal-resize.md`](06-macos-mouse-click-rich-tui-terminal-resize.md)** — **SIGWINCH** + redraw so shrink/expand does not leave broken wrap or stale width (**DEF-005**); defers implementation until picked up.
 - **Field-edit prompt hygiene:** **[`07-macos-mouse-click-tui-field-edit-input.md`](07-macos-mouse-click-tui-field-edit-input.md)** — **`Console.input`** echo / CSI noise (**DEF-004**); acceptable for now; defers implementation until picked up.
+- **Stop during run (no terminal focus):** **[`08-macos-mouse-click-stop-during-run.md`](08-macos-mouse-click-stop-during-run.md)** — **`-Y`** / long runs need abort without **Ctrl+C** in foreground (stop file, optional global hotkey); defers implementation until picked up.
 
 ## Todos
 
