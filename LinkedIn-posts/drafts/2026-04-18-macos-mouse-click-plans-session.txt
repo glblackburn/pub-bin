@@ -1,31 +1,22 @@
-I’ve been iterating on a small macOS script to send mouse clicks. Don’t judge me! This has been a way to get me back into AI-assisted development mode. I’ve been out of it a while and needed something to focus on. It did not help (or maybe it did help) that I recently rediscovered the Cookie Clicker app.
+Small scope, on purpose.
+
+I’ve been iterating on a small macOS script to send mouse clicks to Cookie Clicker. For me, this has been scaffolding. I kept the scope narrow on purpose. I wanted something I could hold in my head end to end. That was the shape of practice I needed while I got back into AI-assisted development mode. I’ve been away from that rhythm for a while and needed a concrete, bounded workload to rehearse on. (Links at the end: the main site and the web tab I point the script at.)
+
+The work that actually moved the needle was developing and revising plan documents and a roadmap of features. Each time I touched a plan, I tried to clear the easy wins first: missing rows or bullets, status labels that were out of date, defects where the fix was obvious. Anything that needed more revision or quiet thinking time went to a numbered follow-on and a line on the roadmap as plan or feature items—mostly future change I did not want to drop—so the idea would not get lost.
+
+𝐖𝐡𝐚𝐭 𝐭𝐡𝐚𝐭 𝐥𝐨𝐨𝐤𝐞𝐝 𝐥𝐢𝐤𝐞 𝐢𝐧 𝐭𝐡𝐞 𝐫𝐞𝐩𝐨:  
+
+▶ Closed plan 02 for v1 once the Rich table UX and manual test rows matched what we had actually run, with “defer” items pointing at specific next plans instead of endless open loops.  
+▶ Added `docs/plans/README​.md` to separate plan 01 (behavior spec, “Shipped” as reference) from plan 02 (TTY UX program, “Closed (v1)” as a delivery I can set aside until a later revision).  
+▶ Left longer-horizon automation work sketched (for example a pytest path for a fake-Rich harness) while being explicit about what still needs a human at the keyboard.  
+
+𝐓𝐡𝐞 𝐩𝐮𝐧𝐜𝐡𝐥𝐢𝐧𝐞:  
+
+The automation stays a narrow utility. The plans and roadmap are what helped me settle back into small slices, honest status, and a place to park bigger changes where they stay visible—captured as work to do later, not as something I have to carry in my head.
+
+https://github.com/glblackburn/pub-bin/tree/main/docs/plans  
 
 All OS builds: https://cookieclicker.com/  
 Web tab: https://orteil.dashnet.org/cookieclicker/  
 
-So yes—`osx/macos_mouse_click​.py` is real: Python + Quartz + Rich, record a click, repeat it, or hit fixed coordinates. The code worked; the story of what was “done” did not.
-
-If you’ve ever kicked off a long `--learn -Y` run and then realized your terminal isn’t frontmost—`Ctrl+C` doesn’t help much. That’s the kind of footgun I want to fix next, but today I got honest about what’s already in the repo first.
-
-𝐓𝐡𝐞 𝐭𝐡𝐢𝐧𝐠 𝐭𝐡𝐚𝐭 𝐚𝐜𝐭𝐮𝐚𝐥𝐥𝐲 𝐬𝐜𝐚𝐫𝐞𝐝 𝐦𝐞:  
-
-▶ `-Y` means “don’t stop me for prompts”—great for scripts, awful if you fat-finger a huge `-n` or a long delay and can’t get back to Terminal in time.  
-▶ I wrote that up as a real roadmap item (plan 08): stop mid-run without living in the terminal window—think stop-file or an optional global hotkey, wired into the same shutdown flag the signal path already uses.  
-
-𝐓𝐡𝐞 𝐡𝐚𝐜𝐤 𝐈 𝐝𝐢𝐝 𝐧𝐨𝐭 𝐞𝐱𝐩𝐞𝐜𝐭 𝐭𝐨 𝐧𝐞𝐞𝐝:  
-
-To test the legacy `--interactive` path on a machine that has Rich installed, you have to make `import rich` fail for one process only. So: `mktemp`, drop a tiny `rich.py` that raises `ImportError`, prepend it on `PYTHONPATH`, run the script. Gross. It works. That was the last checkbox on a nine-row manual matrix I’d been dragging around for weeks.
-
-𝐖𝐡𝐚𝐭 𝐈 𝐰𝐫𝐨𝐭𝐞 𝐝𝐨𝐰𝐧 𝐢𝐧𝐬𝐭𝐞𝐚𝐝 𝐨𝐟 𝐦𝐨𝐫𝐞 𝐜𝐨𝐝𝐞:  
-
-▶ Closed plan 02 for v1—Rich table UX, defects, all MT-01 through MT-09 logged, “defer” items pointed at numbered follow-on plans instead of endless “open” guilt.  
-▶ Added `docs/plans/README​.md` so I can’t pretend plan 01 (behavior spec) and plan 02 (TTY UX program) are the same kind of “done”—one is “Shipped” reference, one is “Closed (v1)” delivery; the README explains that in plain English because I’ll forget why I picked two different words.  
-▶ Sketched how pytest could drive the fake-Rich path later (plan 03) without lying that CI can replace “Accessibility said yes” runs.  
-
-𝐓𝐡𝐞 𝐩𝐮𝐧𝐜𝐡𝐥𝐢𝐧𝐞:  
-
-The script is still small. The repo finally tells the truth about what’s shipped, what’s deferred, and what still scares me when I use my own tool. That’s progress.
-
-https://github.com/glblackburn/pub-bin/tree/main/docs/plans  
-
-#Python #macOS #OpenSource #Automation #DeveloperExperience #Quartz #Terminal
+#Python #macOS #OpenSource #Automation #DeveloperExperience #Planning
