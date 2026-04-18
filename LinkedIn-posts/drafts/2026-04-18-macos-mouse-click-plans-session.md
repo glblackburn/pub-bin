@@ -8,6 +8,6 @@
 
 ---
 
-**Revision:** First draft read like a sprint demo (abstract bullets, no hook). Rewrote after re-reading published posts (e.g. Dec 12 tcpdump, Dec 24 train wreck, Feb 26 React2Shell Part 3): lead with the `-Y` / Ctrl+C footgun, one concrete hack (fake `rich` on `PYTHONPATH`), then what landed in `docs/plans/` (plan 02 v1 closed, README status column, plan 08 / 03 notes).
+**Revision:** First draft read like a sprint demo (abstract bullets, no hook). Rewrote after re-reading published posts (e.g. Dec 12 tcpdump, Dec 24 train wreck, Feb 26 React2Shell Part 3): lead with the `-Y` / Ctrl+C footgun, one concrete hack (fake `rich` on `PYTHONPATH`), then what landed in `docs/plans/` (plan 02 v1 closed, README status column, plan 08 / 03 notes). **Second revision:** open with Cookie Clicker confessional + “back into AI-assisted dev” framing, both official and web URLs, then bridge into the technical hook and the rest unchanged; link labels shortened slightly to stay under LinkedIn’s character cap.
 
 **Repo:** [pub-bin / docs/plans](https://github.com/glblackburn/pub-bin/tree/main/docs/plans)

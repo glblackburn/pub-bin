@@ -1,6 +1,11 @@
-If you’ve ever kicked off a long `--learn -Y` run and then realized your terminal isn’t frontmost—`Ctrl+C` doesn’t help much. That’s the kind of footgun I want to fix next, but today I got honest about what’s already in the repo first.
+I’ve been iterating on a small macOS script to send mouse clicks. Don’t judge me! This has been a way to get me back into AI-assisted development mode. I’ve been out of it a while and needed something to focus on. It did not help (or maybe it did help) that I recently rediscovered the Cookie Clicker app.
 
-I’ve been iterating on a small macOS script: `osx/macos_mouse_click​.py` (Python + Quartz + Rich). It does the boring magic—record a click, repeat it, or hit fixed coordinates. The code worked; the story of what was “done” did not.
+All OS builds: https://cookieclicker.com/  
+Web tab: https://orteil.dashnet.org/cookieclicker/  
+
+So yes—`osx/macos_mouse_click​.py` is real: Python + Quartz + Rich, record a click, repeat it, or hit fixed coordinates. The code worked; the story of what was “done” did not.
+
+If you’ve ever kicked off a long `--learn -Y` run and then realized your terminal isn’t frontmost—`Ctrl+C` doesn’t help much. That’s the kind of footgun I want to fix next, but today I got honest about what’s already in the repo first.
 
 𝐓𝐡𝐞 𝐭𝐡𝐢𝐧𝐠 𝐭𝐡𝐚𝐭 𝐚𝐜𝐭𝐮𝐚𝐥𝐥𝐲 𝐬𝐜𝐚𝐫𝐞𝐝 𝐦𝐞:  
 
@@ -9,7 +14,7 @@ I’ve been iterating on a small macOS script: `osx/macos_mouse_click​.py` (Py
 
 𝐓𝐡𝐞 𝐡𝐚𝐜𝐤 𝐈 𝐝𝐢𝐝 𝐧𝐨𝐭 𝐞𝐱𝐩𝐞𝐜𝐭 𝐭𝐨 𝐧𝐞𝐞𝐝:  
 
-To test the legacy `--interactive` path on a machine that *has* Rich installed, you have to make `import rich` fail for one process only. So: `mktemp`, drop a tiny `rich.py` that raises `ImportError`, prepend it on `PYTHONPATH`, run the script. Gross. It works. That was the last checkbox on a nine-row manual matrix I’d been dragging around for weeks.
+To test the legacy `--interactive` path on a machine that has Rich installed, you have to make `import rich` fail for one process only. So: `mktemp`, drop a tiny `rich.py` that raises `ImportError`, prepend it on `PYTHONPATH`, run the script. Gross. It works. That was the last checkbox on a nine-row manual matrix I’d been dragging around for weeks.
 
 𝐖𝐡𝐚𝐭 𝐈 𝐰𝐫𝐨𝐭𝐞 𝐝𝐨𝐰𝐧 𝐢𝐧𝐬𝐭𝐞𝐚𝐝 𝐨𝐟 𝐦𝐨𝐫𝐞 𝐜𝐨𝐝𝐞:  
 
