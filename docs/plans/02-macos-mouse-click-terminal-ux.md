@@ -14,7 +14,7 @@ todos:
     status: completed
   - id: manual-mt-01-tty-rich-learn
     content: "MT-01: TTY+Rich --learn, table edits, S start, real clicks (Accessibility)"
-    status: pending
+    status: completed
   - id: manual-mt-02-tty-rich-partial-cli
     content: "MT-02: TTY+Rich partial CLI; editor fills missing fields (no --interactive text flow)"
     status: pending
@@ -191,7 +191,7 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 
 | ID | Frontmatter `id` | Status | Command / scenario | Pass criteria |
 |----|------------------|--------|-------------------|---------------|
-| MT-01 | `manual-mt-01-tty-rich-learn` | pending | Real TTY, `rich` installed: `./osx/macos_mouse_click.py --learn` (no `-Y`) | Rich table appears; row edits work; **S** starts; synthetic clicks fire at learned anchor; Accessibility OK |
+| MT-01 | `manual-mt-01-tty-rich-learn` | **completed** | Real TTY, `rich` installed: `./osx/macos_mouse_click.py --learn -n 2000 -d 0` (no `-Y`; count/delay edited in TUI) | Rich table; edits to count/delay; **S** starts; synthetic click count matches edited value; Accessibility OK |
 | MT-02 | `manual-mt-02-tty-rich-partial-cli` | pending | TTY + `rich`: omit mode (e.g. `./osx/macos_mouse_click.py` with only `-n 3` if valid) or minimal flags so editor fills gaps | No legacy `--interactive` text prompts; TUI supplies missing fields |
 | MT-03 | `manual-mt-03-y-learn-minimal` | pending | `./osx/macos_mouse_click.py --learn -Y` | No Rich UI; immediate “Running:” then learn tap + loop per plan 01 |
 | MT-04 | `manual-mt-04-y-learn-cli-args` | completed | `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y` | No TUI; count/delay from CLI honored; learn + loop behaves as expected |
@@ -203,7 +203,7 @@ Run from repo root unless noted. Script path: [`osx/macos_mouse_click.py`](../..
 
 **Checkbox copy (same order as table)**
 
-- [ ] **MT-01** (`manual-mt-01-tty-rich-learn`) — TTY + Rich learn: editor, edits, **S**, real clicks.
+- [x] **MT-01** (`manual-mt-01-tty-rich-learn`) — TTY + Rich learn: editor, edits, **S**, real clicks.
 - [ ] **MT-02** (`manual-mt-02-tty-rich-partial-cli`) — TTY + Rich partial CLI; editor fills gaps.
 - [ ] **MT-03** (`manual-mt-03-y-learn-minimal`) — `./osx/macos_mouse_click.py --learn -Y`.
 - [x] **MT-04** (`manual-mt-04-y-learn-cli-args`) — `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y`.
@@ -234,6 +234,8 @@ CSI / SS3 arrow sequences (`ESC [ A` / `ESC [ B`, optional numeric middle, and `
 
 Known issues found during manual QA or review. Each defect has a stable **DEF-xxx** id, a row in the summary table, and a subsection with reproduction and resolution notes.
 
+**Manual verification** (column + subsection): whether an operator has run that DEF’s **Regression check** on a real Mac TTY and signed off. **`Pending`** = fix is in `git` but the regression has not been recorded here; **`Passed`** = regression done (add date + MT id in the DEF subsection when you update the table).
+
 ### Git workflow (defect fixes)
 
 Traceability: each code fix should have its own **git commit**, then this document is updated with **`Fix commit`** (full 40-character SHA from `git rev-parse HEAD` on that commit) and committed separately so history shows both the patch and the audit record.
@@ -243,19 +245,23 @@ Traceability: each code fix should have its own **git commit**, then this docume
 3. **Commit code** — Prefer **one commit per defect**; message subject/body should cite **`DEF-xxx`**. If two DEFs land in one commit, both rows share the **same** `Fix commit` SHA; note that in the DEF subsection (do not invent two SHAs for one commit).
 4. **Record hash** — Run `git rev-parse HEAD` after the code commit; copy the full hash into the **Defect summary** table and into a **Git** bullet under **Resolution** for that DEF.
 5. **Commit plan** — Commit only `docs/plans/02-macos-mouse-click-terminal-ux.md` so the hash update is visible in `git log` without amending the code commit.
+6. **Manual verification** — Leave **`Manual verification`** = **Pending** until someone runs that DEF’s **Regression check**; then set **Passed** and add a dated line under **Manual verification** in the DEF subsection (and mirror the table column).
 
 ### Defect summary
 
-| ID | Opened | Status | Summary | Affects (MT / area) | Fix commit |
-|----|--------|--------|---------|---------------------|------------|
-| DEF-001 | 2026-04-18 | **Fixed** (script) | Pressing Enter to edit **Mode** crashed: `Console.input()` got unexpected keyword `highlight` | MT-01, MT-02, MT-08 (any TUI field edit via `_prompt_cooked`) | `2319207007b2c65703e192250e3cb13ae54a16a6` |
-| DEF-002 | 2026-04-18 | **Fixed** (script) | **Down**/**Up** after returning from mode edit was treated as lone **Esc** → spurious **Cancel**; mode edit also reset **Count** when re-confirming **learn** | MT-01, MT-02, MT-08; `read_raw_key` / `_edit_row` | `2319207007b2c65703e192250e3cb13ae54a16a6` |
-| DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` |
+| ID | Opened | Status | Summary | Affects (MT / area) | Fix commit | Manual verification |
+|----|--------|--------|---------|---------------------|------------|---------------------|
+| DEF-001 | 2026-04-18 | **Fixed** (script) | Pressing Enter to edit **Mode** crashed: `Console.input()` got unexpected keyword `highlight` | MT-01, MT-02, MT-08 (any TUI field edit via `_prompt_cooked`) | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Passed** |
+| DEF-002 | 2026-04-18 | **Fixed** (script) | **Down**/**Up** after returning from mode edit was treated as lone **Esc** → spurious **Cancel**; mode edit also reset **Count** when re-confirming **learn** | MT-01, MT-02, MT-08; `read_raw_key` / `_edit_row` | `2319207007b2c65703e192250e3cb13ae54a16a6` | **Pending** |
+| DEF-003 | 2026-04-18 | **Fixed** (script) | Mouse **wheel** / unknown **ESC**-led input exited the TUI (`Cancelled.`); cancel must be **Q** / **Ctrl+C** / **Ctrl+D** only | MT-01, MT-08; `read_raw_key` / `run_rich_pre_run_editor` | `a96d6fe0175dd15d02094a889e915d4da451e671` | **Pending** |
+
+**Needs manual verification now:** **DEF-002** and **DEF-003** (**Pending**). **DEF-001** is **Passed**. Close each remaining DEF by running its **Regression check** and updating the table + DEF subsection to **Passed**.
 
 ### DEF-001: `Console.input(highlight=…)` on older Rich
 
 - **Frontmatter todo:** `defect-def-001-rich-input-highlight` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) (`_prompt_cooked`: stop passing `highlight=` so older **Rich** builds work).
+- **Manual verification:** **Passed** — **2026-04-18**, operator on `yoda.local`. `./osx/macos_mouse_click.py --learn -n 2000 -d 0`: **Enter** on **Mode** repeatedly (with default/confirm) — no crash, no exit; same for **Count** and **Delay** row edits via **Enter** (aligned with **MT-01**).
 - **Severity:** High — TUI unusable as soon as the user presses **Enter** on **Mode** (and would affect any row using the same prompt path).
 - **Environment (reporter):** `yoda.local`, repo path `…/pub-bin`, command run from repo root.
 
@@ -292,6 +298,7 @@ Stack pointed to `_prompt_cooked` → `_edit_row` → `run_rich_pre_run_editor`.
 
 - **Frontmatter todo:** `defect-def-002-arrow-misread-as-esc` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py).
+- **Manual verification:** **Pending** — run **Regression check** (mode re-save + **Down**/**Up** + **`-n`** preserved); then set the summary column to **Passed** and note date + environment here.
 - **Severity:** High — looks like an accidental cancel; also **Count** flipped from CLI **`-n 200`** to learn default **infinite** after re-confirming mode.
 - **Environment (reporter):** `yoda.local`, 2026-04-18 06:33, repo `…/pub-bin`.
 
@@ -331,6 +338,7 @@ osx/macos_mouse_click.py --learn -n 200 -d 0
 
 - **Frontmatter todo:** `defect-def-003-wheel-esc-cancel` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py).
+- **Manual verification:** **Pending** — run **Regression check** (mouse wheel / stray **ESC** in the table must not print `Cancelled.`); confirm **Q** / **Ctrl+C** / **Ctrl+D** still cancel; then set the summary column to **Passed** and note date + environment here.
 - **Severity:** High — accidental exit from normal terminal interaction.
 - **Environment (reporter):** `yoda.local`, 2026-04-18 06:46, repo `…/pub-bin`.
 
@@ -411,6 +419,7 @@ This section records what was implemented and verified in the repo, and what rem
 
 ### Completed manual checks (log)
 
+- **2026-04-18** — **MT-01** — `./osx/macos_mouse_click.py --learn -n 2000 -d 0` — Rich TUI: edited **Count** to **2**, **Delay** to **1**, **S** to start; run completed with **2** synthetic clicks at learned anchor as expected (Accessibility).
 - **2026-04-18** — **MT-04** — `./osx/macos_mouse_click.py --learn -n 200 -d 0 -Y` — operator run: `-Y` learn path (no Rich TUI), count and delay from CLI (`-n 200`, `-d 0`), synthetic click loop.
 
 ### Remaining manual QA (operator)
