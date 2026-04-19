@@ -3,90 +3,44 @@
 from __future__ import annotations
 
 import os
-import pty
+import subprocess
 import sys
-import time
 from pathlib import Path
 
 import pytest
 
 OSX_DIR = Path(__file__).resolve().parent.parent
+_RUNNER = Path(__file__).resolve().parent / "csi_pty_child_runner.py"
+
+
+def _run_runner(mode: str) -> str:
+    env = {**os.environ, "PYTHONPATH": str(OSX_DIR)}
+    proc = subprocess.run(
+        [sys.executable, str(_RUNNER), mode],
+        cwd=str(OSX_DIR.parent),
+        env=env,
+        capture_output=True,
+        timeout=30,
+    )
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    return proc.stdout.decode("utf-8", errors="replace").strip()
 
 
 @pytest.mark.darwin
 def test_read_raw_key_csi_down_slow_inter_byte_gap() -> None:
-    """Parent sends ESC [ then waits >250ms before B (one logical Down).
+    """CSI Down: ``ESC [`` then a gap >250ms before ``B``.
 
-    A per-byte 250ms cap (pre-DEF-006) returned ``other`` and broke row nav.
+    Pre-DEF-006 used ``wait_char(0.25)`` after ``[``; a 350ms gap forces a timeout
+    unless the reader uses a cumulative deadline (DEF-006).
 
-    Uses ``pty.fork()`` so the child has a real controlling terminal; pairing
-    ``openpty`` with ``subprocess`` did not deliver master writes to stdin on
-    macOS in CI-style runs.
+    The probe runs in a **subprocess** (see ``csi_pty_child_runner.py``) so we do
+    not call ``pty.fork()`` inside pytest's multi-threaded interpreter (that can
+    hang or reorder I/O vs the old in-process test).
     """
-    pipe_r, pipe_w = os.pipe()
-    pid, master_fd = pty.fork()
-    if pid == 0:
-        os.close(pipe_r)
-        # Do not close master_fd here: on some systems it shares the open file
-        # with the parent and breaks the parent's ability to write.
-        try:
-            # pty.fork wires fd 0 to the slave, but sys.stdin can still be pytest's
-            # DontReadFromInput; rebind stdio to the real fds before read_raw_key().
-            sys.stdin = os.fdopen(0, "r", buffering=1)
-            sys.stdout = os.fdopen(1, "w", buffering=1)
-            sys.stderr = os.fdopen(2, "w", buffering=1)
-            if str(OSX_DIR) not in sys.path:
-                sys.path.insert(0, str(OSX_DIR))
-            import macos_mouse_click as mmc
-
-            k = mmc.read_raw_key()
-            os.write(pipe_w, (k + "\n").encode())
-        finally:
-            os.close(pipe_w)
-        os._exit(0)
-
-    os.close(pipe_w)
-    time.sleep(0.08)
-    os.write(master_fd, b"\x1b[")
-    time.sleep(0.30)
-    os.write(master_fd, b"B")
-    _, status = os.waitpid(pid, 0)
-    os.close(master_fd)
-    assert os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0
-    raw = os.read(pipe_r, 256)
-    os.close(pipe_r)
-    assert raw.decode().strip() == "down"
+    assert _run_runner("csi") == "down"
 
 
 @pytest.mark.darwin
 def test_read_raw_key_ss3_down_slow_final_byte() -> None:
-    """Application cursor Down: ESC O then delayed B."""
-    pipe_r, pipe_w = os.pipe()
-    pid, master_fd = pty.fork()
-    if pid == 0:
-        os.close(pipe_r)
-        try:
-            sys.stdin = os.fdopen(0, "r", buffering=1)
-            sys.stdout = os.fdopen(1, "w", buffering=1)
-            sys.stderr = os.fdopen(2, "w", buffering=1)
-            if str(OSX_DIR) not in sys.path:
-                sys.path.insert(0, str(OSX_DIR))
-            import macos_mouse_click as mmc
-
-            k = mmc.read_raw_key()
-            os.write(pipe_w, (k + "\n").encode())
-        finally:
-            os.close(pipe_w)
-        os._exit(0)
-
-    os.close(pipe_w)
-    time.sleep(0.08)
-    os.write(master_fd, b"\x1bO")
-    time.sleep(0.30)
-    os.write(master_fd, b"B")
-    _, status = os.waitpid(pid, 0)
-    os.close(master_fd)
-    assert os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0
-    raw = os.read(pipe_r, 256)
-    os.close(pipe_r)
-    assert raw.decode().strip() == "down"
+    """SS3 Down: ``ESC O`` then a gap >250ms before ``B``."""
+    assert _run_runner("ss3") == "down"
