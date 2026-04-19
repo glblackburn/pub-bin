@@ -183,6 +183,11 @@ def count_label(n: int) -> str:
     return "infinite (until Ctrl+C or SIGTERM)" if n == 0 else str(n)
 
 
+def _running_message(cfg: ResolvedConfig) -> str:
+    """Human-readable tail of the ``Running:`` line (no ``Running:`` prefix)."""
+    return f"mode={cfg.mode} count={count_label(cfg.count)} delay={cfg.delay}s"
+
+
 @dataclass
 class ResolvedConfig:
     mode: str = ""
@@ -421,6 +426,9 @@ def _debug_tui_emit(
     Stderr uses ``MACOS_MOUSE_CLICK_TUI_STATE `` + JSON; the optional log file
     stores **JSON only** (one compact object per line) so tools like ``jq`` work
     per line and with ``jq -n '[inputs]'``.
+
+    ``event`` is ``draw`` / ``after_key`` in the Rich editor. See
+    ``_debug_tui_emit_run`` / ``_debug_tui_emit_anchor`` for ``run`` / ``anchor``.
     """
     if not _debug_tui_env_enabled():
         return
@@ -440,6 +448,44 @@ def _debug_tui_emit(
     }
     if last_key is not None:
         body["last_key"] = last_key
+    _debug_tui_write_line(body)
+
+
+def _debug_tui_emit_run(cfg: ResolvedConfig) -> None:
+    """Emit resolved run parameters (mirrors the ``Running:`` line) to log + stderr."""
+    if not _debug_tui_env_enabled():
+        return
+    ax: Optional[float] = None
+    ay: Optional[float] = None
+    if cfg.mode == "fixed" and cfg.x is not None and cfg.y is not None:
+        ax, ay = float(cfg.x), float(cfg.y)
+    body: Dict[str, Any] = {
+        "event": "run",
+        "running_text": _running_message(cfg),
+        "mode": cfg.mode,
+        "count": cfg.count,
+        "delay": float(cfg.delay),
+        "anchor_x": ax,
+        "anchor_y": ay,
+    }
+    _debug_tui_write_line(body)
+
+
+def _debug_tui_emit_anchor(
+    cfg: ResolvedConfig, x: float, y: float, message: str
+) -> None:
+    """Emit anchor coordinates (learn: after user click; at-cursor: before loop)."""
+    if not _debug_tui_env_enabled():
+        return
+    body: Dict[str, Any] = {
+        "event": "anchor",
+        "mode": cfg.mode,
+        "anchor_x": float(x),
+        "anchor_y": float(y),
+        "message": message,
+    }
+    if cfg.mode == "learn":
+        body["warmup_delay"] = float(cfg.delay)
     _debug_tui_write_line(body)
 
 
@@ -972,10 +1018,11 @@ def run_learn_flow(qz: Any, cfg: ResolvedConfig) -> int:
         print("Error: no anchor click received.", file=sys.stderr)
         return 2
     x, y = pt
-    print(
-        f"Anchor recorded at ({x:.1f}, {y:.1f}). Warmup: sleeping {cfg.delay}s…",
-        file=sys.stderr,
+    anchor_msg = (
+        f"Anchor recorded at ({x:.1f}, {y:.1f}). Warmup: sleeping {cfg.delay}s…"
     )
+    _debug_tui_emit_anchor(cfg, x, y, anchor_msg)
+    print(anchor_msg, file=sys.stderr)
     sleep_interruptible(cfg.delay)
     if shutdown_requested():
         print("Stopped.", file=sys.stderr)
@@ -986,6 +1033,8 @@ def run_learn_flow(qz: Any, cfg: ResolvedConfig) -> int:
 def run_fixed_or_cursor_flow(qz: Any, cfg: ResolvedConfig) -> int:
     if cfg.mode == "at_cursor":
         x, y = get_mouse_location(qz)
+        cur_msg = f"Cursor position recorded at ({x:.1f}, {y:.1f})."
+        _debug_tui_emit_anchor(cfg, x, y, cur_msg)
     else:
         x, y = float(cfg.x), float(cfg.y)
     return run_synthetic_loop(qz, x, y, cfg.count, cfg.delay)
@@ -1080,6 +1129,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             f"Running: mode={cfg.mode} count={count_label(cfg.count)} delay={cfg.delay}s",
             file=sys.stderr,
         )
+
+    if not can_tui:
+        _reset_debug_tui_log_sink()
+    _debug_tui_emit_run(cfg)
 
     if dry_run_after_start_requested(ns):
         emit_dry_run_json_line(cfg)

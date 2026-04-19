@@ -47,7 +47,7 @@ def _reset_debug_tui_sink() -> Any:
 
 
 def test_json_contract_on_fixture_lines() -> None:
-    """Checklist #3: every state line parses; required keys and types."""
+    """Checklist #3: every state line parses; required keys and types per ``event``."""
     sample = (
         TUI_PREFIX
         + '{"selected_index":0,"row_key":"mode","setting_label":"Mode",'
@@ -55,15 +55,38 @@ def test_json_contract_on_fixture_lines() -> None:
         + TUI_PREFIX
         + '{"selected_index":0,"row_key":"mode","setting_label":"Mode",'
         '"value_text":"learn","source":"cli","event":"after_key","last_key":"down"}\n'
+        + TUI_PREFIX
+        + '{"event":"run","running_text":"mode=learn count=2 delay=0.0s",'
+        '"mode":"learn","count":2,"delay":0.0,"anchor_x":null,"anchor_y":null}\n'
+        + TUI_PREFIX
+        + '{"event":"anchor","mode":"learn","anchor_x":3691.3,"anchor_y":-63.9,'
+        '"message":"Anchor recorded at (3691.3, -63.9). Warmup: sleeping 0.0s…",'
+        '"warmup_delay":0.0}\n'
     )
     for obj in _iter_tui_payloads(sample):
-        assert isinstance(obj["selected_index"], int)
-        assert isinstance(obj["row_key"], str)
-        assert isinstance(obj["setting_label"], str)
-        assert isinstance(obj["value_text"], str)
-        assert obj["event"] in ("draw", "after_key")
-        if "last_key" in obj:
-            assert isinstance(obj["last_key"], str)
+        ev = obj["event"]
+        assert ev in ("draw", "after_key", "run", "anchor")
+        if ev in ("draw", "after_key"):
+            assert isinstance(obj["selected_index"], int)
+            assert isinstance(obj["row_key"], str)
+            assert isinstance(obj["setting_label"], str)
+            assert isinstance(obj["value_text"], str)
+            if "last_key" in obj:
+                assert isinstance(obj["last_key"], str)
+        elif ev == "run":
+            assert isinstance(obj["running_text"], str)
+            assert isinstance(obj["mode"], str)
+            assert isinstance(obj["count"], int)
+            assert isinstance(obj["delay"], (int, float))
+            assert "anchor_x" in obj and "anchor_y" in obj
+        else:
+            assert ev == "anchor"
+            assert isinstance(obj["mode"], str)
+            assert isinstance(obj["anchor_x"], (int, float))
+            assert isinstance(obj["anchor_y"], (int, float))
+            assert isinstance(obj["message"], str)
+            if "warmup_delay" in obj:
+                assert isinstance(obj["warmup_delay"], (int, float))
 
 
 def test_internal_consistency_first_draw_row_key(
@@ -354,6 +377,89 @@ def test_after_key_down_then_draw_pexpect(pexpect_module: Any, tmp_path: Path) -
             child.close(force=True)
         except Exception:
             pass
+
+
+def test_subprocess_noninteractive_yes_writes_run_to_log(tmp_path: Path) -> None:
+    """``-Y`` skips Rich editor; ``event\":\"run\"`` mirrors the ``Running:`` line."""
+    log_path = tmp_path / "cli_run.ndjson"
+    env = {
+        **os.environ,
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": str(OSX_DIR),
+        "MACOS_MOUSE_CLICK_DEBUG_TUI": "1",
+        "MACOS_MOUSE_CLICK_DEBUG_TUI_LOG": str(log_path),
+    }
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--learn",
+            "-n",
+            "2000",
+            "-d",
+            "0",
+            "-Y",
+            "--dry-run-after-start",
+        ],
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    err = r.stderr or ""
+    assert "MACOS_MOUSE_CLICK_TUI_STATE " in err
+    assert '"event":"run"' in err.replace(" ", "")
+    text = log_path.read_text(encoding="utf-8")
+    assert '"event":"run"' in text.replace(" ", "")
+    payloads = list(_iter_tui_payloads(text))
+    runs = [p for p in payloads if p.get("event") == "run"]
+    assert runs, payloads
+    assert runs[0].get("mode") == "learn"
+    assert runs[0].get("count") == 2000
+    assert runs[0].get("anchor_x") is None and runs[0].get("anchor_y") is None
+    rt = runs[0].get("running_text", "")
+    assert "mode=learn" in rt and "2000" in rt and "delay=" in rt
+
+
+def test_subprocess_fixed_mode_run_payload_includes_anchor(tmp_path: Path) -> None:
+    """Fixed mode: ``run`` includes anchor coordinates before Quartz."""
+    log_path = tmp_path / "fixed_run.ndjson"
+    env = {
+        **os.environ,
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": str(OSX_DIR),
+        "MACOS_MOUSE_CLICK_DEBUG_TUI": "1",
+        "MACOS_MOUSE_CLICK_DEBUG_TUI_LOG": str(log_path),
+    }
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "-x",
+            "10.5",
+            "-y",
+            "-20",
+            "-n",
+            "1",
+            "-d",
+            "0",
+            "-Y",
+            "--dry-run-after-start",
+        ],
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    payloads = list(_iter_tui_payloads(log_path.read_text(encoding="utf-8")))
+    runs = [p for p in payloads if p.get("event") == "run"]
+    assert runs and runs[0].get("mode") == "fixed"
+    assert runs[0].get("anchor_x") == 10.5
+    assert runs[0].get("anchor_y") == -20.0
 
 
 def test_subprocess_dry_run_no_tui_state_when_debug_unset() -> None:

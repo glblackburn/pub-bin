@@ -20,14 +20,20 @@ When the script shows the **Rich** review/edit table (TTY + Rich, not `-Y/--yes`
 | **stderr** | `MACOS_MOUSE_CLICK_TUI_STATE ` + compact JSON + newline (prefix for `grep` / human scans in mixed Rich output). |
 | **log file** (`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`) | **JSON only** + newline — each non-empty line is a single value `jq` can parse. |
 
-Payload: compact JSON from `json.dumps(..., separators=(",", ":"))` (no spaces after commas/colons). Typical fields: `selected_index`, `row_key`, `setting_label`, `value_text`, `source`, `event` (`draw` or `after_key`), and on `after_key` also `last_key` (return value of `read_raw_key()` for that wait).
+Payload: compact JSON from `json.dumps(..., separators=(",", ":"))` (no spaces after commas/colons).
+
+- **Rich table** (`event` = `draw` or `after_key`): `selected_index`, `row_key`, `setting_label`, `value_text`, `source`, and on `after_key` also `last_key` (return value of `read_raw_key()` for that wait).
+- **Run start** (`event` = `run`): emitted **right after** the **Running:** line for every successful start (Rich TUI after you press **S**, or CLI / `-Y`). Fields: `running_text` (same text as after `Running: `), `mode`, `count`, `delay`, `anchor_x` / `anchor_y` (`null` until known — fixed mode sets them from CLI; learn / at-cursor leave them `null` here).
+- **Anchor** (`event` = `anchor`): **learn** — after the user’s anchor click, includes `anchor_x`, `anchor_y`, `message` (same text as stderr, including the warmup line), and `warmup_delay`. **at-cursor** — after reading the cursor position, includes `message` (`Cursor position recorded at (x, y).`).
 
 **When lines are emitted:**
 
 - After each table redraw: `event` = `draw`.
 - After each key read: `event` = `after_key`, with `last_key` set.
+- After **Running:** is shown: `event` = `run`.
+- **Learn:** when the anchor point is captured, `event` = `anchor`. **at-cursor:** when the pointer position is read, `event` = `anchor`.
 
-So each **wait for a key** produces **two** lines (`draw` then `after_key`). Moving with arrows, pressing Enter on a row (edit flow), or error messages that sleep and redraw add more `draw` lines.
+So each **wait for a key** in the Rich editor produces **two** lines (`draw` then `after_key`). Moving with arrows, pressing Enter on a row (edit flow), or error messages that sleep and redraw add more `draw` lines.
 
 ### Generating a **large** debug log file
 
