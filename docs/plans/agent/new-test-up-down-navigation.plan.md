@@ -24,16 +24,19 @@ todos:
     status: completed
   - id: "phase-2-debug-tui"
     content: "Phase 2: DEBUG_TUI stderr + optional DEBUG_TUI_LOG file sink; tests assert parsed lines vs expected UI; tmp_path + teardown (see Phase 2 — Logging design)"
-    status: pending
+    status: completed
   - id: "phase-2-logging-meta-tests"
     content: "Phase 2: add meta-tests from 'Expected test cases (validate logging)' list (gate, JSON, file duplicate, no stdout pollution, etc.)"
-    status: pending
+    status: completed
   - id: "phase-3-fix-production"
     content: "Phase 3: fix macos_mouse_click.py (etc.) until new tests pass; remove xfail/marker gating if used"
     status: pending
   - id: "verify-ci"
     content: "After Phase 3: make -C osx test-quick green; existing CSI/SS3 down tests unchanged"
     status: pending
+  - id: "debug-readme-osx"
+    content: "One-off: osx/README.md — TUI debug env vars, large log capture, dry-run pointer"
+    status: completed
 isProject: false
 ---
 # Plan: New independent test for Up/Down (TTY) navigation diagnosis
@@ -58,9 +61,9 @@ All implementation work is split into **three phases** (see **Implementation pha
 - **Scope:** Add **env-gated** diagnostic output in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) per **Debugging visibility** → **Phase 2 — Logging design**: `MACOS_MOUSE_CLICK_DEBUG_TUI=1`, lines on **stderr**, optional duplicate to path in **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** when set (default unset = stderr only).
 - **Intent:** **Instrumentation only**—no functional change to navigation or `read_raw_key` semantics; if behavior changes accidentally, treat as a bug.
 - **Preconditions:** Phase 1 tests are merged (they may still fail).
-- **Tests (required in Phase 2):** Update the **new** table-navigation tests from Phase 1 so that, when `MACOS_MOUSE_CLICK_DEBUG_TUI=1` is set on the subprocess, they **parse** each `MACOS_MOUSE_CLICK_TUI_STATE` line from **`subprocess.stderr`** and/or from the file named by **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** when the test sets that env to a unique path under `tmp_path` (same line format in both sinks) and **assert** that the logged **`setting_label`** and **`value_text`** (and optionally **`row_key`**, **`selected_index`**) **match the same expected values** the test already derives for the **UI layer** (preconditions for **Mode**, expected **Count** / **Delay (s)** after each Down, and any **stdout**-parsed row identity where both views exist). Purpose: prove the **internal highlight state** the script logs is **consistent with** what the test claims the Rich table shows—if stderr and stdout expectations diverge, the test or parser is wrong; if stderr is correct but stdout assertions fail, fix **stdout parsing** in Phase 3; if stderr is wrong, fix **selection logic** in Phase 3. **Do not weaken** Phase 1 stdout assertions when adding stderr checks—add **correlation** assertions (and keep running with debug **on** for these tests once Phase 2 lands, or document turning debug on only for failing diagnostics).
+- **Tests (required in Phase 2):** Update the **new** table-navigation tests from Phase 1 so that, when `MACOS_MOUSE_CLICK_DEBUG_TUI=1` is set on the subprocess, they **parse** each `MACOS_MOUSE_CLICK_TUI_STATE` line from **`subprocess.stderr`** (prefix + JSON) and/or **raw JSON lines** from the file named by **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** when the test sets that env to a unique path under `tmp_path`, and **assert** that the logged **`setting_label`** and **`value_text`** (and optionally **`row_key`**, **`selected_index`**) **match the same expected values** the test already derives for the **UI layer** (preconditions for **Mode**, expected **Count** / **Delay (s)** after each Down, and any **stdout**-parsed row identity where both views exist). Purpose: prove the **internal highlight state** the script logs is **consistent with** what the test claims the Rich table shows—if stderr and stdout expectations diverge, the test or parser is wrong; if stderr is correct but stdout assertions fail, fix **stdout parsing** in Phase 3; if stderr is wrong, fix **selection logic** in Phase 3. **Do not weaken** Phase 1 stdout assertions when adding stderr checks—add **correlation** assertions (and keep running with debug **on** for these tests once Phase 2 lands, or document turning debug on only for failing diagnostics).
 
-- **Logging meta-tests (required in Phase 2):** Add tests that implement the checklist **Phase 2 — Expected test cases (validate logging is wired correctly)** below (gate off/on, JSON schema, file duplicate vs stderr, no stdout pollution, optional truncate and unwritable-path behavior).
+- **Logging meta-tests (required in Phase 2):** Add tests that implement the checklist **Phase 2 — Expected test cases (validate logging is wired correctly)** below (gate off/on, JSON schema, file duplicate vs stderr, no stdout pollution, append-across-processes and unwritable-path behavior).
 
 ### Phase 3 — Fix production code
 
@@ -109,7 +112,7 @@ Rich draws the table to **stdout**. Debug lines must go to **stderr** (and may *
 #### Log sinks: stderr and optional file
 
 - **stderr (default sink when debug is on):** Always write the same line to **stderr** when `MACOS_MOUSE_CLICK_DEBUG_TUI` is truthy. This preserves **operator** visibility in a normal terminal run and lets tests use `subprocess.run(..., capture_output=True).stderr` without configuring a file.
-- **Optional file sink — env `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`:** When **set** to a non-empty string, treat it as a **filesystem path** (absolute recommended in tests). Open that path in **append** or **truncate-on-first-open** mode (pick one in implementation and document: **truncate once per process** when the editor starts avoids stale lines from prior runs; **append** is friendlier to long sessions—**prefer truncate-on-open** for test determinism). Write the **identical** line bytes as stderr (same prefix + JSON + `\n`). **`flush()`** (or line-buffered text IO) after **each** line so tests can read the file **between** synthetic key injections without waiting for process exit.
+- **Optional file sink — env `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`:** When **set** to a non-empty string, treat it as a **filesystem path** (absolute recommended in tests). Open in **append** mode on first log write in the process (**never truncate** on open so prior runs stay in the file). Write **one compact JSON object + newline per line** (no `MACOS_MOUSE_CLICK_TUI_STATE` prefix) so **`jq`** can parse each line and `jq -n '[inputs]' < file` can load the whole session. Stderr continues to use the **prefix + JSON + newline** form. **`flush()`** after **each** line so tests can read the file **between** synthetic key injections without waiting for process exit.
 - **Default for `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`:** **Unset / empty** means **stderr only** — no file is created, no default path under `/tmp` (avoids surprise files, permission issues, and **parallel pytest** collisions). This is the **reasonable default**: opt-in file by explicit path.
 - **Caller override (tests):** Pass `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG=str(tmp_path / "tui_state.log")` (or `pytest` `tmp_path_factory` / per-worker unique path for **xdist**) so each test has a **unique** file, can **tail** or read fully, and **`unlink`** in a `finally` / fixture teardown. Same pattern for any subprocess wrapper script.
 - **Security / hygiene:** The script must **not** log secrets; path is **caller-controlled** (trusted in tests). Document that arbitrary paths are the operator’s responsibility.
@@ -117,7 +120,7 @@ Rich draws the table to **stdout**. Debug lines must go to **stderr** (and may *
 #### Implementation sketch (for Phase 2 code)
 
 - Lazy-open file handle on first log line when `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` is set; register `atexit` or close in `finally` of editor loop is optional; simplest is **open per line** with append (slow but test-simple) or hold one file handle for editor lifetime.
-- Use a tiny helper `_debug_tui_line(obj: dict) -> None` that serializes JSON, writes to stderr, optionally duplicates to the log path, flushes both.
+- Use a tiny helper that serializes JSON once: write **`MACOS_MOUSE_CLICK_TUI_STATE ` + JSON + newline** to stderr; write **JSON + newline** only to the log file; flush both.
 
 #### How tests consume output
 
@@ -137,7 +140,7 @@ These are **meta-tests** for the logging machinery itself (in addition to table-
 
 4. **Internal consistency on first draw:** For the **first** `draw` (or first emitted state line after startup), assert **`row_key`** equals `editor_row_keys(cfg)[selected_index]` for that scenario (e.g. `mode` at index `0` for learn + default selection).
 
-5. **File sink — created and duplicate:** With `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` set to a path under `tmp_path`, the file **exists** after logging, is **UTF-8** text, and each line in the file that starts with the prefix is **byte-identical** to the corresponding emitted stderr line (same order for the same run), **or** the multiset of prefixed lines in stderr equals that in the file (document which equality rule the implementation guarantees).
+5. **File sink — created and duplicate:** With `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` set to a path under `tmp_path`, the file **exists** after logging, is **UTF-8** text, and each file line (raw JSON) **matches** the JSON payload of the corresponding stderr line (same order for the same run: stderr line equals `MACOS_MOUSE_CLICK_TUI_STATE ` + file line). File lines must be **`jq`**-parsable on their own.
 
 6. **File default unset:** With debug on but **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` unset**, **no** file is created at a hidden default path (assert path does not exist or list tmp is clean if using isolated `TMPDIR`).
 
@@ -316,13 +319,23 @@ Implement as a **separate** pytest test function/method from test case 1 so fail
 
 ## Phase 1 delivery record (2026-04)
 
-**Production:** No edits to [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py). [`osx/tests/csi_pty_child_runner.py`](../../osx/tests/csi_pty_child_runner.py) and [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py) unchanged.
+**Phase 1 snapshot (initial delivery):** No edits to [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) yet. [`osx/tests/csi_pty_child_runner.py`](../../osx/tests/csi_pty_child_runner.py) and [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py) unchanged. (Phase 2 adds TUI debug logging to `macos_mouse_click.py`; see **Phase 2 delivery record**.)
 
 **Low-level Up track:** [`osx/tests/read_raw_key_up_pty_child_runner.py`](../../osx/tests/read_raw_key_up_pty_child_runner.py) (`csi-up` / `ss3-up`) and [`osx/tests/test_read_raw_key_up_slow_gap.py`](../../osx/tests/test_read_raw_key_up_slow_gap.py) — **pass** on darwin (same pattern as DEF-006 Down).
 
 **Rich table track:** [`osx/tests/test_rich_table_nav_down_pty.py`](../../osx/tests/test_rich_table_nav_down_pty.py) implements normative cases 1–2 with golden argv ``--learn --interactive -n 2 -d 3.5``, `TERM=xterm-256color`, bold-Setting parser, and preconditions. **Runtime:** highlight stayed on **Mode** after CSI Down in pexpect harness (or transcript lacked table rows); tests are **`xfail(strict=False)`** with reasons pointing to Phase 3. Scratch notes: [`osx/tests/_scratch_phase1_rich_table_pty.md`](../../osx/tests/_scratch_phase1_rich_table_pty.md).
 
 **Harness tweaks:** [`osx/tests/pty_harness.py`](../../osx/tests/pty_harness.py) — optional `dimensions` and `maxread` on `spawn_clicker_pexpect`. Marker **`table_nav`** registered in [`osx/pytest.ini`](../../osx/pytest.ini) and [`osx/tests/conftest.py`](../../osx/tests/conftest.py). [`osx/Makefile`](../../osx/Makefile) **`test-quick`** excludes **`table_nav`**.
+
+## Phase 2 delivery record (2026-04)
+
+**Production:** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) — gated **`MACOS_MOUSE_CLICK_DEBUG_TUI`** (truthy: `1`/`true`/`yes`/`on`). Each editor loop iteration emits **`MACOS_MOUSE_CLICK_TUI_STATE `** + compact JSON on **stderr**; optional **log file** at **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** writes **JSON + newline only** (same object, **jq**-friendly per line; append on open per process, flush per line). Events: **`draw`** after the table panel is printed, **`after_key`** immediately after `read_raw_key()` with **`last_key`**. Payload includes **`selected_index`**, **`row_key`**, **`setting_label`**, **`value_text`**, **`source`**. Unwritable log path: stderr-only (`OSError` swallowed). **`_reset_debug_tui_log_sink()`** at editor start.
+
+**Tests:** [`osx/tests/test_debug_tui_logging_meta.py`](../../osx/tests/test_debug_tui_logging_meta.py) covers the Phase 2 checklist (gate off editor, gate on via log file, JSON contract, first-draw row_key, file vs stderr order, no default log file, stdout pollution unit check, append across subprocesses, subprocess dry-run guard). **`test_after_key_down_then_draw_pexpect`** is **`xfail(strict=False)`** when pexpect does not yield **`last_key: down`** in the log (same PTY limitation as table nav). [`osx/tests/test_rich_table_nav_down_pty.py`](../../osx/tests/test_rich_table_nav_down_pty.py) sets debug env + per-test log under **`tmp_path`**, asserts log **draw** / **`after_key`** correlation alongside existing Rich assertions (tests remain **`table_nav`** + **`xfail`** until Phase 3).
+
+**Documentation (one-off request):** [`osx/README.md`](../../osx/README.md) — operator-focused summary of **`MACOS_MOUSE_CLICK_DEBUG_TUI`** / **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`**, how to generate **large** log files (interactive use, per-run paths + concat, pexpect stress), stderr-only capture, **`MACOS_MOUSE_CLICK_DRY_RUN`** / **`--dry-run-after-start`**, unwritable log path behavior, a minimal parse example, and pointers to this plan and the meta/table tests. Tracked as todo **`debug-readme-osx`** (completed).
+
+**Follow-up (log file + `jq`):** Log file lines are **raw JSON only** (no `MACOS_MOUSE_CLICK_TUI_STATE` prefix) so **`tail -1 file | jq .`**, **`jq -n '[inputs]' < file`**, etc. work; stderr keeps the prefix for grep in mixed output. Documented in **`osx/README.md`** and plan **Phase 2 — Logging design** above.
 
 ## Out of scope (this plan document)
 

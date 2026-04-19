@@ -42,6 +42,12 @@ Quartz: Any = None
 _rich_module: Any = None
 _rich_import_attempted: bool = False
 
+# Gated Rich editor diagnostics (``MACOS_MOUSE_CLICK_DEBUG_TUI``); see plan
+# ``docs/plans/agent/new-test-up-down-navigation.plan.md`` Phase 2.
+_DEBUG_TUI_STATE_PREFIX = "MACOS_MOUSE_CLICK_TUI_STATE "
+_debug_tui_log_file: Optional[Any] = None
+_debug_tui_log_failed: bool = False
+
 
 def import_quartz() -> Any:
     global Quartz
@@ -352,6 +358,91 @@ def editor_row_keys(cfg: ResolvedConfig) -> List[str]:
     return keys
 
 
+def _debug_tui_env_enabled() -> bool:
+    v = os.environ.get("MACOS_MOUSE_CLICK_DEBUG_TUI", "").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
+def _debug_tui_log_path() -> Optional[str]:
+    p = os.environ.get("MACOS_MOUSE_CLICK_DEBUG_TUI_LOG", "").strip()
+    return p if p else None
+
+
+def _reset_debug_tui_log_sink() -> None:
+    """Close optional log file; reset flags (new editor session or tests)."""
+    global _debug_tui_log_file, _debug_tui_log_failed
+    try:
+        if _debug_tui_log_file is not None:
+            _debug_tui_log_file.close()
+    except OSError:
+        pass
+    _debug_tui_log_file = None
+    _debug_tui_log_failed = False
+
+
+def _debug_tui_append_file(file_line: str) -> None:
+    """Append one line to the optional log file (``file_line`` is JSON + newline only)."""
+    global _debug_tui_log_file, _debug_tui_log_failed
+    if _debug_tui_log_failed:
+        return
+    path = _debug_tui_log_path()
+    if not path:
+        return
+    try:
+        if _debug_tui_log_file is None:
+            # Append: preserve prior runs and other writers; never truncate on open.
+            _debug_tui_log_file = open(path, "a", encoding="utf-8", buffering=1)
+        _debug_tui_log_file.write(file_line)
+        _debug_tui_log_file.flush()
+    except OSError:
+        _debug_tui_log_failed = True
+
+
+def _debug_tui_write_line(payload: Dict[str, Any]) -> None:
+    if not _debug_tui_env_enabled():
+        return
+    # Log file: one JSON object per line (``jq``-friendly). Stderr: same JSON with grep prefix.
+    raw = json.dumps(payload, separators=(",", ":")) + "\n"
+    sys.stderr.write(_DEBUG_TUI_STATE_PREFIX + raw)
+    sys.stderr.flush()
+    _debug_tui_append_file(raw)
+
+
+def _debug_tui_emit(
+    cfg: ResolvedConfig,
+    row_keys: List[str],
+    selected: int,
+    *,
+    event: str,
+    last_key: Optional[str] = None,
+) -> None:
+    """Emit one TUI state record (stderr + optional log file).
+
+    Stderr uses ``MACOS_MOUSE_CLICK_TUI_STATE `` + JSON; the optional log file
+    stores **JSON only** (one compact object per line) so tools like ``jq`` work
+    per line and with ``jq -n '[inputs]'``.
+    """
+    if not _debug_tui_env_enabled():
+        return
+    if not row_keys:
+        return
+    selected = max(0, min(selected, len(row_keys) - 1))
+    rk = row_keys[selected]
+    label, val = _row_display(cfg, rk)
+    src = _field_source(cfg, rk)
+    body: Dict[str, Any] = {
+        "selected_index": selected,
+        "row_key": rk,
+        "setting_label": label,
+        "value_text": str(val),
+        "source": str(src),
+        "event": event,
+    }
+    if last_key is not None:
+        body["last_key"] = last_key
+    _debug_tui_write_line(body)
+
+
 def _row_display(cfg: ResolvedConfig, key: str) -> Tuple[str, str]:
     if key == "mode":
         v = cfg.mode if cfg.mode else "(not set)"
@@ -539,6 +630,7 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
     from rich.panel import Panel
     from rich.text import Text
 
+    _reset_debug_tui_log_sink()
     console = Console()
     row_keys = editor_row_keys(cfg)
     selected = 0
@@ -560,7 +652,9 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
                 border_style="cyan",
             )
         )
+        _debug_tui_emit(cfg, row_keys, selected, event="draw")
         key = read_raw_key()
+        _debug_tui_emit(cfg, row_keys, selected, event="after_key", last_key=key)
         if key in ("q", "ctrl_c", "ctrl_d"):
             return False
         if key == "s":
