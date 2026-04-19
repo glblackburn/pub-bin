@@ -19,7 +19,7 @@ help:
 	@echo "osx / macOS mouse click test targets (from repo: make -C osx <target>)"
 	@echo "  test-setup   Create .venv under osx/ and pip install requirements-test.txt"
 	@echo "  test         Full pytest (verbose)"
-	@echo "  test-quick   pytest -q --tb=short"
+	@echo "  test-quick   pytest -q --tb=short (excludes table_nav)"
 	@echo "  test-report  JUnit XML -> osx/tests/reports/junit.xml"
 	@echo "  test-timings Slowest tests (--durations=25)"
 	@echo "  test-clean   Drop pytest caches, __pycache__, junit.xml"
@@ -39,7 +39,7 @@ test: check-venv
 	cd "$(REPO_ROOT)" && $(PYTEST_BASE) -v
 
 test-quick: check-venv
-	cd "$(REPO_ROOT)" && $(PYTEST_BASE) -q --tb=short
+	cd "$(REPO_ROOT)" && $(PYTEST_BASE) -q --tb=short -m "not table_nav"
 
 test-report: check-venv
 	@mkdir -p "$(OSX_DIR)/tests/reports"

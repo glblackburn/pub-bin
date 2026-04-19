@@ -6,22 +6,22 @@ todos:
     status: completed
   - id: "runner-up-arrow"
     content: "Add new child runner script (separate from csi_pty_child_runner.py) for staggered CSI-A and SS3-A PTY injection"
-    status: pending
+    status: completed
   - id: "pytest-up-module"
     content: "Add new test module (separate from test_read_raw_key_csi.py) with darwin-gated tests calling the new runner"
-    status: pending
+    status: completed
   - id: "table-down-nav-pty"
     content: "Rich settings table: capture highlight + row below, send Down once, assert new highlight equals prior row-below (see Normative test case 1)"
-    status: pending
+    status: completed
   - id: "table-two-down-labels"
     content: "Second test function: learn/at-cursor table only; Mode -> Count -> Delay (s) after two Downs (see Normative test case 2)"
-    status: pending
+    status: completed
   - id: "precondition-initial-mode-row"
     content: "Before any stdin: assert highlighted row is Mode and Value matches argv/defaults (see Precondition assertions)"
-    status: pending
+    status: completed
   - id: "phase-1-tests-only"
     content: "Phase 1: add all new tests/runners; no production code changes; failures allowed (see Implementation phases)"
-    status: pending
+    status: completed
   - id: "phase-2-debug-tui"
     content: "Phase 2: DEBUG_TUI stderr + optional DEBUG_TUI_LOG file sink; tests assert parsed lines vs expected UI; tmp_path + teardown (see Phase 2 — Logging design)"
     status: pending
@@ -51,7 +51,7 @@ All implementation work is split into **three phases** (see **Implementation pha
 - **Scope:** Add new test modules, child runners, fixtures, and documentation per this plan (including low-level Up-arrow PTY tests and Rich table tests as specified).
 - **Production code:** **Do not** change [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) or any other **non-test** code—including **no** debug logging yet. Existing third-party constraints (e.g. do not alter `csi_pty_child_runner.py` unless policy changes) remain.
 - **Pass/fail:** New tests **may fail** on purpose in this phase; failures document the defect and lock in expected behavior for **Phase 3** (after Phase 2 instrumentation exists).
-- **CI / default pytest:** If the project requires a **green** default test run on `main` while Phase 1 is incomplete, either (a) land tests as **`@pytest.mark.xfail`** with a clear reason and issue/plan link, (b) register a **separate marker** (e.g. `table_nav`) and exclude it from the default `make test-quick` collection until **Phase 3**, or (c) accept a red CI until **Phase 3**—**pick one** when implementing and record it in the PR / plan 02 if needed. (Phase 2 adds stderr logs but does not require tests to pass.)
+- **CI / default pytest:** If the project requires a **green** default test run on `main` while Phase 1 is incomplete, either (a) land tests as **`@pytest.mark.xfail`** with a clear reason and issue/plan link, (b) register a **separate marker** (e.g. `table_nav`) and exclude it from the default `make test-quick` collection until **Phase 3**, or (c) accept a red CI until **Phase 3**—**pick one** when implementing and record it in the PR / plan 02 if needed. (Phase 2 adds stderr logs but does not require tests to pass.) **Phase 1 choice (implemented):** **`table_nav`** marker + **`make -C osx test-quick`** uses **`-m "not table_nav"`**; Rich table tests are additionally **`@pytest.mark.xfail(strict=False)`** until Phase 3 so **`make -C osx test`** stays green while still running them as **xfail** on darwin.
 
 ### Phase 2 — Debugging visibility (gated production instrumentation)
 
@@ -70,9 +70,20 @@ All implementation work is split into **three phases** (see **Implementation pha
 
 ## Constraints (non-negotiable)
 
+- **Working tree only (visibility = truth):** All substantive work—code, tests, probes, scratch scripts, notes, and applied fixes—must exist as **files under this repository’s git working tree** (paths you can `open`, `diff`, and see in **`git status`**). Work that exists only in chat, only in agent UI outside the clone, or only “suggested” for the user to paste in **does not count** as completed work and wastes review time. Short terminal commands are fine **to run** what is already on disk; they are not a substitute for writing the repo.
 - **Do not edit** existing test files (e.g. [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py)) or [`osx/tests/csi_pty_child_runner.py`](../../osx/tests/csi_pty_child_runner.py)) except if a future defect fix *requires* it—this plan assumes **zero** changes there.
 - **New top-level scripts stay separate:** one dedicated **child runner** per workstream, one dedicated **pytest module** per workstream. Reuse **patterns** (handshake pipe, `pty.fork`, `PYTHONPATH`, staggered writes) by copy or thin shared helper **only if** it does not force merging runner entrypoints; prefer **copy** over premature abstraction per DRY plan optional phase.
 - **Reuse without entanglement:** [`osx/tests/conftest.py`](../../osx/tests/conftest.py) path fixtures, [`osx/tests/pty_harness.py`](../../osx/tests/pty_harness.py) constants if imported, same `OSX_DIR` / `cwd=repo_root` convention as CSI tests.
+
+## Agent workflow (scratch files, reviewability, cleanup)
+
+These rules apply to **implementation work** on this plan (any phase), so progress is visible in the repo and fragile context is not lost.
+
+- **No “outside the tree” deliverables:** There is **no** separate workspace for implementation artifacts. The **pub-bin clone** (this repo on disk) is the sole place work product must land. Do not treat Cursor-only buffers, `~/.cursor/plans/` copies, or chat transcripts as the source of truth—**the working tree is**.
+- **Write work to disk in the git tree:** Put probes, harness spikes, parsers, and draft tests in **real paths** under the repo (e.g. `osx/tests/…` or a dedicated scratch prefix agreed with the owner) so **`git status`** shows new/modified files the user can open and review. Avoid large **`python <<'PY'`** / **`python -c '…'`** blobs in the terminal for anything non-trivial; keep logic in files and use short commands only to **run** those files (e.g. `pytest …`, `python path/to/probe.py`).
+- **Uncommitted is OK:** Scratch and WIP files do **not** need to be committed; the goal is **reviewability and monitoring**, not every file on `main`.
+- **No silent cleanup:** **Do not delete** temporary or scratch work files until the **user explicitly confirms** the phase is signed off and asks for cleanup (or names specific files to remove). Default is to **retain** artifacts until then—they may capture findings that avoid repeating costly investigation later.
+- **Cleanup is explicit and last:** After sign-off, run a deliberate cleanup pass (delete obsolete scratch, promote useful snippets into permanent tests/docs, or leave a short note in this plan pointing at what was kept).
 
 ## Debugging visibility (correlate script state with what the test “sees”)
 
@@ -289,6 +300,7 @@ Implement as a **separate** pytest test function/method from test case 1 so fail
 
 - New tests and harnesses exist as specified; **no** edits to `osx/macos_mouse_click.py` (production), including no debug logging.
 - Existing DEF-006 tests and [`csi_pty_child_runner.py`](../../osx/tests/csi_pty_child_runner.py) remain **unchanged** and still pass if collected.
+- **Delivered:** Up runner + tests **pass**; Rich table module **exists** with normative assertions; table tests **`xfail(strict=False)`** + **`table_nav`** excluded from **`test-quick`** until Phase 3 (see **Phase 1 delivery record**).
 
 **Phase 2**
 
@@ -301,6 +313,16 @@ Implement as a **separate** pytest test function/method from test case 1 so fail
 
 - `make -C osx test-quick` passes on macOS with new tests **enabled** (no `xfail` / marker skip unless intentionally kept for unrelated reasons).
 - Production fixes are minimal and tied to failing assertions; existing DEF-006 coverage still green.
+
+## Phase 1 delivery record (2026-04)
+
+**Production:** No edits to [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py). [`osx/tests/csi_pty_child_runner.py`](../../osx/tests/csi_pty_child_runner.py) and [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py) unchanged.
+
+**Low-level Up track:** [`osx/tests/read_raw_key_up_pty_child_runner.py`](../../osx/tests/read_raw_key_up_pty_child_runner.py) (`csi-up` / `ss3-up`) and [`osx/tests/test_read_raw_key_up_slow_gap.py`](../../osx/tests/test_read_raw_key_up_slow_gap.py) — **pass** on darwin (same pattern as DEF-006 Down).
+
+**Rich table track:** [`osx/tests/test_rich_table_nav_down_pty.py`](../../osx/tests/test_rich_table_nav_down_pty.py) implements normative cases 1–2 with golden argv ``--learn --interactive -n 2 -d 3.5``, `TERM=xterm-256color`, bold-Setting parser, and preconditions. **Runtime:** highlight stayed on **Mode** after CSI Down in pexpect harness (or transcript lacked table rows); tests are **`xfail(strict=False)`** with reasons pointing to Phase 3. Scratch notes: [`osx/tests/_scratch_phase1_rich_table_pty.md`](../../osx/tests/_scratch_phase1_rich_table_pty.md).
+
+**Harness tweaks:** [`osx/tests/pty_harness.py`](../../osx/tests/pty_harness.py) — optional `dimensions` and `maxread` on `spawn_clicker_pexpect`. Marker **`table_nav`** registered in [`osx/pytest.ini`](../../osx/pytest.ini) and [`osx/tests/conftest.py`](../../osx/tests/conftest.py). [`osx/Makefile`](../../osx/Makefile) **`test-quick`** excludes **`table_nav`**.
 
 ## Out of scope (this plan document)
 

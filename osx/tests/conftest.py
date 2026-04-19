@@ -31,6 +31,7 @@ def pytest_configure(config: pytest.Config) -> None:
         "darwin: requires macOS",
         "mt02: plan 03 MT-02 automation",
         "mt09: plan 03 MT-09 automation",
+        "table_nav: Rich table Down PTY tests (excluded from test-quick until Phase 3)",
     ):
         config.addinivalue_line("markers", line)
 

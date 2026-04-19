@@ -32,23 +32,33 @@ def spawn_clicker_pexpect(
     cwd: Path | None = None,
     env: Mapping[str, str] | None = None,
     timeout: int = 120,
+    dimensions: tuple[int, int] | None = None,
+    maxread: int = 200000,
 ):
     """
     Start ``python <script>`` with a PTY (stdin+stdout are TTYs).
 
     Rich pre-run editor writes the panel to stdout; ``Running:`` uses stderr.
     pexpect merges both into ``child.before`` / match buffers.
+
+    ``dimensions`` is ``(rows, cols)`` for the pseudo-TTY when supported by
+    pexpect (stable Rich layout for table tests).
     """
     cmd = [sys.executable, str(SCRIPT_PATH), *args]
     merged = base_child_env(dict(env) if env else None)
+    kw: dict[str, Any] = {
+        "timeout": timeout,
+        "maxread": maxread,
+        "encoding": "utf-8",
+        "codec_errors": "replace",
+        "echo": False,
+    }
+    if dimensions is not None:
+        kw["dimensions"] = dimensions
     return pexpect.spawn(
         cmd[0],
         cmd[1:],
         cwd=str(cwd or REPO_ROOT),
         env=merged,
-        timeout=timeout,
-        maxread=200000,
-        encoding="utf-8",
-        codec_errors="replace",
-        echo=False,
+        **kw,
     )
