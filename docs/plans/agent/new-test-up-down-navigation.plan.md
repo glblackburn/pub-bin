@@ -23,7 +23,10 @@ todos:
     content: "Phase 1: add all new tests/runners; no production code changes; failures allowed (see Implementation phases)"
     status: pending
   - id: "phase-2-debug-tui"
-    content: "Phase 2: add gated stderr TUI JSON in macos_mouse_click.py; update table-nav tests to assert stderr highlight fields match expected UI values (see Phase 2 Tests)"
+    content: "Phase 2: DEBUG_TUI stderr + optional DEBUG_TUI_LOG file sink; tests assert parsed lines vs expected UI; tmp_path + teardown (see Phase 2 — Logging design)"
+    status: pending
+  - id: "phase-2-logging-meta-tests"
+    content: "Phase 2: add meta-tests from 'Expected test cases (validate logging)' list (gate, JSON, file duplicate, no stdout pollution, etc.)"
     status: pending
   - id: "phase-3-fix-production"
     content: "Phase 3: fix macos_mouse_click.py (etc.) until new tests pass; remove xfail/marker gating if used"
@@ -52,10 +55,12 @@ All implementation work is split into **three phases** (see **Implementation pha
 
 ### Phase 2 — Debugging visibility (gated production instrumentation)
 
-- **Scope:** Add **stderr**, **env-gated** diagnostic output in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) (see **Debugging visibility** → Option A): e.g. `MACOS_MOUSE_CLICK_DEBUG_TUI=1` and `MACOS_MOUSE_CLICK_TUI_STATE` JSON lines from `run_rich_pre_run_editor` so subprocess tests can correlate **internal** `selected` / `row_key` / labels with **stdout** parsing.
+- **Scope:** Add **env-gated** diagnostic output in [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) per **Debugging visibility** → **Phase 2 — Logging design**: `MACOS_MOUSE_CLICK_DEBUG_TUI=1`, lines on **stderr**, optional duplicate to path in **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** when set (default unset = stderr only).
 - **Intent:** **Instrumentation only**—no functional change to navigation or `read_raw_key` semantics; if behavior changes accidentally, treat as a bug.
 - **Preconditions:** Phase 1 tests are merged (they may still fail).
-- **Tests (required in Phase 2):** Update the **new** table-navigation tests from Phase 1 so that, when `MACOS_MOUSE_CLICK_DEBUG_TUI=1` (or the chosen env name) is set on the subprocess, they **parse stderr** for each `MACOS_MOUSE_CLICK_TUI_STATE` line and **assert** that the logged **`setting_label`** and **`value_text`** (and optionally **`row_key`**, **`selected_index`**) **match the same expected values** the test already derives for the **UI layer** (preconditions for **Mode**, expected **Count** / **Delay (s)** after each Down, and any **stdout**-parsed row identity where both views exist). Purpose: prove the **internal highlight state** the script logs is **consistent with** what the test claims the Rich table shows—if stderr and stdout expectations diverge, the test or parser is wrong; if stderr is correct but stdout assertions fail, fix **stdout parsing** in Phase 3; if stderr is wrong, fix **selection logic** in Phase 3. **Do not weaken** Phase 1 stdout assertions when adding stderr checks—add **correlation** assertions (and keep running with debug **on** for these tests once Phase 2 lands, or document turning debug on only for failing diagnostics).
+- **Tests (required in Phase 2):** Update the **new** table-navigation tests from Phase 1 so that, when `MACOS_MOUSE_CLICK_DEBUG_TUI=1` is set on the subprocess, they **parse** each `MACOS_MOUSE_CLICK_TUI_STATE` line from **`subprocess.stderr`** and/or from the file named by **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** when the test sets that env to a unique path under `tmp_path` (same line format in both sinks) and **assert** that the logged **`setting_label`** and **`value_text`** (and optionally **`row_key`**, **`selected_index`**) **match the same expected values** the test already derives for the **UI layer** (preconditions for **Mode**, expected **Count** / **Delay (s)** after each Down, and any **stdout**-parsed row identity where both views exist). Purpose: prove the **internal highlight state** the script logs is **consistent with** what the test claims the Rich table shows—if stderr and stdout expectations diverge, the test or parser is wrong; if stderr is correct but stdout assertions fail, fix **stdout parsing** in Phase 3; if stderr is wrong, fix **selection logic** in Phase 3. **Do not weaken** Phase 1 stdout assertions when adding stderr checks—add **correlation** assertions (and keep running with debug **on** for these tests once Phase 2 lands, or document turning debug on only for failing diagnostics).
+
+- **Logging meta-tests (required in Phase 2):** Add tests that implement the checklist **Phase 2 — Expected test cases (validate logging is wired correctly)** below (gate off/on, JSON schema, file duplicate vs stderr, no stdout pollution, optional truncate and unwritable-path behavior).
 
 ### Phase 3 — Fix production code
 
@@ -71,14 +76,67 @@ All implementation work is split into **three phases** (see **Implementation pha
 
 ## Debugging visibility (correlate script state with what the test “sees”)
 
-Rich draws the table to **stdout**. Debug lines must go to **stderr** (or a separate fd) so PTY tests can **capture stderr** for assertions without corrupting the TUI byte stream the test parses on stdout.
+Rich draws the table to **stdout**. Debug lines must go to **stderr** (and may **duplicate** to an optional **file** path from env) so PTY tests can **capture** diagnostics without writing debug bytes into the Rich **stdout** stream.
 
-### Option A — Gated stderr logs in `run_rich_pre_run_editor` (recommended)
+### Option A — Gated diagnostics in `run_rich_pre_run_editor` (recommended)
 
-- **Gate:** e.g. `MACOS_MOUSE_CLICK_DEBUG_TUI=1` (or similar) so normal users see no noise.
-- **When to log:** Once per editor loop iteration **after** `selected` / `row_keys` are finalized and **after** `read_raw_key()` returns (two lines if useful: “draw” snapshot + “key” line).
-- **What to log (machine-friendly):** e.g. one JSON object per line with a stable prefix, `MACOS_MOUSE_CLICK_TUI_STATE ` + JSON, including at least: `selected_index`, `row_key` (`row_keys[selected]`), `setting_label` and `value_text` from [`_row_display`](../../osx/macos_mouse_click.py) for that key, and optionally `key` last returned by `read_raw_key()`. Tests then `assert "MACOS_MOUSE_CLICK_TUI_STATE" in stderr` and parse JSON instead of scraping ANSI highlight codes.
-- **Phase schedule:** Land Option A in **Phase 2** only—not in Phase 1 (Phase 1 has **no** `macos_mouse_click.py` edits). **Phase 3** applies functional fixes; tests may use stderr JSON from Phase 2 to confirm what is being tested.
+- **Summary:** Phase 2 adds env-gated, line-oriented **TUI state** logs (see **Phase 2 — Logging design** below). **Phase schedule:** land in **Phase 2** only—not in Phase 1. **Phase 3** applies functional fixes.
+
+### Phase 2 — Logging design (how debug values are emitted)
+
+#### Activation
+
+- **`MACOS_MOUSE_CLICK_DEBUG_TUI`:** When set to a **truthy** value (e.g. `1`, `yes`), the editor emits debug lines. When **unset** or empty, **no** TUI debug lines (current behavior).
+
+#### Line format (stable for parsers)
+
+- Each event is **one line**, **UTF-8**, newline-terminated.
+- **Prefix** fixed for grep/substring tests, e.g. `MACOS_MOUSE_CLICK_TUI_STATE ` (note trailing space) immediately followed by a **single JSON object** (no pretty-print; use `json.dumps(..., separators=(",", ":"))` in implementation notes).
+- **Payload fields** (minimum agreed contract): `selected_index` (int), `row_key` (string, e.g. `mode`), `setting_label` (string, e.g. `Mode`), `value_text` (string), optional `source` (string), optional `last_key` (string, value last returned by `read_raw_key()` for that loop iteration).
+- **When to emit:** (1) **After draw** — immediately after the table is built and printed for the loop iteration, `selected` / `row_keys` finalized. (2) **After input** — immediately after `read_raw_key()` returns, same schema plus `last_key` so tests correlate key → state. (Same line shape for both; use a `phase` or `event` field in JSON if implementers want one discriminant: `draw` vs `after_key`.)
+
+#### Log sinks: stderr and optional file
+
+- **stderr (default sink when debug is on):** Always write the same line to **stderr** when `MACOS_MOUSE_CLICK_DEBUG_TUI` is truthy. This preserves **operator** visibility in a normal terminal run and lets tests use `subprocess.run(..., capture_output=True).stderr` without configuring a file.
+- **Optional file sink — env `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`:** When **set** to a non-empty string, treat it as a **filesystem path** (absolute recommended in tests). Open that path in **append** or **truncate-on-first-open** mode (pick one in implementation and document: **truncate once per process** when the editor starts avoids stale lines from prior runs; **append** is friendlier to long sessions—**prefer truncate-on-open** for test determinism). Write the **identical** line bytes as stderr (same prefix + JSON + `\n`). **`flush()`** (or line-buffered text IO) after **each** line so tests can read the file **between** synthetic key injections without waiting for process exit.
+- **Default for `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`:** **Unset / empty** means **stderr only** — no file is created, no default path under `/tmp` (avoids surprise files, permission issues, and **parallel pytest** collisions). This is the **reasonable default**: opt-in file by explicit path.
+- **Caller override (tests):** Pass `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG=str(tmp_path / "tui_state.log")` (or `pytest` `tmp_path_factory` / per-worker unique path for **xdist**) so each test has a **unique** file, can **tail** or read fully, and **`unlink`** in a `finally` / fixture teardown. Same pattern for any subprocess wrapper script.
+- **Security / hygiene:** The script must **not** log secrets; path is **caller-controlled** (trusted in tests). Document that arbitrary paths are the operator’s responsibility.
+
+#### Implementation sketch (for Phase 2 code)
+
+- Lazy-open file handle on first log line when `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` is set; register `atexit` or close in `finally` of editor loop is optional; simplest is **open per line** with append (slow but test-simple) or hold one file handle for editor lifetime.
+- Use a tiny helper `_debug_tui_line(obj: dict) -> None` that serializes JSON, writes to stderr, optionally duplicates to the log path, flushes both.
+
+#### How tests consume output
+
+- **stderr path:** Parse `result.stderr.decode("utf-8")`, splitlines, filter `startswith("MACOS_MOUSE_CLICK_TUI_STATE ")`, `json.loads` remainder.
+- **File path:** Read path passed in env after subprocess step (or open in parent in parallel—usually read after child yields). Prefer **file** when stderr is noisy (Rich / warnings); prefer **stderr** when no tmp desired.
+- **Phase 2 assertions:** Compare parsed `setting_label` / `value_text` (and friends) to **expected** values derived from CLI + `_row_display` rules, in lockstep with stdout-based UI assertions.
+
+### Phase 2 — Expected test cases (validate logging is wired correctly)
+
+These are **meta-tests** for the logging machinery itself (in addition to table-navigation tests that **use** the logs for correlation). They should land in **Phase 2** in a **dedicated test module or functions** so regressions in the sink/format/gate are caught without conflating them with Rich navigation failures.
+
+1. **Gate off:** With `MACOS_MOUSE_CLICK_DEBUG_TUI` **unset** (and `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` unset), run a subprocess that reaches the Rich editor briefly (or a minimal harness that calls the debug helper if extracted); **stderr** must contain **no** line starting with `MACOS_MOUSE_CLICK_TUI_STATE `.
+
+2. **Gate on — stderr present:** With `MACOS_MOUSE_CLICK_DEBUG_TUI=1` and **no** log path env, stderr must contain **at least one** `MACOS_MOUSE_CLICK_TUI_STATE ` line after the table first renders.
+
+3. **JSON contract:** Every `MACOS_MOUSE_CLICK_TUI_STATE ` line must parse with `json.loads`; each object must include **`selected_index`** (int), **`row_key`** (str), **`setting_label`** (str), **`value_text`** (str). If **`event`** / **`phase`** / **`last_key`** are implemented, assert types and allowed values (`draw` / `after_key`, etc.).
+
+4. **Internal consistency on first draw:** For the **first** `draw` (or first emitted state line after startup), assert **`row_key`** equals `editor_row_keys(cfg)[selected_index]` for that scenario (e.g. `mode` at index `0` for learn + default selection).
+
+5. **File sink — created and duplicate:** With `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` set to a path under `tmp_path`, the file **exists** after logging, is **UTF-8** text, and each line in the file that starts with the prefix is **byte-identical** to the corresponding emitted stderr line (same order for the same run), **or** the multiset of prefixed lines in stderr equals that in the file (document which equality rule the implementation guarantees).
+
+6. **File default unset:** With debug on but **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` unset**, **no** file is created at a hidden default path (assert path does not exist or list tmp is clean if using isolated `TMPDIR`).
+
+7. **No stdout pollution:** **`MACOS_MOUSE_CLICK_TUI_STATE`** prefix must **not** appear in **stdout** (only on stderr / log file).
+
+8. **Truncate-on-open (if chosen):** Run two sequential subprocesses that both write to the **same** log path; the second run’s file content must **not** include stale prefixed lines from the first run (unless append semantics are explicitly chosen and this test is skipped).
+
+9. **After-key line follows draw:** In a controlled subprocess that sends **one** known key (e.g. Down), assert there is an **`after_key`** (or equivalent) line whose **`last_key`** is **`down`** (or empty/`other` as designed) and that a subsequent **`draw`** line reflects updated `selected_index` if navigation succeeded.
+
+10. **Unwritable log path (optional):** If `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` points to an invalid or unwritable path, the editor must **not** crash; stderr-only or a documented fallback applies—assert process still runs and stderr logging still works.
 
 ### Option B — Test-only wrapper (no `macos_mouse_click.py` edits in Phase 1)
 
@@ -90,9 +148,9 @@ Rich draws the table to **stdout**. Debug lines must go to **stderr** (or a sepa
 
 ### Validation workflow
 
-1. Run the failing test with env debug on; collect **stderr** artifact in pytest (`capfd` does not cross subprocess—use `subprocess.run(..., capture_output=True)` or log file).
-2. **Codify in tests (Phase 2):** After each table draw or each key event boundary, assert parsed JSON **`setting_label` / `value_text`** equal the **expected** strings computed from CLI + `_row_display` rules (same as normative preconditions and case 2 label sequence). Optionally assert the latest JSON line agrees with the **stdout-parsed** highlighted row label when both are available.
-3. If stderr JSON matches expectations but stdout assertions fail, prioritize **stdout / Rich parser** fixes in Phase 3. If stderr JSON is wrong, prioritize **`run_rich_pre_run_editor` / `selected`** in Phase 3.
+1. Run the failing test with `MACOS_MOUSE_CLICK_DEBUG_TUI=1`; collect **`capture_output=True` stderr** and/or read the file path passed in **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** after each interaction step (`capfd` does not cross subprocess).
+2. **Codify in tests (Phase 2):** After each table draw or each key event boundary, assert parsed JSON (from **stderr** and/or **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`**) **`setting_label` / `value_text`** equal the **expected** strings computed from CLI + `_row_display` rules (same as normative preconditions and case 2 label sequence). Optionally assert the latest line agrees with the **stdout-parsed** highlighted row label when both are available.
+3. If parsed TUI state lines match expectations but stdout assertions fail, prioritize **stdout / Rich parser** fixes in Phase 3. If parsed lines are wrong, prioritize **`run_rich_pre_run_editor` / `selected`** in Phase 3.
 
 ---
 
@@ -234,9 +292,10 @@ Implement as a **separate** pytest test function/method from test case 1 so fail
 
 **Phase 2**
 
-- Gated stderr **TUI state** logging exists per **Debugging visibility** (Option A); default **off**; no intentional navigation/`read_raw_key` behavior change.
-- Table-navigation tests run subprocess with debug env **on** and **assert** stderr `MACOS_MOUSE_CLICK_TUI_STATE` fields match **expected** highlight **Setting** / **Value** (and related fields) aligned with the normative test expectations and any stdout-based UI checks.
-- New tests may still **fail** overall until Phase 3; stderr assertions should **pass** once logging is correct and expectations are aligned—if stderr assertions fail while logging is present, fix test expectations or log payload before Phase 3 functional work.
+- Gated **TUI state** logging exists per **Debugging visibility** (stderr when `MACOS_MOUSE_CLICK_DEBUG_TUI` on; optional file duplicate when `MACOS_MOUSE_CLICK_DEBUG_TUI_LOG` set); default **off** / no default file path; no intentional navigation/`read_raw_key` behavior change.
+- **Logging meta-tests** pass (checklist **Expected test cases (validate logging is wired correctly)**).
+- Table-navigation tests run subprocess with debug env **on**, optionally set **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** to a **unique** path, **assert** parsed `MACOS_MOUSE_CLICK_TUI_STATE` fields match **expected** highlight **Setting** / **Value** (from stderr and/or log file), **delete** the log file in teardown when used.
+- New tests may still **fail** overall until Phase 3; stderr/file correlation assertions should **pass** once logging is correct and expectations are aligned—if those assertions fail while logging is present, fix test expectations or log payload before Phase 3 functional work.
 
 **Phase 3**
 
