@@ -2,6 +2,13 @@
 """Run in a fresh interpreter (no pytest): PTY + handshake + read_raw_key.
 
 Invoked by test_read_raw_key_csi.py to avoid fork() inside pytest's process.
+
+The parent must not write ``ESC`` and ``[`` in the same syscall as ``B`` with a
+sleep in between: the PTY/tty layer can coalesce or reorder enough that the
+child sometimes sees the full ``ESC [ B`` before blocking in the post-``[``
+wait, which makes a >250ms regression test useless and can leave the slave
+closed before the parent's final ``write`` (EIO). Instead we send ``ESC``,
+pause, ``[``, then the long gap, then ``B`` (and similarly for SS3).
 """
 
 from __future__ import annotations
@@ -15,6 +22,26 @@ from pathlib import Path
 # Must exceed legacy 250ms CSI/SS3 tail waits so a pre-DEF-006 reader returns ``other``.
 # Keep under ~1s so the DEF-006 deadline still covers one delayed final byte.
 _GAP = 0.45
+# Short gaps between ESC and the next byte so read_raw_key blocks between reads.
+_INTER_ESC = 0.04
+
+
+def _inject_csi_down(master_fd: int) -> None:
+    time.sleep(0.08)
+    os.write(master_fd, b"\x1b")
+    time.sleep(_INTER_ESC)
+    os.write(master_fd, b"[")
+    time.sleep(_GAP)
+    os.write(master_fd, b"B")
+
+
+def _inject_ss3_down(master_fd: int) -> None:
+    time.sleep(0.08)
+    os.write(master_fd, b"\x1b")
+    time.sleep(_INTER_ESC)
+    os.write(master_fd, b"O")
+    time.sleep(_GAP)
+    os.write(master_fd, b"B")
 
 
 def main() -> None:
@@ -22,8 +49,6 @@ def main() -> None:
         print("usage: csi_pty_child_runner.py csi|ss3", file=sys.stderr)
         sys.exit(2)
     mode = sys.argv[1]
-    prefix = b"\x1b[" if mode == "csi" else b"\x1bO"
-    final = b"B"
 
     sync_r, sync_w = os.pipe()
     result_r, result_w = os.pipe()
@@ -55,12 +80,10 @@ def main() -> None:
         sys.exit(1)
     os.close(sync_r)
 
-    # Let the child enter read_raw_key() and block on the first read(1) before
-    # we push bytes (reduces batching ESC+[ and B in one kernel read).
-    time.sleep(0.08)
-    os.write(master_fd, prefix)
-    time.sleep(_GAP)
-    os.write(master_fd, final)
+    if mode == "csi":
+        _inject_csi_down(master_fd)
+    else:
+        _inject_ss3_down(master_fd)
 
     _, status = os.waitpid(pid, 0)
     os.close(master_fd)
