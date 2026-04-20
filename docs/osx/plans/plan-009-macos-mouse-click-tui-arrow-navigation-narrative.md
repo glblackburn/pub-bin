@@ -172,7 +172,12 @@ When a defect causes **`draw`** lines to repeat the **same** `selected_index` / 
    - *Example stderr line:* `2026-04-20T15:23:41.527-07:00 MACOS_MOUSE_CLICK_TUI_STATE {"ts_wall":"2026-04-20T15:23:41.527-07:00","ts_mono_ns":9123456789012345,...}`  
    - (Exact prefix formatting is an implementation detail; the requirement is **visible wall time** + **unchanged** ability to strip a fixed prefix and parse JSON.)
 3. **Docs** — update [`osx/README.md`](../../../osx/README.md) (jq examples, field dictionary) and **[`plan-agent-new-test-up-down-navigation.plan.md`](agent/plan-agent-new-test-up-down-navigation.plan.md)** / **[`plan-002`](plan-002-macos-mouse-click-terminal-ux.md)** cross-links if the public contract changes.
-4. **Tests** — extend [`osx/tests/test_debug_tui_logging_meta.py`](../../../osx/tests/test_debug_tui_logging_meta.py) (and any fixture strings that assert exact JSON) for required keys/types; keep **log file** lines **jq-friendly** (one JSON object per line; new fields additive).
+4. **Automated tests (required)** — extend [`osx/tests/test_debug_tui_logging_meta.py`](../../../osx/tests/test_debug_tui_logging_meta.py) (and any other tests that parse TUI debug lines) so **CI proves** the feature works end-to-end, not only by manual eyeballing stderr:
+   - **Presence:** every parsed **`draw`** / **`after_key`** / **`run`** / **`anchor`** payload from the log sink and from **stderr** (after stripping the `MACOS_MOUSE_CLICK_TUI_STATE ` prefix) includes **`ts_wall`** and **`ts_mono_ns`** when **`MACOS_MOUSE_CLICK_DEBUG_TUI`** is on.
+   - **`ts_wall` format:** assert string matches a documented pattern (e.g. ISO-8601 with offset and fractional seconds as in examples above); reject empty or naive `Z`-only forms unless implementation explicitly standardizes on UTC and tests document that.
+   - **`ts_mono_ns` type and ordering:** assert **integer**; for **two emissions in one test** (e.g. `draw` then `after_key`), assert `ts_mono_ns` **strictly increases** on the second line (monotonicity within a process).
+   - **Stderr prefix:** assert the human-visible wall time appears on stderr **before** or within the prefix as specified in task 2, so operators get a new visual anchor even when JSON bodies repeat.
+   - **Fixtures:** update any hard-coded JSON strings in tests to include the new fields; keep **log file** lines **jq-friendly** (one JSON object per line; new fields **additive** so old `jq` filters keep working when keys are ignored).
 
 **Non-goals for Phase 1:** raw stdin hex dumps (deferred to optional deeper instrumentation below); changing **Rich** layout or adding interactive TUI “debug HUD.”
 
