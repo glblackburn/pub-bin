@@ -6,12 +6,15 @@ todos:
   - id: add-plan-09-evidence-bundle
     content: "Document evidence bundle and agent validation for one-press Up/Down (plan-09)"
     status: completed
+  - id: phase-1-tui-debug-timestamps
+    content: "Phase 1: add wall-clock (and optional monotonic) timestamps to TUI debug JSON + stderr MACOS_MOUSE_CLICK_TUI_STATE lines"
+    status: pending
 isProject: false
 ---
 
 # Plan 09: Rich TUI arrow navigation — consolidated problem narrative
 
-This document **does not** define new product behavior. It **summarizes**, in one place, how **Up** / **Down** misbehavior in the Rich pre-run table was **described** across **DEF-002**, **DEF-003**, **DEF-006**, and **DEF-008**, and points to the canonical specs and defect detail files.
+This document **primarily summarizes** how **Up** / **Down** misbehavior in the Rich pre-run table was **described** across **DEF-002**, **DEF-003**, **DEF-006**, and **DEF-008**, and points to the canonical specs and defect detail files. **Phase 1** below records a **planned** logging enhancement (timestamps) to make operator and agent validation easier; implementation is tracked in frontmatter **`phase-1-tui-debug-timestamps`**.
 
 **Normative UX and checklist:** **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)**  
 **Per-defect detail:** **[`../defects/README.md`](../defects/README.md)**  
@@ -139,6 +142,41 @@ For **Up**, the same checks with **`last_key":"up"`** and movement to the **prev
 ### Limits of logs alone
 
 Logs prove **internal state** the script emits; they do not **by themselves** prove what appeared on glass. For “pixel truth,” add **screenshot/video** or a **transcript** and state that the attachment matches the same run as the NDJSON file.
+
+### Operator pain: stderr looks “unchanged” when state repeats
+
+When a defect causes **`draw`** lines to repeat the **same** `selected_index` / `row_key` / `setting_label` / `value_text` (e.g. highlight did not move after a keypress), **stderr** can look like the terminal is only **redrawing**—successive `MACOS_MOUSE_CLICK_TUI_STATE {"selected_index":0,...,"event":"draw"}` lines are visually identical. That is **literally true** for the JSON body even though the user **did** press a key and expects a **new** row. Without a **per-line time identity**, operators cannot tell “new log emission” from “scrollback” or correlate key timing to log order.
+
+---
+
+## Phase 1 (planned): timestamps on every TUI debug emission
+
+**Goal:** make each **`MACOS_MOUSE_CLICK_TUI_STATE`** emission **obviously distinct** and **time-correlatable** in both the **NDJSON log file** and **stderr**, without changing Rich table rendering.
+
+**Tasks (implementation — not done in this narrative doc alone):**
+
+1. **JSON body** — extend `_debug_tui_emit` payloads (see [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) `_debug_tui_write_line` / `_debug_tui_emit`) with at least:
+   - **`ts_wall`** — wall-clock for **humans** and calendar correlation: **ISO-8601** string with **fractional seconds** and a **numeric timezone offset** (not `Z` alone unless UTC is explicit and documented).  
+     - *Example value:* `"2026-04-20T15:23:41.527-07:00"`  
+     - Sortable lexicographically if offsets are consistent; unambiguous across DST when offset is present.
+   - **`ts_mono_ns`** — monotonic time for **machines**: **integer** count of **nanoseconds** from an **unspecified origin** (e.g. `time.monotonic_ns()` at process start is irrelevant—only **differences** matter). Strict total order even when two emissions share the same **`ts_wall`** millisecond.  
+     - *Example value:* `9123456789012345`  
+     - *Example delta:* line B `ts_mono_ns` minus line A `ts_mono_ns` ⇒ nanoseconds between those two emissions (overflow across reboot not a concern for one session).
+   - *Illustrative one-line NDJSON record* (other keys unchanged from today; ellipses for brevity):
+
+```json
+{"ts_wall":"2026-04-20T15:23:41.527-07:00","ts_mono_ns":9123456789012345,"selected_index":0,"row_key":"mode","setting_label":"Mode","value_text":"learn","source":"cli","event":"draw"}
+```
+
+2. **Stderr prefix** — prepend the same **`ts_wall`** string (or a compact `HH:MM:SS.mmm` slice derived from it) **before** the existing `MACOS_MOUSE_CLICK_TUI_STATE ` prefix **or** embed it in the prefix pattern so scrolling operators see a **new** line at a glance even when the JSON body matches the previous row.  
+   - *Example stderr line:* `2026-04-20T15:23:41.527-07:00 MACOS_MOUSE_CLICK_TUI_STATE {"ts_wall":"2026-04-20T15:23:41.527-07:00","ts_mono_ns":9123456789012345,...}`  
+   - (Exact prefix formatting is an implementation detail; the requirement is **visible wall time** + **unchanged** ability to strip a fixed prefix and parse JSON.)
+3. **Docs** — update [`osx/README.md`](../../../osx/README.md) (jq examples, field dictionary) and **[`plan-agent-new-test-up-down-navigation.plan.md`](agent/plan-agent-new-test-up-down-navigation.plan.md)** / **[`plan-002`](plan-002-macos-mouse-click-terminal-ux.md)** cross-links if the public contract changes.
+4. **Tests** — extend [`osx/tests/test_debug_tui_logging_meta.py`](../../../osx/tests/test_debug_tui_logging_meta.py) (and any fixture strings that assert exact JSON) for required keys/types; keep **log file** lines **jq-friendly** (one JSON object per line; new fields additive).
+
+**Non-goals for Phase 1:** raw stdin hex dumps (deferred to optional deeper instrumentation below); changing **Rich** layout or adding interactive TUI “debug HUD.”
+
+**Tracking:** frontmatter todo **`phase-1-tui-debug-timestamps`** above; mark **`completed`** when shipped and note **Fix commit** in **plan 02** / defect rows if tied to a reopened DEF.
 
 ---
 
