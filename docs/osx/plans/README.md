@@ -12,7 +12,7 @@ Canonical product and UX specs for **`osx/macos_mouse_click.py`**. Agent/session
 | plan-006 | Rich TUI terminal resize | **Roadmap** | [plan-006-macos-mouse-click-rich-tui-terminal-resize.md](plan-006-macos-mouse-click-rich-tui-terminal-resize.md) |
 | plan-007 | TUI field-edit input | **Roadmap** | [plan-007-macos-mouse-click-tui-field-edit-input.md](plan-007-macos-mouse-click-tui-field-edit-input.md) |
 | plan-008 | Stop during run | **Roadmap** | [plan-008-macos-mouse-click-stop-during-run.md](plan-008-macos-mouse-click-stop-during-run.md) |
-| plan-009 | TUI arrow issues — consolidated narrative | **Reference** | [plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
+| plan-009 | TUI Up/Down arrows — phased remediation | **Roadmap** | [plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
 | plan-handoff | LinkedIn draft session (2026-04-18) | Session note | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
 
 Status meanings match the former **`docs/plans/README.md`** legend: **Shipped** = normative behavior spec matches the script; **Closed (v1)** = that plan’s v1 milestone signed off in-doc; **Roadmap** = future work.

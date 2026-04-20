@@ -94,7 +94,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 - [Plan 06: Rich TUI terminal resize (related)](plan-006-macos-mouse-click-rich-tui-terminal-resize.md)
 - [Plan 07: TUI field-edit input / DEF-004 (related)](plan-007-macos-mouse-click-tui-field-edit-input.md)
 - [Plan 08: Stop during run without terminal focus (related)](plan-008-macos-mouse-click-stop-during-run.md)
-- [Plan 09: TUI arrow navigation — consolidated narrative (reference)](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)
+- [Plan 09: TUI Up/Down arrows — phased remediation (narrative + phases)](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)
 - [Todos](#todos)
   - [Implementation and docs (closed)](#implementation-and-docs-closed)
   - [Manual tests (operator checklist)](#manual-tests-operator-checklist)
