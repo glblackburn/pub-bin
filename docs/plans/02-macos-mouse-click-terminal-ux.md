@@ -57,6 +57,12 @@ todos:
   - id: defect-def-006-tui-arrow-multi-press
     content: "DEF-006: Rich table Up/Down needs multiple presses — CSI inter-byte timeout"
     status: completed
+  - id: defect-def-007-cli-duplicate-options-silent
+    content: "DEF-007: Repeated -n/--count (etc.) silently uses last value — should error"
+    status: pending
+  - id: defect-def-008-tui-arrow-double-press-residual
+    content: "DEF-008: Up/Down still feels like double press — log vs stdin (see arrow analysis plan)"
+    status: pending
   - id: plan-02-v1-closure
     content: "Plan 02 v1 closed; DEF-003 manual verification signed off at plan close-out"
     status: completed
@@ -99,6 +105,8 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
   - [DEF-004: TUI edit prompts echo or capture special characters](#def-004-tui-edit-prompts-echo-or-capture-special-characters)
   - [DEF-005: Rich TUI does not reflow on terminal resize](#def-005-rich-tui-does-not-reflow-on-terminal-resize)
 - [DEF-006: Multiple Up/Down presses per row (CSI timeout)](#def-006-multiple-updown-presses-per-row-csi-timeout)
+- [DEF-007: Duplicate -n flag uses last value (no error)](#def-007-duplicate-n-flag-uses-last-value-no-error)
+- [DEF-008: Residual Up/Down double press (investigation)](#def-008-residual-updown-double-press-investigation)
 - [Manual QA checklist (after implementation)](#manual-qa-checklist-after-implementation)
 - [Out of scope (v1)](#out-of-scope-v1)
 - [Implementation order](#implementation-order)
@@ -114,6 +122,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 | **DEF-001**, **DEF-002** | **Fixed** + manual **Passed** |
 | **DEF-003** | **Fixed** (script); manual **Passed** at v1 plan close-out — see [DEF-003](#def-003-mouse-wheel--unknown-esc-cancels-tui) subsection |
 | **DEF-004**, **DEF-005** | **Closed (deferred)** to **[plan 07](07-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06](06-macos-mouse-click-rich-tui-terminal-resize.md)** |
+| **DEF-007**, **DEF-008** | **Open** — see [DEF-007](#def-007-duplicate-n-flag-uses-last-value-no-error) / [DEF-008](#def-008-residual-updown-double-press-investigation) |
 
 **No further v1 scope** is tracked in this document. New UX or behavior changes should add a **new plan** or a **new MT-xx** row here only if plan 02 remains the canonical overlay spec for that release.
 
@@ -284,7 +293,7 @@ Then walk the **Select mode** menu, optional field prompts, **Resolved configura
 - [x] **MT-08** (`manual-mt-08-resize-narrow`) — resize exercise **2026-04-18**: reflow **missing** (**DEF-005** → **[plan 06](06-macos-mouse-click-rich-tui-terminal-resize.md)**).
 - [x] **MT-09** (`manual-mt-09-interactive-legacy`) — legacy **`--interactive`** + fake **`rich`** [one-liner](#mt-09-operator-one-liner-hide-rich); operator **2026-04-18** (`yoda.local`).
 
-**Remaining manual work (pending only):** **None** — **MT-01**–**MT-09** **done** in the operator checklist (re-open rows only when behavior materially changes). **Defect audit:** **DEF-001**–**DEF-003** **Passed** (see **[Plan status](#plan-status-v1--closed)**); **DEF-004** / **DEF-005** **closed (deferred)** — **[plan 07 — TUI field-edit input](07-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**; no **Fix commit** for deferrals. Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
+**Remaining manual work (pending only):** **None** — **MT-01**–**MT-09** **done** in the operator checklist (re-open rows only when behavior materially changes). **Defect audit:** **DEF-001**–**DEF-003** **Passed** (see **[Plan status](#plan-status-v1--closed)**); **DEF-004** / **DEF-005** **closed (deferred)** — **[plan 07 — TUI field-edit input](07-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06 — terminal resize](06-macos-mouse-click-rich-tui-terminal-resize.md)**; no **Fix commit** for deferrals. **DEF-007** / **DEF-008** are **open** (CLI duplicate flags; arrow / log investigation — see **[Defects](#defects)**). Automation roadmap: **[plan 03 — TUI automation](03-macos-mouse-click-tui-automation.md)**.
 
 ## Pre-run editor: controls (normative)
 
@@ -330,8 +339,10 @@ Traceability: each code fix should have its own **git commit**, then this docume
 | DEF-004 | 2026-04-18 | **Closed (deferred)** | TUI row **Enter** → `Console.input` prompts **echo** or **capture** stray / special characters; validation rejects bad values but UX is noisy (**acceptable for now**) | MT-01, MT-02 | — | **N/A** |
 | DEF-005 | 2026-04-18 | **Closed (deferred)** | Rich pre-run TUI **does not reflow** on terminal resize: shrink → bad wrap; expand → layout stays at old effective width (**MT-08**) | MT-08; `run_rich_pre_run_editor` | — | **N/A** |
 | DEF-006 | 2026-04-18 | **Fixed** (script) | On the main Rich table, **Up**/**Down** sometimes need **several** presses per row: **CSI** arrow bytes can arrive **>250 ms** apart; `read_raw_key` timed out mid-sequence → **`other`** + orphan tail (**DEF-002**-class timing, distinct symptom) | MT-01, MT-02; `read_raw_key` | `7cfec5161c20ee36db2fe5f95b2ebe8cc92bfd3c` | **Pending** |
+| DEF-007 | 2026-04-19 | **Open** | Same option repeated on the argv (**`-n`** / **`--count`**, etc.): **no error**; **last occurrence wins** — easy to typo **`-n 10 … -n 100 -n 5`** and run **5** clicks without noticing | CLI / `argparse`; MT-05-style runs | — | **N/A** until fixed |
+| DEF-008 | 2026-04-19 | **Open** | After **DEF-006** fix, **Up**/**Down** can still feel like **two presses** per row: mix of **`after_key` logged before `selected` updates**, partial CSI → **`other`**, or Rich **`console.clear`** / stdin timing — see analysis plan | MT-01, MT-02; `run_rich_pre_run_editor` / `read_raw_key` | — | **N/A** until fixed |
 
-**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **DEF-003** subsection for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient.
+**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **DEF-003** subsection for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient. **DEF-007** / **DEF-008** — **Open** (no fix commit yet).
 
 ### DEF-001: `Console.input(highlight=…)` on older Rich
 
@@ -521,6 +532,58 @@ At the Rich table, **scroll the mouse wheel down** a few times (no **Q** / **Ctr
 
 - **pytest** (macOS): `pytest osx/tests/test_read_raw_key_csi.py -c osx/pytest.ini -v`
 - **MT-01** / **MT-02**: **Up**/**Down** moves exactly **one** row per key on the main table under normal typing.
+
+### DEF-007: Duplicate -n flag uses last value (no error)
+
+- **Frontmatter todo:** `defect-def-007-cli-duplicate-options-silent` (**pending**).
+- **Status:** **Open** — no script change yet.
+- **Severity:** Medium — operator mistake (**`-n 10 … -n 100 -n 5`**) silently picks **5**; no stderr hint.
+
+**Observed**
+
+```bash
+MACOS_MOUSE_CLICK_DEBUG_TUI=yes MACOS_MOUSE_CLICK_DEBUG_TUI_LOG=debug.json \
+  osx/macos_mouse_click.py -n 10 -d 0 -x 1563.4 -y 4.0 -Y -n 100 -n 5
+```
+
+Process prints **Running** / **`run`** JSON with **`count":5`** (last **`-n`** only). No **`Error:`** exit.
+
+**Root cause**
+
+1. In [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py) **`build_arg_parser`**, **`-n` / `--count`** is registered once (`add_argument(..., default=argparse.SUPPRESS)`). **`argparse`**’s default **store** action **replaces** the destination each time the flag appears; **`parse_args`** does not treat repeated options as an error.
+2. **`validate_ns`** / **`namespace_to_cfg`** only read the final namespace — there is **no** check that **`-n`** appeared at most once.
+
+**Desired behavior (future fix)**
+
+- Exit **2** with a clear message, e.g. **`-n` / `--count` may only appear once** (same policy optionally for **`-d`**, **`-x`**, **`-y`** if repeated).
+
+**Resolution (when implemented)**
+
+- Custom **`argparse.Action`** (or post-parse scan of **`sys.argv`**) to detect duplicates; then update this row per **Git workflow** above.
+
+**Regression check**
+
+- Passing **`-n 3`** once still works; duplicate **`-n`** on the same line exits **2**.
+
+### DEF-008: Residual Up/Down double press (investigation)
+
+- **Analysis plan (in-repo):** [`agent/arrow-key-double-press-analysis.plan.md`](agent/arrow-key-double-press-analysis.plan.md)
+- **Frontmatter todo:** `defect-def-008-tui-arrow-double-press-residual` (**pending**).
+- **Status:** **Open** — investigation; overlaps **DEF-006** (CSI timing) but covers **post-fix** reports and **debug log** semantics.
+- **Severity:** Medium — table highlight still does not move on first physical press in some environments, or operators misread **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** because **`after_key`** is emitted **before** **`selected`** is updated for **Up**/**Down**.
+
+**Observed / hypotheses**
+
+- See analysis plan: classify **Case A** (`last_key` is **`down`** / **`up`**, next **`draw`** moves) vs **Case B** (first press **`other`**, real stdin loss).
+- Rich **`console.clear()`** + PTY may still interact badly with stdin (**Phase 1** scratch: [`osx/tests/_scratch_phase1_rich_table_pty.md`](../../osx/tests/_scratch_phase1_rich_table_pty.md)).
+
+**Resolution (when implemented)**
+
+- Depends on Case A vs B (logging order vs **`read_raw_key`** / drain). Record **Fix commit** and **Manual verification** here when closed.
+
+**Regression check**
+
+- **MT-01** / **MT-02** + **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`**: one **Down** → one row move; log lines match intent.
 
 ## Manual QA checklist (after implementation)
 
