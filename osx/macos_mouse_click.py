@@ -36,7 +36,7 @@ import termios
 import tty
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 Quartz: Any = None
 _rich_module: Any = None
@@ -670,6 +670,15 @@ def _build_editor_table(cfg: ResolvedConfig, row_keys: List[str], selected: int)
     return table
 
 
+def _tui_bump_selected_for_arrow_key(selected: int, key: str, n_rows: int) -> int:
+    """Return ``selected`` after one Up/Down in the Rich table (DEF-008 logging uses this)."""
+    if key == "up":
+        return max(0, selected - 1)
+    if key == "down":
+        return min(n_rows - 1, selected + 1)
+    return selected
+
+
 def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
     """TTY review/edit. Returns True to run clicks, False if user cancelled."""
     from rich.console import Console
@@ -700,6 +709,10 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
         )
         _debug_tui_emit(cfg, row_keys, selected, event="draw")
         key = read_raw_key()
+        if key in ("up", "down"):
+            selected = _tui_bump_selected_for_arrow_key(
+                selected, key, len(row_keys)
+            )
         _debug_tui_emit(cfg, row_keys, selected, event="after_key", last_key=key)
         if key in ("q", "ctrl_c", "ctrl_d"):
             return False
@@ -723,18 +736,14 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
             _apply_row_reset(cfg, rk)
             row_keys = editor_row_keys(cfg)
             continue
-        if key == "up":
-            selected = max(0, selected - 1)
-            continue
-        if key == "down":
-            selected = min(len(row_keys) - 1, selected + 1)
-            continue
         if key == "enter":
             rk = row_keys[selected]
             console.clear()
             _edit_row(console, cfg, rk)
             row_keys = editor_row_keys(cfg)
             _prompt_cooked(console, "\nPress Enter to return to the editor…")
+            continue
+        if key in ("up", "down"):
             continue
         continue
 
@@ -817,6 +826,76 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         ),
     )
     return p
+
+
+def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
+    """Detect duplicate count/delay/x/y flags in raw argv (DEF-007).
+
+    Scans tokens before a bare ``--``. Bundled forms such as ``-n5`` or
+    ``--count=3`` each count as one occurrence. ``-n`` and ``--count`` share
+    the same logical option.
+    """
+    counts = {"count": 0, "delay": 0, "x": 0, "y": 0}
+    for tok in argv:
+        if tok == "--":
+            break
+        if tok in ("-n", "--count") or tok.startswith("--count="):
+            counts["count"] += 1
+        elif tok in ("-d", "--delay") or tok.startswith("--delay="):
+            counts["delay"] += 1
+        elif tok in ("-x", "--x") or tok.startswith("--x="):
+            counts["x"] += 1
+        elif tok in ("-y", "--y") or tok.startswith("--y="):
+            counts["y"] += 1
+        elif len(tok) > 2 and tok.startswith("-n"):
+            rest = tok[2:]
+            if rest.startswith("="):
+                rest = rest[1:]
+            try:
+                int(rest, 10)
+            except ValueError:
+                pass
+            else:
+                counts["count"] += 1
+        elif len(tok) > 2 and tok.startswith("-d"):
+            rest = tok[2:]
+            if rest.startswith("="):
+                rest = rest[1:]
+            try:
+                float(rest)
+            except ValueError:
+                pass
+            else:
+                counts["delay"] += 1
+        elif len(tok) > 2 and tok.startswith("-x"):
+            rest = tok[2:]
+            if rest.startswith("="):
+                rest = rest[1:]
+            try:
+                float(rest)
+            except ValueError:
+                pass
+            else:
+                counts["x"] += 1
+        elif len(tok) > 2 and tok.startswith("-y"):
+            rest = tok[2:]
+            if rest.startswith("="):
+                rest = rest[1:]
+            try:
+                float(rest)
+            except ValueError:
+                pass
+            else:
+                counts["y"] += 1
+    if counts["count"] > 1:
+        return "-n / --count may only appear once"
+    if counts["delay"] > 1:
+        return "-d / --delay may only appear once"
+    if counts["x"] > 1:
+        return "-x / --x may only appear once"
+    if counts["y"] > 1:
+        return "-y / --y may only appear once"
+    return None
 
 
 def validate_ns(ns: argparse.Namespace) -> Optional[str]:
@@ -1042,6 +1121,10 @@ def run_fixed_or_cursor_flow(qz: Any, cfg: ResolvedConfig) -> int:
 
 def main(argv: Optional[List[str]] = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
+    dup_err = argv_duplicate_cli_option_error(argv)
+    if dup_err:
+        print(f"Error: {dup_err}", file=sys.stderr)
+        return 2
     parser = build_arg_parser()
     ns = parser.parse_args(argv)
 

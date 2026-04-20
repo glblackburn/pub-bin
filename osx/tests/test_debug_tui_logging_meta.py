@@ -53,8 +53,8 @@ def test_json_contract_on_fixture_lines() -> None:
         + '{"selected_index":0,"row_key":"mode","setting_label":"Mode",'
         '"value_text":"learn","source":"cli","event":"draw"}\n'
         + TUI_PREFIX
-        + '{"selected_index":0,"row_key":"mode","setting_label":"Mode",'
-        '"value_text":"learn","source":"cli","event":"after_key","last_key":"down"}\n'
+        + '{"selected_index":1,"row_key":"count","setting_label":"Count",'
+        '"value_text":"2","source":"cli","event":"after_key","last_key":"down"}\n'
         + TUI_PREFIX
         + '{"event":"run","running_text":"mode=learn count=2 delay=0.0s",'
         '"mode":"learn","count":2,"delay":0.0,"anchor_x":null,"anchor_y":null}\n'
