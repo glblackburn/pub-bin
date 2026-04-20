@@ -17,7 +17,7 @@ isProject: false
 
 # Plan 09: Rich TUI Up and Down arrow navigation — phased remediation
 
-This document is the **working plan** to drive **Up** / **Down** arrow behavior in the Rich pre-run table toward stable, predictable navigation and **trustworthy diagnostics**. It starts with **better logging (Phase 1)**, then **runs tests and analyzes evidence (Phase 2)** using automated tests, AI-driven manual checks, and **user** manual runs with full log bundles fed back for analysis. **Further phases (Phase 3+)** are **not specified here**; they will be written **after Phase 2** results (remaining bugs, environment-specific issues, or deeper instrumentation).
+This document is the **working plan** to drive **Up** / **Down** arrow behavior in the Rich pre-run table toward stable, predictable navigation and **trustworthy diagnostics**. The **normative outcome** of the whole plan is **[Plan goal: Target use case (acceptance)](#plan-goal-target-use-case-acceptance)**—one physical keypress moves the highlight exactly **one row** in the expected direction, with logs that operators and agents can trust. Work starts with **better logging (Phase 1)**, then **runs tests and analyzes evidence (Phase 2)** using automated tests, AI-driven manual checks, and **user** manual runs with full log bundles fed back for analysis. **Further phases (Phase 3+)** are **not specified here**; they will be written **after Phase 2** results (remaining bugs, environment-specific issues, or deeper instrumentation).
 
 **Normative UX and checklist:** **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)**  
 **Per-defect detail:** **[`../defects/README.md`](../defects/README.md)**  
@@ -25,14 +25,26 @@ This document is the **working plan** to drive **Up** / **Down** arrow behavior 
 
 ---
 
+## Plan goal: Target use case (acceptance)
+
+Everything in this plan—logging, tests, analysis, and later fixes—exists to **satisfy** the following **acceptance target** for the Rich pre-run settings table:
+
+- **Down (once):** the **next** row in the settings table is **highlighted** (focus moves down by one row).
+- **Up (once):** the **previous** row is **highlighted** (focus moves up by one row).
+
+“Highlighted” means the same notion as the operator: the **selected** row in the Rich table (bold / focus styling on the **Setting** column in practice). Broader pre-run UX rules remain in **[`plan-002`](plan-002-macos-mouse-click-terminal-ux.md)**; this plan focuses on proving and preserving **arrow-driven row motion** under real terminals.
+
+---
+
 ## Table of contents
 
+- [Plan goal: Target use case (acceptance)](#plan-goal-target-use-case-acceptance)
 - [Purpose and scope](#purpose-and-scope)
 - [Phased roadmap overview](#phased-roadmap-overview)
 - [Phase 1: Better logging for analysis](#phase-1-better-logging-for-analysis)
 - [Phase 2: Execute tests and analyze results](#phase-2-execute-tests-and-analyze-results)
 - [Phase 3 and beyond](#phase-3-and-beyond)
-- [Background: consolidated narrative](#background-consolidated-narrative) — defect summary, operator narrative, evidence bundle, agent validation, stderr “unchanged lines” note (subsections under that heading)
+- [Background: consolidated narrative](#background-consolidated-narrative) — defect summary, operator narrative, acceptance cross-reference, evidence bundle, agent validation, stderr “unchanged lines” note (subsections under that heading)
 - [Optional next instrumentation](#optional-next-instrumentation-if-bundles-stay-inconclusive)
 - [Repo pointers](#repo-pointers-tests-and-docs)
 
@@ -40,11 +52,13 @@ This document is the **working plan** to drive **Up** / **Down** arrow behavior 
 
 ## Purpose and scope
 
+**Plan goal (normative):** deliver the behavior and evidence needed to meet **[Plan goal: Target use case (acceptance)](#plan-goal-target-use-case-acceptance)**—reliable **one press → one row** **Up** / **Down** motion in the Rich pre-run table, with **telemetry aligned** to what the operator sees. Phases 1–2 (and any Phase 3+) are **means** toward that end: better logs first, then measured runs and analysis, then targeted remediation as Phase 2 dictates.
+
 **In scope:** pre-run Rich table **Up** / **Down** navigation, related **cancel / Esc** policy interactions, **CSI timing** in `read_raw_key`, and **debug telemetry** that must align with operator perception (**DEF-002**, **DEF-003**, **DEF-006**, **DEF-008** classes).
 
 **Out of scope for this plan file:** implementing fixes beyond what each phase describes; Phase 3+ content until Phase 2 completes.
 
-The **background** section keeps the original **consolidated narrative**, defect summaries, evidence-bundle recipe, and agent validation notes unchanged in substance so reports and agents can still cite one document.
+The **background** section keeps the original **consolidated narrative**, defect summaries, evidence-bundle recipe, and agent validation notes unchanged in substance so reports and agents can still cite one document. The **[Target use case (acceptance)](#target-use-case-acceptance)** heading there points back to the **Plan goal** section above so the acceptance definition stays **single-sourced** at the top.
 
 ---
 
@@ -54,7 +68,7 @@ The **background** section keeps the original **consolidated narrative**, defect
 |-------|--------|-----------------------------|
 | **1** | Instrumentation — time-ordered, distinct TUI debug lines | Timestamps and tests described in Phase 1 are **shipped**; operators can correlate keys to log lines reliably. |
 | **2** | Evidence — automated + manual (AI + user) + analysis | Findings documented; failures classified; **Phase 3+** plan drafted from data, not guesswork. |
-| **3+** | *TBD after Phase 2* | Code fixes, extra tests, env-specific notes, or optional stdin tracing — whatever Phase 2 shows is needed. |
+| **3+** | *TBD after Phase 2* | Code fixes, extra tests, env-specific notes, or optional stdin tracing — whatever Phase 2 shows is needed to meet **[Plan goal: Target use case (acceptance)](#plan-goal-target-use-case-acceptance)**. |
 
 ---
 
@@ -96,7 +110,7 @@ The **background** section keeps the original **consolidated narrative**, defect
 
 ## Phase 2: Execute tests and analyze results
 
-**Goal:** after Phase 1 logging is in place, **produce comparable evidence** from **CI**, **AI-driven manual runs**, and **real user sessions**, then **analyze** that evidence so Phase 3+ addresses actual failure modes.
+**Goal:** after Phase 1 logging is in place, **produce comparable evidence** from **CI**, **AI-driven manual runs**, and **real user sessions**, then **analyze** that evidence so Phase 3+ addresses actual failure modes. Success is measured against **[Plan goal: Target use case (acceptance)](#plan-goal-target-use-case-acceptance)** (one physical **Up** / **Down** ⇒ one row move, logs match perception).
 
 **Activities:**
 
@@ -168,10 +182,7 @@ Without **structured, time-ordered** evidence tied to **each physical keypress**
 
 ### Target use case (acceptance)
 
-- **Down (once):** the **next** row in the settings table is **highlighted** (focus moves down by one row).
-- **Up (once):** the **previous** row is **highlighted** (focus moves up by one row).
-
-“Highlighted” means the same notion as the operator: the **selected** row in the Rich table (bold / focus styling on the **Setting** column in practice).
+Authoritative definition: **[Plan goal: Target use case (acceptance)](#plan-goal-target-use-case-acceptance)** at the top of this document. The narrative and validation sections below assume that goal when they discuss “the use case” or “acceptance.”
 
 ### Evidence bundle from a running `osx/macos_mouse_click.py` (attach to a bug report or agent session)
 
