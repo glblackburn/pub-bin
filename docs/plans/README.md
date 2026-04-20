@@ -1,6 +1,6 @@
 # Plans index
 
-**macOS mouse click** product plans and operator specs now live under **`[docs/osx/](../osx/README.md)`** — start at **[`docs/osx/plans/README.md`](../osx/plans/README.md)** for the numbered **plan-001**–**plan-008** table, handoffs, and links to **[defects](../osx/defects/README.md)**.
+**macOS mouse click** product plans and operator specs now live under **`[docs/osx/](../osx/README.md)`** — start at **[`docs/osx/plans/README.md`](../osx/plans/README.md)** for the numbered **plan-001**–**plan-009** table, handoffs, and links to **[defects](../osx/defects/README.md)**.
 
 The rows below are **shortcuts** to the same documents (new canonical paths use the **`plan-###-`** filename prefix):
 
@@ -14,6 +14,7 @@ The rows below are **shortcuts** to the same documents (new canonical paths use 
 | **06** | [plan-006 — Rich TUI resize](../osx/plans/plan-006-macos-mouse-click-rich-tui-terminal-resize.md) |
 | **07** | [plan-007 — field-edit input](../osx/plans/plan-007-macos-mouse-click-tui-field-edit-input.md) |
 | **08** | [plan-008 — stop during run](../osx/plans/plan-008-macos-mouse-click-stop-during-run.md) |
+| **09** | [plan-009 — TUI arrow narrative](../osx/plans/plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
 
 **Stub paths** (same relative directory as before the move) still exist as one-line redirects — for example [`01-macos-clicker.md`](01-macos-clicker.md) — so older links and external bookmarks keep resolving.
 
