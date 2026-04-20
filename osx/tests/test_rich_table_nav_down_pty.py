@@ -12,14 +12,41 @@ See ``docs/plans/agent/new-test-up-down-navigation.plan.md``.
 
 from __future__ import annotations
 
+import json
 import re
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import pytest
 
 from pty_harness import REPO_ROOT, base_child_env, spawn_clicker_pexpect
+
+def _iter_tui_payloads_from_log(path: Path) -> Iterator[dict[str, Any]]:
+    """Log file lines are raw JSON (one object per line) for ``jq`` compatibility."""
+    if not path.exists():
+        yield from ()
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        yield json.loads(s)
+
+
+def _wait_debug_log(path: Path, *, timeout: float = 8.0) -> None:
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        if path.exists() and path.stat().st_size > 0:
+            return
+        time.sleep(0.05)
+    raise AssertionError(f"expected non-empty debug log at {path}")
+
+
+def _latest_draw_payload(path: Path) -> dict[str, Any]:
+    draws = [p for p in _iter_tui_payloads_from_log(path) if p.get("event") == "draw"]
+    assert draws, f"no draw events in {path}"
+    return draws[-1]
 
 # Rich highlights the selected Setting cell with bold (``\\x1b[1m``) when TERM
 # supports ANSI (use ``xterm-256color`` in env below).
@@ -89,7 +116,7 @@ def _drain_until_setting(child: Any, expected: str, *, timeout: float = 12.0) ->
     return "".join(parts)
 
 
-def _mode_row_preconditions(transcript: str) -> None:
+def _mode_row_preconditions(transcript: str, *, debug_log: Path | None = None) -> None:
     """Plan case 1 (i)–(ii): first highlight Mode; Mode value matches learn CLI."""
     hi = _highlighted_setting_label(transcript)
     assert hi == "Mode", f"expected initial highlight Mode, got {hi!r}"
@@ -100,6 +127,11 @@ def _mode_row_preconditions(transcript: str) -> None:
             break
     assert found, "expected Mode row value learn with bold styling when selected"
     assert "2" in transcript and "3.5" in transcript, "expected Count/Delay cells in table"
+    if debug_log is not None:
+        _wait_debug_log(debug_log)
+        d = _latest_draw_payload(debug_log)
+        assert d["setting_label"] == "Mode" and str(d["value_text"]) == "learn"
+        assert d["row_key"] == "mode" and d["selected_index"] == 0
 
 
 @pytest.mark.darwin
@@ -114,12 +146,16 @@ def _mode_row_preconditions(transcript: str) -> None:
 def test_rich_table_down_moves_to_row_below(
     pexpect_module: Any,
     repo_root: Path,
+    tmp_path: Path,
 ) -> None:
     """Normative case 1: one Down; new highlight Setting equals prior row-below."""
     pexpect = pexpect_module
+    log_path = tmp_path / "nav.log"
     env = base_child_env(
         {
             "TERM": "xterm-256color",
+            "MACOS_MOUSE_CLICK_DEBUG_TUI": "1",
+            "MACOS_MOUSE_CLICK_DEBUG_TUI_LOG": str(log_path),
         }
     )
     child = spawn_clicker_pexpect(
@@ -135,13 +171,20 @@ def test_rich_table_down_moves_to_row_below(
     try:
         child.expect("review / edit", timeout=60)
         t0 = _transcript_after_editor_banner(child)
-        _mode_row_preconditions(t0)
+        _mode_row_preconditions(t0, debug_log=log_path)
         a = _highlighted_setting_label(t0)
         b = _row_below_setting(a)
         assert b is not None and a != b
         child.send("\x1b[B")
         t1 = _drain_until_setting(child, "Count")
         c = _highlighted_setting_label(t1)
+        _wait_debug_log(log_path)
+        tail = list(_iter_tui_payloads_from_log(log_path))
+        draws = [p for p in tail if p.get("event") == "draw"]
+        if draws:
+            assert draws[-1]["setting_label"] == "Count"
+        downs = [p for p in tail if p.get("event") == "after_key" and p.get("last_key") == "down"]
+        assert downs, "expected after_key down in debug log"
         assert c == b, f"expected highlight after Down == row-below {b!r}, got {c!r}"
         if a and c:
             assert c != a, "selection should leave the original row"
@@ -165,10 +208,18 @@ def test_rich_table_down_moves_to_row_below(
 def test_rich_table_two_downs_mode_count_delay_labels(
     pexpect_module: Any,
     repo_root: Path,
+    tmp_path: Path,
 ) -> None:
     """Normative case 2: two Downs; Setting column Mode -> Count -> Delay (s)."""
     pexpect = pexpect_module
-    env = base_child_env({"TERM": "xterm-256color"})
+    log_path = tmp_path / "nav2.log"
+    env = base_child_env(
+        {
+            "TERM": "xterm-256color",
+            "MACOS_MOUSE_CLICK_DEBUG_TUI": "1",
+            "MACOS_MOUSE_CLICK_DEBUG_TUI_LOG": str(log_path),
+        }
+    )
     child = spawn_clicker_pexpect(
         pexpect,
         ["--learn", "--interactive", "-n", "2", "-d", "3.5"],
@@ -182,14 +233,20 @@ def test_rich_table_two_downs_mode_count_delay_labels(
     try:
         child.expect("review / edit", timeout=60)
         t0 = _transcript_after_editor_banner(child)
-        _mode_row_preconditions(t0)
+        _mode_row_preconditions(t0, debug_log=log_path)
         assert _highlighted_setting_label(t0) == "Mode"
         child.send("\x1b[B")
         t1 = _drain_until_setting(child, "Count")
         assert _highlighted_setting_label(t1) == "Count"
+        _wait_debug_log(log_path)
+        d1 = _latest_draw_payload(log_path)
+        assert d1["setting_label"] == "Count"
         child.send("\x1b[B")
         t2 = _drain_until_setting(child, "Delay (s)")
         assert _highlighted_setting_label(t2) == "Delay (s)"
+        _wait_debug_log(log_path)
+        d2 = _latest_draw_payload(log_path)
+        assert d2["setting_label"] == "Delay (s)"
     finally:
         try:
             child.send("q")
