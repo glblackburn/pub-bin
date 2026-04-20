@@ -59,10 +59,10 @@ todos:
     status: completed
   - id: defect-def-007-cli-duplicate-options-silent
     content: "DEF-007: Repeated -n/--count (etc.) silently uses last value — should error"
-    status: pending
+    status: completed
   - id: defect-def-008-tui-arrow-double-press-residual
     content: "DEF-008: Up/Down still feels like double press — log vs stdin (see arrow analysis plan)"
-    status: pending
+    status: completed
   - id: plan-02-v1-closure
     content: "Plan 02 v1 closed; DEF-003 manual verification signed off at plan close-out"
     status: completed
@@ -115,7 +115,7 @@ This document is the **UX / terminal overlay** spec for [`osx/macos_mouse_click.
 | **DEF-001**, **DEF-002** | **Fixed** + manual **Passed** |
 | **DEF-003** | **Fixed** (script); manual **Passed** at v1 plan close-out — see [DEF-003 detail](../defects/def-003-wheel-esc-cancel.md) |
 | **DEF-004**, **DEF-005** | **Closed (deferred)** to **[plan 07](plan-007-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06](plan-006-macos-mouse-click-rich-tui-terminal-resize.md)** |
-| **DEF-007**, **DEF-008** | **Open** — see [DEF-007 detail](../defects/def-007-duplicate-n-flag-last-wins.md) / [DEF-008 detail](../defects/def-008-residual-arrow-double-press.md) |
+| **DEF-007**, **DEF-008** | **Fixed** (script) — duplicate CLI flags rejected; **`after_key`** debug uses post-arrow **`selected`** — see [DEF-007 detail](../defects/def-007-duplicate-n-flag-last-wins.md) / [DEF-008 detail](../defects/def-008-residual-arrow-double-press.md) |
 
 **No further v1 scope** is tracked in this document. New UX or behavior changes should add a **new plan** or a **new MT-xx** row here only if plan 02 remains the canonical overlay spec for that release.
 
@@ -286,7 +286,7 @@ Then walk the **Select mode** menu, optional field prompts, **Resolved configura
 - [x] **MT-08** (`manual-mt-08-resize-narrow`) — resize exercise **2026-04-18**: reflow **missing** (**DEF-005** → **[plan 06](plan-006-macos-mouse-click-rich-tui-terminal-resize.md)**).
 - [x] **MT-09** (`manual-mt-09-interactive-legacy`) — legacy **`--interactive`** + fake **`rich`** [one-liner](#mt-09-operator-one-liner-hide-rich); operator **2026-04-18** (`yoda.local`).
 
-**Remaining manual work (pending only):** **None** — **MT-01**–**MT-09** **done** in the operator checklist (re-open rows only when behavior materially changes). **Defect audit:** **DEF-001**–**DEF-003** **Passed** (see **[Plan status](#plan-status-v1--closed)**); **DEF-004** / **DEF-005** **closed (deferred)** — **[plan 07 — TUI field-edit input](plan-007-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06 — terminal resize](plan-006-macos-mouse-click-rich-tui-terminal-resize.md)**; no **Fix commit** for deferrals. **DEF-007** / **DEF-008** are **open** (CLI duplicate flags; arrow / log investigation — see **[Defects](#defects)**). Automation roadmap: **[plan 03 — TUI automation](plan-003-macos-mouse-click-tui-automation.md)**.
+**Remaining manual work (pending only):** **None** — **MT-01**–**MT-09** **done** in the operator checklist (re-open rows only when behavior materially changes). **Defect audit:** **DEF-001**–**DEF-003** **Passed** (see **[Plan status](#plan-status-v1--closed)**); **DEF-004** / **DEF-005** **closed (deferred)** — **[plan 07 — TUI field-edit input](plan-007-macos-mouse-click-tui-field-edit-input.md)** / **[plan 06 — terminal resize](plan-006-macos-mouse-click-rich-tui-terminal-resize.md)**; no **Fix commit** for deferrals. **DEF-007** / **DEF-008** **fixed** in **`faeb3d89da6be12decfa39adb7027516c935c98b`** (duplicate argv guard + **`after_key`** row alignment); see **[Defects](#defects)** and **[`osx/tests/test_open_defects.py`](../../../osx/tests/test_open_defects.py)**. Automation roadmap: **[plan 03 — TUI automation](plan-003-macos-mouse-click-tui-automation.md)**.
 
 ## Pre-run editor: controls (normative)
 
@@ -332,10 +332,10 @@ Traceability: each code fix should have its own **git commit**, then this docume
 | DEF-004 | 2026-04-18 | **Closed (deferred)** | TUI row **Enter** → `Console.input` prompts **echo** or **capture** stray / special characters; validation rejects bad values but UX is noisy (**acceptable for now**) | MT-01, MT-02 | — | **N/A** |
 | DEF-005 | 2026-04-18 | **Closed (deferred)** | Rich pre-run TUI **does not reflow** on terminal resize: shrink → bad wrap; expand → layout stays at old effective width (**MT-08**) | MT-08; `run_rich_pre_run_editor` | — | **N/A** |
 | DEF-006 | 2026-04-18 | **Fixed** (script) | On the main Rich table, **Up**/**Down** sometimes need **several** presses per row: **CSI** arrow bytes can arrive **>250 ms** apart; `read_raw_key` timed out mid-sequence → **`other`** + orphan tail (**DEF-002**-class timing, distinct symptom) | MT-01, MT-02; `read_raw_key` | `7cfec5161c20ee36db2fe5f95b2ebe8cc92bfd3c` | **Pending** |
-| DEF-007 | 2026-04-19 | **Open** | Same option repeated on the argv (**`-n`** / **`--count`**, etc.): **no error**; **last occurrence wins** — easy to typo **`-n 10 … -n 100 -n 5`** and run **5** clicks without noticing | CLI / `argparse`; MT-05-style runs | — | **N/A** until fixed |
-| DEF-008 | 2026-04-19 | **Open** | After **DEF-006** fix, **Up**/**Down** can still feel like **two presses** per row: mix of **`after_key` logged before `selected` updates**, partial CSI → **`other`**, or Rich **`console.clear`** / stdin timing — see analysis plan | MT-01, MT-02; `run_rich_pre_run_editor` / `read_raw_key` | — | **N/A** until fixed |
+| DEF-007 | 2026-04-19 | **Fixed** (script) | Same option repeated on the argv (**`-n`** / **`--count`**, etc.): **no error**; **last occurrence wins** — easy to typo **`-n 10 … -n 100 -n 5`** and run **5** clicks without noticing | CLI / `argparse`; MT-05-style runs | `faeb3d89da6be12decfa39adb7027516c935c98b` | **Passed** (automated: `test_open_defects.py`) |
+| DEF-008 | 2026-04-19 | **Fixed** (script) | After **DEF-006** fix, **Up**/**Down** can still feel like **two presses** per row: mix of **`after_key` logged before `selected` updates**, partial CSI → **`other`**, or Rich **`console.clear`** / stdin timing — see analysis plan | MT-01, MT-02; `run_rich_pre_run_editor` / `read_raw_key` | `faeb3d89da6be12decfa39adb7027516c935c98b` | **Pending** (operator spot-check on TTY; log semantics covered in tests) |
 
-**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **[DEF-003 detail](../defects/def-003-wheel-esc-cancel.md)** for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient. **DEF-007** / **DEF-008** — **Open** (no fix commit yet).
+**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **[DEF-003 detail](../defects/def-003-wheel-esc-cancel.md)** for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient. **DEF-007** — **Passed** via [`osx/tests/test_open_defects.py`](../../../osx/tests/test_open_defects.py). **DEF-008** — **Pending** on real TTY for full **MT-01** / **MT-02** feel; **`after_key`** row alignment covered in tests.
 
 
 ### Defect detail documents
