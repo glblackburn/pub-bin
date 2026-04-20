@@ -110,4 +110,4 @@ grep '^MACOS_MOUSE_CLICK_TUI_STATE ' tui-stderr.ndjson | sed 's/^MACOS_MOUSE_CLI
 - `osx/tests/test_debug_tui_logging_meta.py` — behavior of the TUI debug logger (gates, JSON, file vs stderr, append across processes, etc.).
 - `osx/tests/test_rich_table_nav_down_pty.py` — Rich table navigation (uses debug log under `tmp_path` for correlation when enabled).
 
-See `docs/plans/agent/new-test-up-down-navigation.plan.md` for the full Phase 2 design.
+See `docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md` for the full Phase 2 design.

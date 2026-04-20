@@ -2,7 +2,7 @@
 
 Not collected by pytest (name is not test_*.py). Keep in the tree until the
 owning phase is signed off and the user requests cleanup—see
-docs/plans/agent/new-test-up-down-navigation.plan.md (Agent workflow).
+docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md (Agent workflow).
 """
 import os
 import sys

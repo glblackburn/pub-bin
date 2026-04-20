@@ -43,7 +43,7 @@ _rich_module: Any = None
 _rich_import_attempted: bool = False
 
 # Gated Rich editor diagnostics (``MACOS_MOUSE_CLICK_DEBUG_TUI``); see plan
-# ``docs/plans/agent/new-test-up-down-navigation.plan.md`` Phase 2.
+# ``docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md`` Phase 2.
 _DEBUG_TUI_STATE_PREFIX = "MACOS_MOUSE_CLICK_TUI_STATE "
 _debug_tui_log_file: Optional[Any] = None
 _debug_tui_log_failed: bool = False

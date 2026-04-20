@@ -1,31 +1,29 @@
 # Plans index
 
-Design and roadmap documents for the **macOS mouse click** tooling (primarily [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py)). Files are ordered by plan number.
+**macOS mouse click** product plans and operator specs now live under **`[docs/osx/](../osx/README.md)`** — start at **[`docs/osx/plans/README.md`](../osx/plans/README.md)** for the numbered **plan-001**–**plan-008** table, handoffs, and links to **[defects](../osx/defects/README.md)**.
 
-| Plan | Document | Status | Summary |
-|------|----------|--------|---------|
-| **01** | [01-macos-clicker.md](01-macos-clicker.md) | **Shipped** | Core clicker: modes (learn / fixed / at-cursor), Quartz, CLI, signals, **`--yes`** / **`--interactive`**, confirmation — **source of truth** for behavior. |
-| **02** | [02-macos-mouse-click-terminal-ux.md](02-macos-mouse-click-terminal-ux.md) | **Closed (v1)** | Rich **pre-run** TTY table, keybindings, operator **MT-01–MT-09**, defects **DEF-001–005**; links to plans **03–08**. |
-| **03** | [03-macos-mouse-click-tui-automation.md](03-macos-mouse-click-tui-automation.md) | **Roadmap** | **pytest** / PTY / CI for pre-Quartz TUI and pipe paths (**MT-02**, **MT-09**, etc.) — document done; **implementation todos pending** in plan frontmatter. |
-| **04** | [04-macos-mouse-click-run-progress-ui.md](04-macos-mouse-click-run-progress-ui.md) | **Roadmap** | Post-**Start** Rich summary + **in-run progress** — not implemented. |
-| **05** | [05-macos-mouse-click-target-preview.md](05-macos-mouse-click-target-preview.md) | **Roadmap** | **Preview-only** + **show-before-run** for fixed **`-x`/`-y`** — not implemented. |
-| **06** | [06-macos-mouse-click-rich-tui-terminal-resize.md](06-macos-mouse-click-rich-tui-terminal-resize.md) | **Roadmap** | **SIGWINCH** / reflow (**DEF-005** deferred here) — not implemented. |
-| **07** | [07-macos-mouse-click-tui-field-edit-input.md](07-macos-mouse-click-tui-field-edit-input.md) | **Roadmap** | Field-edit **`Console.input`** hygiene (**DEF-004** deferred here) — not implemented. |
-| **08** | [08-macos-mouse-click-stop-during-run.md](08-macos-mouse-click-stop-during-run.md) | **Roadmap** | Stop during run without foreground terminal (**`-Y`**, long runs) — not implemented. |
+The rows below are **shortcuts** to the same documents (new canonical paths use the **`plan-###-`** filename prefix):
 
-### Status meanings
+| Plan | Document |
+|------|----------|
+| **01** | [plan-001 — macOS clicker](../osx/plans/plan-001-macos-clicker.md) |
+| **02** | [plan-002 — terminal UX](../osx/plans/plan-002-macos-mouse-click-terminal-ux.md) |
+| **03** | [plan-003 — TUI automation](../osx/plans/plan-003-macos-mouse-click-tui-automation.md) |
+| **04** | [plan-004 — run progress UI](../osx/plans/plan-004-macos-mouse-click-run-progress-ui.md) |
+| **05** | [plan-005 — target preview](../osx/plans/plan-005-macos-mouse-click-target-preview.md) |
+| **06** | [plan-006 — Rich TUI resize](../osx/plans/plan-006-macos-mouse-click-rich-tui-terminal-resize.md) |
+| **07** | [plan-007 — field-edit input](../osx/plans/plan-007-macos-mouse-click-tui-field-edit-input.md) |
+| **08** | [plan-008 — stop during run](../osx/plans/plan-008-macos-mouse-click-stop-during-run.md) |
 
-| Status | Meaning |
-|--------|---------|
-| **Shipped** | Described behavior is **in the repo** for the main script; this plan stays the **normative reference** (small doc drift vs YAML todos may exist). |
-| **Closed (v1)** | That plan’s **v1** scope is **finished and signed off** in the document (implementation + manual QA as defined there). |
-| **Roadmap** | **Future work**: spec / phases exist; **no** matching product change yet (or only partial — see that plan’s frontmatter **`todos:`**). |
+**Stub paths** (same relative directory as before the move) still exist as one-line redirects — for example [`01-macos-clicker.md`](01-macos-clicker.md) — so older links and external bookmarks keep resolving.
 
-When adding a new plan, use the next free number (`09-…`), link it from **plan 02** *Implementation touchpoints* if it affects terminal UX, add a row here, and pick a **Status** from the table above (or extend the legend).
+Design and roadmap documents for the **macOS mouse click** tooling (primarily [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py)) are described in detail in **`docs/osx/plans/`**; this file remains a **top-level entry** from `docs/plans/`.
 
 ## Cursor / agent session plans
 
-Machine-generated or working-session plans (Create Plan, handoffs) live under **[`agent/`](agent/README.md)** with **kebab-case, no spaces** filenames. Do **not** treat `~/.cursor/plans/` as the canonical location for pub-bin work — copy or author plans in **`docs/plans/agent/`** instead.
+Machine-generated or working-session plans for **non–mouse-clicker** work stay under **[`agent/`](agent/README.md)** with **kebab-case, no spaces** filenames.
+
+**Mouse-clicker** session plans live under **[`docs/osx/plans/agent/`](../osx/plans/agent/README.md)** (see **`.cursorrules`**). Do **not** treat `~/.cursor/plans/` as the canonical location for pub-bin work — copy or author plans into the appropriate **`…/plans/agent/`** tree.
 
 ## Plan 01 (**Shipped**) vs plan 02 (**Closed (v1)**)
 
@@ -42,4 +40,3 @@ Both statuses align with **code you can run today**, but they answer **different
 | **“Done?”** | Core behavior: **yes** for v1. Plan file todos: **may still be messy**. | v1 UX work: **yes**, by the plan’s own closure section. |
 
 So: **both** tie to shipped reality for their **scopes**; **Shipped** labels the **semantic reference**, **Closed (v1)** labels the **closed UX program** for that release line.
-

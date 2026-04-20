@@ -46,3 +46,6 @@ docs/system-setup-migration-plan-sensitive.md
 
 # osx pytest machine output (make -C osx test-report)
 osx/tests/reports/junit.xml
+
+# Local TUI debug log (MACOS_MOUSE_CLICK_DEBUG_TUI_LOG default / cwd artifact)
+/debug.json

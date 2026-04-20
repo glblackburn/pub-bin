@@ -7,7 +7,7 @@ Golden argv (learn + interactive, ``editor_row_keys`` = mode/count/delay only):
 Requires **pexpect**, **rich**, and **darwin** (PTY + real TUI). Marked ``table_nav``;
 excluded from ``make -C osx test-quick`` until Phase 3 stabilizes navigation/parsing.
 
-See ``docs/plans/agent/new-test-up-down-navigation.plan.md``.
+See ``docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md``.
 """
 
 from __future__ import annotations
