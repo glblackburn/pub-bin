@@ -6,7 +6,7 @@ related_plans:
 
 ### DEF-009: Rich pre-run table / panel layout corruption (double borders, misaligned grid)
 
-- **Status:** **Reported** — no fix commit yet; visual regression on the main **review / edit** screen (`Panel` + `Table` in `run_rich_pre_run_editor` / `_run_rich_pre_run_editor_loop`).
+- **Status:** **Fixed** (script) — root cause was Rich’s default ``Table`` box (**``HEAVY_HEAD``**, heavy U+2501 header rules) visually merging with the ``Panel`` light top border on tight TTYs; mitigated with **``box.ROUNDED``** and stdout flush before stderr debug lines.
 - **Severity:** Medium (UX) — readability and trust in the UI; logic and debug NDJSON can still be correct while the frame looks broken.
 - **Opened:** 2026-04-21
 - **Environment (reporter):** `yoda.local`, Terminal.app-style session, Rich pre-run editor (e.g. `./osx/macos_mouse_click.py --learn --interactive` without `-Y`, `rich` installed).
@@ -36,10 +36,13 @@ The cyan **macOS mouse click — review / edit** panel renders, but the **Settin
 
 **Resolution**
 
-- **None yet.** When fixed, add **Fix commit** (full SHA) here and in **[`plan-002` Defect summary](../plans/plan-002-macos-mouse-click-terminal-ux.md)**; prefer one commit citing **DEF-009**.
+- **`_build_editor_table`:** pass **`box=box.ROUNDED`** so inner table rules stay light-only and align with the ``Panel`` frame (no **``HEAVY_HEAD``** / U+2501 on the nested table).
+- **`_run_rich_pre_run_editor_loop`:** call **`_flush_stdout_safe()`** after **`console.clear()`** and after the main **`console.print(Panel(...))`**, before **`_debug_tui_emit`**, so ``MACOS_MOUSE_CLICK_TUI_STATE`` on stderr cannot interleave mid-frame on a single TTY.
+- **Git:** `afba1c22a626b81a368a9742b0d59d7ec4bd5646`
+- Mirror the **Fix commit** row in **[`plan-002` Defect summary](../plans/plan-002-macos-mouse-click-terminal-ux.md)**.
 
 **Regression check (after fix)**
 
-- **Automated (in-repo):** [`osx/tests/test_def009_rich_table_layout_pty.py`](../../../osx/tests/test_def009_rich_table_layout_pty.py) + [`osx/tests/def009_layout_heuristics.py`](../../../osx/tests/def009_layout_heuristics.py). Early heuristics only caught **literal** doubled column rules (`││` / `┃┃`), **`||`**, or **stderr JSON merged into a table row** — those do **not** appear in typical PTY captures. The dominant automation/real-terminal signature is **structural**: the **Panel** top border (``╭`` … light ``─`` … normally closing with ``╮`` on its own line) appears **on the same physical line** as inner **``Table``** heavy horizontal box drawing (**━**, U+2501) and related junction glyphs — i.e. outer panel row and inner table rules are **fused**. The PTY test (40×120, same as other Rich table tests) now **expects** that fused signature until DEF-009 is fixed; when layout is corrected, flip the assertion to ``assert layout_corruption_reason(...) is None`` and close the defect. Additional synthetic fixtures cover doubled pipes and interleaved debug markers.
+- **Automated (in-repo):** [`osx/tests/test_def009_rich_table_layout_pty.py`](../../../osx/tests/test_def009_rich_table_layout_pty.py) + [`osx/tests/def009_layout_heuristics.py`](../../../osx/tests/def009_layout_heuristics.py). Heuristics cover **structural** fusion (``╭`` on the same stripped line as inner heavy **━** U+2501), **literal** doubled column rules, and **stderr JSON** merged into a table row. The **darwin** + **`table_nav`** PTY test asserts ``layout_corruption_reason(...) is None`` at **40×120** with debug TUI enabled. Synthetic fixtures keep the detector honest if the layout regresses.
 - From a real TTY, open the Rich pre-run editor; confirm **single** column rules, continuous horizontal rules, **no** pipes outside the cyan frame, and stable layout with **`MACOS_MOUSE_CLICK_DEBUG_TUI=1`** on and off.
 - Optional: narrow/wide terminal spot-check; relate findings to **DEF-005** / plan 06 if resize still misbehaves separately.

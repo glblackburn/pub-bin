@@ -281,6 +281,14 @@ def _restore_terminal(fd: int, attrs: List) -> None:
     termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
 
+def _flush_stdout_safe() -> None:
+    """Push Rich frame bytes to the TTY before stderr (DEF-009: avoid stdout/stderr interleave)."""
+    try:
+        sys.stdout.flush()
+    except (OSError, BrokenPipeError, ValueError):
+        pass
+
+
 def _drain_stdin_burst(
     max_bytes: int = 256, idle_timeout: float = 0.05, fd: Optional[int] = None
 ) -> None:
@@ -706,10 +714,20 @@ def _edit_row(console: Any, cfg: ResolvedConfig, key: str) -> None:
 
 
 def _build_editor_table(cfg: ResolvedConfig, row_keys: List[str], selected: int) -> Any:
+    from rich import box
     from rich.table import Table
     from rich.text import Text
 
-    table = Table(show_header=True, header_style="bold cyan", expand=True)
+    # DEF-009: Rich's default ``Table`` box is ``HEAVY_HEAD``, which draws heavy
+    # horizontal rules (U+2501). On tight vertical space the inner table frame can
+    # visually merge with the ``Panel`` top border (light U+2500). ``ROUNDED`` uses
+    # light box drawing throughout so the nested frame stays visually consistent.
+    table = Table(
+        show_header=True,
+        header_style="bold cyan",
+        expand=True,
+        box=box.ROUNDED,
+    )
     table.add_column("Setting", style="white", no_wrap=True)
     table.add_column("Value", style="green")
     table.add_column("Source", style="dim")
@@ -778,6 +796,7 @@ def _run_rich_pre_run_editor_loop(
         selected = max(0, min(selected, len(row_keys) - 1))
         table = _build_editor_table(cfg, row_keys, selected)
         console.clear()
+        _flush_stdout_safe()
         console.print(
             Panel(
                 table,
@@ -789,6 +808,10 @@ def _run_rich_pre_run_editor_loop(
                 border_style="cyan",
             )
         )
+        # DEF-009: ``_debug_tui_emit`` writes ``MACOS_MOUSE_CLICK_TUI_STATE`` on stderr.
+        # If stdout is still buffered, stderr can interleave mid-frame and garble Panel/Table
+        # box drawing on a single TTY. Flush the Rich frame to the kernel first.
+        _flush_stdout_safe()
         _debug_tui_emit(cfg, row_keys, selected, event="draw")
         key = _read_raw_key_impl(fd_in)
         if key in ("up", "down"):

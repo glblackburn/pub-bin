@@ -92,13 +92,7 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
     repo_root: Path,
     tmp_path: Path,
 ) -> None:
-    """Live PTY: assert we still observe DEF-009 structural corruption (open defect).
-
-    ``make -C osx test`` uses the same 40×120 geometry as other Rich PTY tests; the
-    captured transcript fuses the Panel top row with inner ``Table`` heavy rules on
-    one line (``╭`` + ``━``). When DEF-009 is fixed in the product, flip this assertion
-    to ``assert reason is None`` and update the defect status.
-    """
+    """Live PTY: transcript must not show DEF-009 fused panel/table (40×120, debug on)."""
     pytest.importorskip("pexpect", reason="pty tests need pexpect")
 
     from pty_harness import base_child_env, spawn_clicker_pexpect
@@ -131,11 +125,7 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
         base = _transcript_after_editor_banner(child)
         transcript = _drain_until_setting_from(child, base, "Mode", timeout=15.0)
         reason = layout_corruption_reason(transcript)
-        assert reason is not None, (
-            "expected DEF-009 fused panel/table signature in PTY transcript; "
-            "if this fails after a Rich/layout fix, set status to fixed and assert None"
-        )
-        assert "fused" in reason.lower() and "2501" in reason, reason
+        assert reason is None, reason
     finally:
         try:
             child.send("q")
