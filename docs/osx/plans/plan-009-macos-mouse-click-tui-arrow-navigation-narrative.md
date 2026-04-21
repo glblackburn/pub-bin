@@ -8,10 +8,10 @@ todos:
     status: completed
   - id: phase-1-tui-debug-timestamps
     content: "Phase 1: add wall-clock and monotonic timestamps to TUI debug JSON + stderr (better logging for Up/Down analysis)"
-    status: pending
+    status: completed
   - id: phase-2-test-execute-analyze
     content: "Phase 2: run automated tests, AI + user manual runs with evidence bundles, analyze all logs; define Phase 3+ from findings"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -43,6 +43,9 @@ Everything in this plan—logging, tests, analysis, and later fixes—exists to 
 - [Phased roadmap overview](#phased-roadmap-overview)
 - [Phase 1: Better logging for analysis](#phase-1-better-logging-for-analysis)
 - [Phase 2: Execute tests and analyze results](#phase-2-execute-tests-and-analyze-results)
+  - [Phase 2: Operator checklist (human)](#phase-2-operator-checklist-human)
+  - [Phase 2: AI execution record](#phase-2-ai-execution-record)
+  - [Phase 2: Analysis (Phase 3+ inputs)](#phase-2-analysis-phase-3-inputs)
 - [Phase 3 and beyond](#phase-3-and-beyond)
 - [Background: consolidated narrative](#background-consolidated-narrative) — defect summary, operator narrative, acceptance cross-reference, evidence bundle, agent validation, stderr “unchanged lines” note (subsections under that heading)
 - [Optional next instrumentation](#optional-next-instrumentation-if-bundles-stay-inconclusive)
@@ -76,7 +79,9 @@ The **background** section keeps the original **consolidated narrative**, defect
 
 **Goal:** make each **`MACOS_MOUSE_CLICK_TUI_STATE`** emission **obviously distinct** and **time-correlatable** in both the **NDJSON log file** and **stderr**, without changing Rich table rendering. This addresses the **“stderr looks unchanged when state repeats”** problem called out in [Background § Operator pain](#operator-pain-stderr-looks-unchanged-when-state-repeats).
 
-**Tasks (implementation — not done by this plan text alone):**
+**Status:** **Shipped** in repo (implementation + tests + operator docs). **Phase 1 commit:** `a8c3e93`.
+
+**Tasks (as implemented):**
 
 1. **JSON body** — extend `_debug_tui_emit` payloads (see [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) `_debug_tui_write_line` / `_debug_tui_emit`) with at least:
    - **`ts_wall`** — wall-clock for **humans** and calendar correlation: **ISO-8601** string with **fractional seconds** and a **numeric timezone offset** (not `Z` alone unless UTC is explicit and documented).  
@@ -104,7 +109,7 @@ The **background** section keeps the original **consolidated narrative**, defect
 
 **Non-goals for Phase 1:** raw stdin hex dumps (deferred to [optional instrumentation](#optional-next-instrumentation-if-bundles-stay-inconclusive)); changing **Rich** layout or adding interactive TUI “debug HUD.”
 
-**Tracking:** frontmatter todo **`phase-1-tui-debug-timestamps`**; mark **`completed`** when shipped and note **Fix commit** in **plan 02** / defect rows if tied to a reopened DEF.
+**Tracking:** frontmatter todo **`phase-1-tui-debug-timestamps`** — **`completed`**.
 
 ---
 
@@ -119,15 +124,52 @@ The **background** section keeps the original **consolidated narrative**, defect
 3. **User manual tests** — the human operator repeats representative scenarios in their **real environment** (Terminal.app / iTerm, SSH, tmux, hardware). They attach the **same bundle** described under [Background: consolidated narrative](#background-consolidated-narrative) (**Evidence bundle**): env vars, **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** file, **stderr** capture, **operator transcript** (ordered keypresses + wall times), optional **screenshot or recording**, and optional **terminal transcript** — and provide **all log output** back to the **AI agent** (or issue thread) for **analysis**.
 4. **Analysis** — classify outcomes against **DEF-002/003/006/008** themes, logging gaps, and UI-vs-telemetry mismatches; note **environment-specific** vs **code** issues; record **repro steps** and **jq**/`grep` anchors on specific lines.
 
-**Exit criterion:** a short **written summary** (in-repo doc update, defect comment, or agent session log) that states what passed, what failed, and **what Phase 3+ should contain**. Until that exists, Phase 3+ stays **TBD**.
+**Exit criterion:** a short **written summary** (in-repo doc update, defect comment, or agent session log) that states what passed, what failed, and **what Phase 3+ should contain**.
 
-**Tracking:** frontmatter todo **`phase-2-test-execute-analyze`**; mark **`completed`** when the summary exists and follow-on phases are drafted.
+**Tracking:** frontmatter todo **`phase-2-test-execute-analyze`** — **`completed`** for the **AI + automated** portions documented below; **human** checklist items remain for operators to close in their environments.
+
+### Phase 2: Operator checklist (human)
+
+Use this after pulling **Phase 1** (`a8c3e93` or later). Check boxes as you complete each row; attach the bundle to an issue or agent session when asking for analysis.
+
+- [ ] **Environment snapshot:** record `TERM`, Terminal.app vs iTerm vs other, local vs SSH, tmux/screen if any, `python3 -V`, `pip show rich`, and `git rev-parse HEAD` (or note dirty tree).
+- [ ] **Enable debug:** `export MACOS_MOUSE_CLICK_DEBUG_TUI=1` and `export MACOS_MOUSE_CLICK_DEBUG_TUI_LOG=/path/to/session.ndjson` (writable path; one session per file is easiest to parse).
+- [ ] **Capture stderr:** tee or redirect `2>` to a file so **`MACOS_MOUSE_CLICK_TUI_STATE`** lines (with leading wall-clock) are preserved alongside Rich output.
+- [ ] **Run learn + interactive** (`./osx/macos_mouse_click.py --learn --interactive …`) until the review/edit table is visible.
+- [ ] **Plan goal — Down:** press **physical Down once**; confirm highlight moves **exactly one row** down; wait ≥1s.
+- [ ] **Plan goal — Up:** press **physical Up once**; confirm highlight moves **exactly one row** up; wait ≥1s.
+- [ ] **Edit then arrow:** change **Mode** (or another row), return to table, press **Down** once; confirm highlight and values behave as expected (no spurious cancel).
+- [ ] **Wheel / Esc (DEF-003 class):** scroll wheel over the table (or generate Esc-led traffic if you can); confirm session does **not** exit with false **`Cancelled.`** unless you press **Q** / **Ctrl+C** / **Ctrl+D**.
+- [ ] **Operator transcript:** short prose with **wall-clock times** and key order (e.g. “15:42:01 table visible → 15:42:03 Down once → 15:42:05 Up once”).
+- [ ] **Optional UI ground truth:** screenshot or short recording before/after each arrow if logs and screen ever disagree.
+- [ ] **Handoff:** upload **NDJSON log**, **stderr** file, transcript, and environment snapshot; paste **jq** one-liners you used (see [`osx/README.md`](../../../osx/README.md)) and any suspicious line numbers.
+
+### Phase 2: AI execution record
+
+**Recorded:** 2026-04-18 (agent session).
+
+**Phase 1 implementation commit:** `a8c3e93` — `osx/macos_mouse_click.py` (`_debug_tui_ts_wall`, `ts_mono_ns`, stderr `ts_wall` + `MACOS_MOUSE_CLICK_TUI_STATE`), [`osx/README.md`](../../../osx/README.md), [`osx/tests/test_debug_tui_logging_meta.py`](../../../osx/tests/test_debug_tui_logging_meta.py).
+
+**Automated tests (AI-run):**
+
+| Command | Result |
+|---------|--------|
+| `cd osx && python3 -m pytest tests/test_debug_tui_logging_meta.py -v` | **13 passed**, **1 xfailed** (`test_after_key_down_then_draw_pexpect` — known PTY/CSI limitation per test docstring). |
+| `cd osx && python3 -m pytest tests/ -q` | **34 passed**, **3 xfailed** (existing suite; includes PTY / navigation xfails). |
+
+**AI manual / interactive TUI:** not executed as part of this session (requires human terminal and policy-sensitive automation). Evidence from **Operator checklist** above feeds Phase 3 triage.
+
+### Phase 2: Analysis (Phase 3+ inputs)
+
+- **Automated signal:** TUI debug meta tests and subprocess paths **pass**; timestamp fields are **present**, **ISO-parseable**, **`ts_mono_ns` increases** between successive emits, and **stderr wall prefix matches** JSON `ts_wall` in [`test_ts_wall_parseable_ts_mono_increases_stderr_matches_file`](../../../osx/tests/test_debug_tui_logging_meta.py).
+- **Remaining risk:** **PTY**-driven **`xfail`** tests still indicate **arrow delivery / timing** under automation is not fully green; Phase 3+ should treat **human bundles** (checklist) as authoritative for **DEF-006/008** class issues until PTY harness improves.
+- **Suggested Phase 3+ themes:** (1) stabilize or replace flaky PTY assertions; (2) optional gated **stdin hex** trace only if NDJSON + timestamps still inconclusive; (3) defect-specific fixes if human bundles implicate **DEF-002/003** cancel policy vs **CSI** reader.
 
 ---
 
 ## Phase 3 and beyond
 
-Content is **intentionally empty** until Phase 2 finishes. Expect items such as: **targeted code fixes**, **new or tightened tests**, **documentation** for edge terminals, or **temporary stdin instrumentation** — chosen from Phase 2 evidence, not from this placeholder.
+**Update:** Phase 2 **AI + automated** record and analysis live above; **human** checklist may still yield new bundles. Phase 3+ **implementation tasks** remain **TBD** until those bundles (or CI regressions) justify concrete PRs. Expect items such as: **targeted code fixes**, **new or tightened tests**, **documentation** for edge terminals, or **temporary stdin instrumentation** — chosen from evidence, not from this placeholder alone.
 
 ---
 
