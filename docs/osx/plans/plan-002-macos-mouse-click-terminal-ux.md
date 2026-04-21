@@ -335,13 +335,14 @@ Traceability: each code fix should have its own **git commit**, then this docume
 | DEF-006 | 2026-04-18 | **Fixed** (script) | On the main Rich table, **Up**/**Down** sometimes need **several** presses per row: **CSI** arrow bytes can arrive **>250 ms** apart; `read_raw_key` timed out mid-sequence → **`other`** + orphan tail (**DEF-002**-class timing, distinct symptom) | MT-01, MT-02; `read_raw_key` | `7cfec5161c20ee36db2fe5f95b2ebe8cc92bfd3c` | **Pending** |
 | DEF-007 | 2026-04-19 | **Fixed** (script) | Same option repeated on the argv (**`-n`** / **`--count`**, etc.): **no error**; **last occurrence wins** — easy to typo **`-n 10 … -n 100 -n 5`** and run **5** clicks without noticing | CLI / `argparse`; MT-05-style runs | `faeb3d89da6be12decfa39adb7027516c935c98b` | **Passed** (automated: `test_open_defects.py`) |
 | DEF-008 | 2026-04-19 | **Fixed** (script) | After **DEF-006** fix, **Up**/**Down** can still feel like **two presses** per row: mix of **`after_key` logged before `selected` updates**, partial CSI → **`other`**, or Rich **`console.clear`** / stdin timing — see analysis plan | MT-01, MT-02; `run_rich_pre_run_editor` / `read_raw_key` | `faeb3d89da6be12decfa39adb7027516c935c98b` | **Pending** (operator spot-check on TTY; log semantics covered in tests) |
+| DEF-009 | 2026-04-21 | **Reported** | Rich pre-run **Panel** + **Table**: **double** vertical rules, **misaligned** horizontal grid, **stray** pipes outside the cyan frame; highlight looks **segmented** — screenshot in repo; logic/NDJSON may still match (**layout / paint**) | MT-01, MT-02, MT-08; `run_rich_pre_run_editor` / Rich `Console` | — | **Pending** |
 
-**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **[DEF-003 detail](../defects/def-003-wheel-esc-cancel.md)** for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient. **DEF-007** — **Passed** via [`osx/tests/test_open_defects.py`](../../../osx/tests/test_open_defects.py). **DEF-008** — **Pending** on real TTY for full **MT-01** / **MT-02** feel; **`after_key`** row alignment covered in tests.
+**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **[DEF-003 detail](../defects/def-003-wheel-esc-cancel.md)** for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient. **DEF-007** — **Passed** via [`osx/tests/test_open_defects.py`](../../../osx/tests/test_open_defects.py). **DEF-008** — **Pending** on real TTY for full **MT-01** / **MT-02** feel; **`after_key`** row alignment covered in tests. **DEF-009** — **Reported** (visual); see **[DEF-009 detail](../defects/def-009-rich-pre-run-tui-table-layout-corruption.md)** and screenshot under `osx/tests/screenshots/`.
 
 
 ### Defect detail documents
 
-Full narrative for each **DEF-001**–**DEF-008** lives under [`docs/osx/defects/`](../defects/README.md). Summary table above is canonical for status and fix SHAs; update the **detail file** when closing a defect, then mirror the **Defect summary** row here.
+Full narrative for each **DEF-001**–**DEF-009** lives under [`docs/osx/defects/`](../defects/README.md). Summary table above is canonical for status and fix SHAs; update the **detail file** when closing a defect, then mirror the **Defect summary** row here.
 
 | DEF | Detail |
 |-----|--------|
@@ -353,6 +354,7 @@ Full narrative for each **DEF-001**–**DEF-008** lives under [`docs/osx/defects
 | DEF-006 | [def-006-tui-arrow-multi-press.md](../defects/def-006-tui-arrow-multi-press.md) |
 | DEF-007 | [def-007-duplicate-n-flag-last-wins.md](../defects/def-007-duplicate-n-flag-last-wins.md) |
 | DEF-008 | [def-008-residual-arrow-double-press.md](../defects/def-008-residual-arrow-double-press.md) |
+| DEF-009 | [def-009-rich-pre-run-tui-table-layout-corruption.md](../defects/def-009-rich-pre-run-tui-table-layout-corruption.md) |
 
 
 ## Manual QA checklist (after implementation)

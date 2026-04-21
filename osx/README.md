@@ -30,6 +30,7 @@ Payload: compact JSON from `json.dumps(..., separators=(",", ":"))` (no spaces a
 
 - After each table redraw: `event` = `draw`.
 - After each key read: `event` = `after_key`, with `last_key` set.
+- **TTY discipline:** while the Rich editor loop runs, stdin stays in **raw** mode so CSI/SS3 arrow bytes are not eaten by canonical line discipline (important under PTY/pexpect); `Console.input()` prompts temporarily restore cooked mode.
 - After **Running:** is shown: `event` = `run`.
 - **Learn:** when the anchor point is captured, `event` = `anchor`. **at-cursor:** when the pointer position is read, `event` = `anchor`.
 
@@ -109,5 +110,6 @@ grep 'MACOS_MOUSE_CLICK_TUI_STATE ' tui-stderr.ndjson | sed 's/^.*MACOS_MOUSE_CL
 
 - `osx/tests/test_debug_tui_logging_meta.py` — behavior of the TUI debug logger (gates, JSON, file vs stderr, append across processes, etc.).
 - `osx/tests/test_rich_table_nav_down_pty.py` — Rich table navigation (uses debug log under `tmp_path` for correlation when enabled).
+- `osx/tests/test_def009_rich_table_layout_pty.py` — **DEF-009** layout corruption heuristics on PTY transcripts (see `docs/osx/defects/def-009-rich-pre-run-tui-table-layout-corruption.md`).
 
 See `docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md` for the full Phase 2 design.

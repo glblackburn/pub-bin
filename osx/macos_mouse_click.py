@@ -43,6 +43,27 @@ Quartz: Any = None
 _rich_module: Any = None
 _rich_import_attempted: bool = False
 
+# Raw key reads use this FD (lazy-open ``/dev/tty``) so bytes are not consumed by
+# :class:`io.TextIOWrapper` buffering on ``sys.stdin`` (pexpect PTY + Rich).
+_kbd_tty_fd: Optional[int] = None
+# Cooked TTY attrs snapshot while Rich pre-run editor holds stdin raw (pexpect CSI).
+_rich_editor_tty_cooked_attrs: Optional[List] = None
+
+
+def _kbd_tty_fd_get() -> int:
+    """Return a FD for reading keyboard bytes, bypassing ``sys.stdin`` text buffering."""
+    global _kbd_tty_fd
+    if _kbd_tty_fd is not None:
+        return _kbd_tty_fd
+    if sys.stdin.isatty():
+        try:
+            _kbd_tty_fd = os.open("/dev/tty", os.O_RDONLY | os.O_NOCTTY)
+        except OSError:
+            _kbd_tty_fd = sys.stdin.fileno()
+    else:
+        _kbd_tty_fd = sys.stdin.fileno()
+    return _kbd_tty_fd
+
 # Gated Rich editor diagnostics (``MACOS_MOUSE_CLICK_DEBUG_TUI``); see plan
 # ``docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md`` Phase 2.
 _DEBUG_TUI_STATE_PREFIX = "MACOS_MOUSE_CLICK_TUI_STATE "
@@ -260,98 +281,116 @@ def _restore_terminal(fd: int, attrs: List) -> None:
     termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
 
-def _drain_stdin_burst(max_bytes: int = 256, idle_timeout: float = 0.05) -> None:
+def _drain_stdin_burst(
+    max_bytes: int = 256, idle_timeout: float = 0.05, fd: Optional[int] = None
+) -> None:
     """Discard pending stdin bytes (tail of an unknown ESC / mouse / wheel sequence)."""
     import select
 
+    use_fd = fd if fd is not None else _kbd_tty_fd_get()
     n = 0
     while n < max_bytes:
-        r, _, _ = select.select([sys.stdin], [], [], idle_timeout)
+        r, _, _ = select.select([use_fd], [], [], idle_timeout)
         if not r:
             break
-        chunk = sys.stdin.read(max_bytes - n)
+        chunk = os.read(use_fd, max_bytes - n)
         if not chunk:
             break
         n += len(chunk)
 
 
+def _read_raw_key_impl(fd: int) -> str:
+    """Read one logical key; caller must leave ``fd`` in raw mode."""
+    import select
+
+    def read_byte() -> str:
+        chunk = os.read(fd, 1)
+        if not chunk:
+            return ""
+        return chunk.decode("latin-1", errors="replace")
+
+    def wait_byte(timeout: float) -> str:
+        r, _, _ = select.select([fd], [], [], timeout)
+        if not r:
+            return ""
+        chunk = os.read(fd, 1)
+        if not chunk:
+            return ""
+        return chunk.decode("latin-1", errors="replace")
+
+    ch = read_byte()
+    if ch == "":
+        return ""
+    if ch == "\x04":
+        return "ctrl_d"
+    if ch == "\x1b":
+        # Arrow keys are ESC [ A / ESC [ B (CSI) or ESC O A / ESC O B (SS3).
+        # A short select after ESC mis-reads the prefix as lone Escape → false
+        # "cancel". Use generous waits and full CSI tails (e.g. ESC [ 1 ; 3 B).
+        ch2 = wait_byte(0.4)
+        if ch2 == "":
+            # Lone ESC: do not cancel (DEF-003); wheel / meta can look similar.
+            return "other"
+        if ch2 == "[":
+            buf: List[str] = []
+            # DEF-006: CSI tail bytes can arrive slowly. Use one deadline for the whole
+            # tail after "["; retry select until the deadline (do not stop on first empty).
+            deadline = time.monotonic() + 1.0
+            while len(buf) < 32:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                c = wait_byte(min(0.5, remaining))
+                if c == "":
+                    continue
+                buf.append(c)
+                if c in "ABCDEFGHZab~":
+                    break
+            tail = "".join(buf)
+            if tail.endswith("A"):
+                return "up"
+            if tail.endswith("B"):
+                return "down"
+            return "other"
+        if ch2 == "O":
+            deadline = time.monotonic() + 1.0
+            ch3 = ""
+            while not ch3 and time.monotonic() < deadline:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                got = wait_byte(min(0.5, remaining))
+                if got:
+                    ch3 = got
+            if ch3 == "A":
+                return "up"
+            if ch3 == "B":
+                return "down"
+            return "other"
+        # Unknown ESC prefix (e.g. mouse / wheel `ESC [ < …`, `ESC ]`, `ESC >`).
+        _drain_stdin_burst(fd=fd)
+        return "other"
+    if ch == "\x03":
+        return "ctrl_c"
+    if ch in ("\r", "\n"):
+        return "enter"
+    oc = ch.lower()
+    if oc == "s":
+        return "s"
+    if oc == "q":
+        return "q"
+    if oc == "r":
+        return "r"
+    return "other"
+
+
 def read_raw_key() -> str:
-    fd = sys.stdin.fileno()
+    """Read one logical key; sets raw mode around the read (subprocess PTY tests)."""
+    fd = _kbd_tty_fd_get()
     old = termios.tcgetattr(fd)
     try:
         tty.setraw(fd)
-        ch = sys.stdin.read(1)
-        if ch == "":
-            return ""
-        if ch == "\x04":
-            return "ctrl_d"
-        if ch == "\x1b":
-            import select
-
-            def wait_char(timeout: float) -> str:
-                r, _, _ = select.select([sys.stdin], [], [], timeout)
-                if not r:
-                    return ""
-                return sys.stdin.read(1) or ""
-
-            # Arrow keys are ESC [ A / ESC [ B (CSI) or ESC O A / ESC O B (SS3).
-            # A short select after ESC mis-reads the prefix as lone Escape → false
-            # "cancel". Use generous waits and full CSI tails (e.g. ESC [ 1 ; 3 B).
-            ch2 = wait_char(0.4)
-            if ch2 == "":
-                # Lone ESC: do not cancel (DEF-003); wheel / meta can look similar.
-                return "other"
-            if ch2 == "[":
-                buf: List[str] = []
-                # DEF-006: CSI tail bytes can arrive slowly. Use one deadline for the whole
-                # tail after "["; retry select until the deadline (do not stop on first empty).
-                deadline = time.monotonic() + 1.0
-                while len(buf) < 32:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        break
-                    c = wait_char(min(0.5, remaining))
-                    if c == "":
-                        continue
-                    buf.append(c)
-                    if c in "ABCDEFGHZab~":
-                        break
-                tail = "".join(buf)
-                if tail.endswith("A"):
-                    return "up"
-                if tail.endswith("B"):
-                    return "down"
-                return "other"
-            if ch2 == "O":
-                deadline = time.monotonic() + 1.0
-                ch3 = ""
-                while not ch3 and time.monotonic() < deadline:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        break
-                    got = wait_char(min(0.5, remaining))
-                    if got:
-                        ch3 = got
-                if ch3 == "A":
-                    return "up"
-                if ch3 == "B":
-                    return "down"
-                return "other"
-            # Unknown ESC prefix (e.g. mouse / wheel `ESC [ < …`, `ESC ]`, `ESC >`).
-            _drain_stdin_burst()
-            return "other"
-        if ch == "\x03":
-            return "ctrl_c"
-        if ch in ("\r", "\n"):
-            return "enter"
-        oc = ch.lower()
-        if oc == "s":
-            return "s"
-        if oc == "q":
-            return "q"
-        if oc == "r":
-            return "r"
-        return "other"
+        return _read_raw_key_impl(fd)
     finally:
         _restore_terminal(fd, old)
 
@@ -565,11 +604,16 @@ def _apply_row_reset(cfg: ResolvedConfig, key: str) -> None:
 
 
 def _prompt_cooked(console: Any, prompt: str) -> str:
-    fd = sys.stdin.fileno()
-    old = termios.tcgetattr(fd)
-    _restore_terminal(fd, old)
-    # Older Rich: Console.input() has no highlight= kwarg; omit for compatibility.
-    return console.input(prompt).strip()
+    fd = _kbd_tty_fd_get()
+    raw_attrs = termios.tcgetattr(fd)
+    cooked = _rich_editor_tty_cooked_attrs
+    try:
+        if cooked is not None:
+            termios.tcsetattr(fd, termios.TCSADRAIN, cooked)
+        # Older Rich: Console.input() has no highlight= kwarg; omit for compatibility.
+        return console.input(prompt).strip()
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, raw_attrs)
 
 
 def _edit_row(console: Any, cfg: ResolvedConfig, key: str) -> None:
@@ -698,10 +742,35 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
     from rich.panel import Panel
     from rich.text import Text
 
+    global _rich_editor_tty_cooked_attrs
+
     _reset_debug_tui_log_sink()
     console = Console()
     row_keys = editor_row_keys(cfg)
     selected = 0
+
+    fd_in = _kbd_tty_fd_get()
+    _rich_editor_tty_cooked_attrs = termios.tcgetattr(fd_in)
+    try:
+        tty.setraw(fd_in)
+        return _run_rich_pre_run_editor_loop(
+            cfg, console, row_keys, selected, fd_in
+        )
+    finally:
+        if _rich_editor_tty_cooked_attrs is not None:
+            termios.tcsetattr(fd_in, termios.TCSADRAIN, _rich_editor_tty_cooked_attrs)
+            _rich_editor_tty_cooked_attrs = None
+
+
+def _run_rich_pre_run_editor_loop(
+    cfg: ResolvedConfig,
+    console: Any,
+    row_keys: List[str],
+    selected: int,
+    fd_in: int,
+) -> bool:
+    from rich.panel import Panel
+    from rich.text import Text
 
     while True:
         if not row_keys:
@@ -721,7 +790,7 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
             )
         )
         _debug_tui_emit(cfg, row_keys, selected, event="draw")
-        key = read_raw_key()
+        key = _read_raw_key_impl(fd_in)
         if key in ("up", "down"):
             selected = _tui_bump_selected_for_arrow_key(
                 selected, key, len(row_keys)

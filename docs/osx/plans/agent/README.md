@@ -9,5 +9,6 @@ Cursor / Create-Plan artifacts for **`osx/macos_mouse_click.py`** (PTY tests, DE
 | [plan-agent-arrow-key-double-press-analysis.plan.md](plan-agent-arrow-key-double-press-analysis.plan.md) | DEF-008 residual double-press analysis. |
 | [plan-agent-osx-dry-refactor.plan.md](plan-agent-osx-dry-refactor.plan.md) | **`osx/tests/`** helper DRY refactor notes. |
 | [plan-agent-automation-deep-dive.plan.md](plan-agent-automation-deep-dive.plan.md) | Plan 03 automation deep dive (historical; much of it landed). |
+| [plan-agent-plan-09-phase-3-resume.plan.md](plan-agent-plan-09-phase-3-resume.plan.md) | Plan-09 resume: agent-proxy operator checklist, CI, Phase 3+ draft. |
 
 **Product plans:** **[`../README.md`](../README.md)** · **Defects:** **[`../../defects/README.md`](../../defects/README.md)** · **Other agent plans (non-clicker):** [`docs/plans/agent/README.md`](../../../plans/agent/README.md)

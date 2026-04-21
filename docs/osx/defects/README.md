@@ -1,6 +1,6 @@
 # macOS clicker defects (`docs/osx/defects/`)
 
-Detail files for **DEF-001**–**DEF-008**. The **Defect summary** table (status, fix SHAs, manual verification) remains canonical in **[`../plans/plan-002-macos-mouse-click-terminal-ux.md`](../plans/plan-002-macos-mouse-click-terminal-ux.md)**; update the table and the matching **`def-###`** file together when closing a defect.
+Detail files for **DEF-001**–**DEF-009**. The **Defect summary** table (status, fix SHAs, manual verification) remains canonical in **[`../plans/plan-002-macos-mouse-click-terminal-ux.md`](../plans/plan-002-macos-mouse-click-terminal-ux.md)**; update the table and the matching **`def-###`** file together when closing a defect.
 
 | Id | Title | Opened | Status | Document |
 |----|-------|--------|--------|----------|
@@ -12,5 +12,6 @@ Detail files for **DEF-001**–**DEF-008**. The **Defect summary** table (status
 | DEF-006 | Multiple Up/Down presses per row (CSI) | 2026-04-18 | **Fixed** (manual **Pending**) | [def-006-tui-arrow-multi-press.md](def-006-tui-arrow-multi-press.md) |
 | DEF-007 | Duplicate **`-n`** / last wins | 2026-04-19 | **Fixed** (script) | [def-007-duplicate-n-flag-last-wins.md](def-007-duplicate-n-flag-last-wins.md) |
 | DEF-008 | Residual double-press / log semantics | 2026-04-19 | **Fixed** (script) | [def-008-residual-arrow-double-press.md](def-008-residual-arrow-double-press.md) |
+| DEF-009 | Rich pre-run TUI table layout corruption | 2026-04-21 | **Reported** | [def-009-rich-pre-run-tui-table-layout-corruption.md](def-009-rich-pre-run-tui-table-layout-corruption.md) |
 
 **Plans index:** **[`../plans/README.md`](../plans/README.md)**.

@@ -384,10 +384,6 @@ def test_gate_on_stderr_contains_tui_state(
 
 
 @pytest.mark.darwin
-@pytest.mark.xfail(
-    strict=False,
-    reason="pexpect CSI Down may not reach read_raw_key as down; use Phase 3 PTY harness.",
-)
 def test_after_key_down_then_draw_pexpect(pexpect_module: Any, tmp_path: Path) -> None:
     """Checklist #9: one Down — ``after_key`` with ``last_key`` ``down`` then a ``draw``."""
     pexpect = pexpect_module
@@ -417,18 +413,27 @@ def test_after_key_down_then_draw_pexpect(pexpect_module: Any, tmp_path: Path) -
         except Exception:
             pass
         child.send("\x1b[B")
-        time.sleep(1.0)
-        try:
-            child.read_nonblocking(size=500_000, timeout=4)
-        except Exception:
-            pass
-        text = log_path.read_text(encoding="utf-8")
-        payloads = list(_iter_tui_payloads(text))
-        after_keys = [p for p in payloads if p.get("event") == "after_key" and p.get("last_key") == "down"]
-        assert after_keys, f"expected after_key down in payloads, got {payloads!r}"
-        idx = payloads.index(after_keys[0])
-        draws_after = [p for p in payloads[idx + 1 :] if p.get("event") == "draw"]
-        assert draws_after, "expected a draw after down after_key"
+        deadline = time.monotonic() + 8.0
+        draws_after: list[dict[str, Any]] = []
+        while time.monotonic() < deadline:
+            try:
+                child.read_nonblocking(size=500_000, timeout=0)
+            except Exception:
+                pass
+            text = log_path.read_text(encoding="utf-8")
+            payloads = list(_iter_tui_payloads(text))
+            after_keys = [
+                p for p in payloads if p.get("event") == "after_key" and p.get("last_key") == "down"
+            ]
+            if not after_keys:
+                time.sleep(0.05)
+                continue
+            idx = payloads.index(after_keys[0])
+            draws_after = [p for p in payloads[idx + 1 :] if p.get("event") == "draw"]
+            if draws_after:
+                break
+            time.sleep(0.05)
+        assert draws_after, "expected a draw after down after_key within timeout"
         child.send("q")
         try:
             child.expect(pexpect.EOF, timeout=20)
