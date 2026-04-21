@@ -38,7 +38,7 @@ The cyan **macOS mouse click — review / edit** panel renders, but the **Settin
 
 - **`_build_editor_table`:** pass **`box=box.ROUNDED`** so inner table rules stay light-only and align with the ``Panel`` frame (no **``HEAVY_HEAD``** / U+2501 on the nested table).
 - **`_run_rich_pre_run_editor_loop`:** call **`_flush_stdout_safe()`** after **`console.clear()`** and after the main **`console.print(Panel(...))`**, before **`_debug_tui_emit`**, so ``MACOS_MOUSE_CLICK_TUI_STATE`` on stderr cannot interleave mid-frame on a single TTY.
-- **Git:** `afba1c22a626b81a368a9742b0d59d7ec4bd5646`
+- **Git:** `3bd517d6adb4e0d3fa112cb7b6a6f39aeee9317a`
 - Mirror the **Fix commit** row in **[`plan-002` Defect summary](../plans/plan-002-macos-mouse-click-terminal-ux.md)**.
 
 **Regression check (after fix)**
