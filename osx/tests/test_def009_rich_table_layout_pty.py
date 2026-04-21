@@ -74,6 +74,17 @@ def test_def009_detects_debug_marker_inside_table_row() -> None:
     assert r is not None and "MACOS_MOUSE_CLICK_TUI_STATE" in r
 
 
+def test_def009_detects_fused_panel_top_and_inner_heavy_rules() -> None:
+    """PTY capture (automation 40×120): panel ``╭`` row shares a line with inner ``Table`` ``━``."""
+    # Stripped shape only — CSI stripped the same way as ``layout_corruption_reason``.
+    fused_vis = (
+        "╭───────────────────────────────────────── macOS mouse click — review / edit"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │"
+    )
+    r = layout_corruption_reason(fused_vis + "\n")
+    assert r is not None and "fused" in r.lower() and "2501" in r
+
+
 @pytest.mark.darwin
 @pytest.mark.table_nav
 def test_def009_subprocess_editor_transcript_layout_pexpect(
@@ -81,7 +92,13 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
     repo_root: Path,
     tmp_path: Path,
 ) -> None:
-    """Live PTY: debug TUI on stderr + Rich on stdout must not corrupt table lines (DEF-009)."""
+    """Live PTY: assert we still observe DEF-009 structural corruption (open defect).
+
+    ``make -C osx test`` uses the same 40×120 geometry as other Rich PTY tests; the
+    captured transcript fuses the Panel top row with inner ``Table`` heavy rules on
+    one line (``╭`` + ``━``). When DEF-009 is fixed in the product, flip this assertion
+    to ``assert reason is None`` and update the defect status.
+    """
     pytest.importorskip("pexpect", reason="pty tests need pexpect")
 
     from pty_harness import base_child_env, spawn_clicker_pexpect
@@ -114,7 +131,11 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
         base = _transcript_after_editor_banner(child)
         transcript = _drain_until_setting_from(child, base, "Mode", timeout=15.0)
         reason = layout_corruption_reason(transcript)
-        assert reason is None, reason
+        assert reason is not None, (
+            "expected DEF-009 fused panel/table signature in PTY transcript; "
+            "if this fails after a Rich/layout fix, set status to fixed and assert None"
+        )
+        assert "fused" in reason.lower() and "2501" in reason, reason
     finally:
         try:
             child.send("q")
