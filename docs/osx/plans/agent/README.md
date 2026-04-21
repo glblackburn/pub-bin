@@ -10,5 +10,6 @@ Cursor / Create-Plan artifacts for **`osx/macos_mouse_click.py`** (PTY tests, DE
 | [plan-agent-osx-dry-refactor.plan.md](plan-agent-osx-dry-refactor.plan.md) | **`osx/tests/`** helper DRY refactor notes. |
 | [plan-agent-automation-deep-dive.plan.md](plan-agent-automation-deep-dive.plan.md) | Plan 03 automation deep dive (historical; much of it landed). |
 | [plan-agent-plan-09-phase-3-resume.plan.md](plan-agent-plan-09-phase-3-resume.plan.md) | Plan-09 resume: agent-proxy operator checklist, CI, Phase 3+ draft. |
+| [plan-agent-rich-pre-run-tui-layout-regression.md](plan-agent-rich-pre-run-tui-layout-regression.md) | Rich pre-run editor layout/resize regression (`32d5820` vs `a0c621f`), PTY tests, fix phases. |
 
 **Product plans:** **[`../README.md`](../README.md)** · **Defects:** **[`../../defects/README.md`](../../defects/README.md)** · **Other agent plans (non-clicker):** [`docs/plans/agent/README.md`](../../../plans/agent/README.md)
