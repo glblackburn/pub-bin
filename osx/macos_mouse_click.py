@@ -714,23 +714,18 @@ def _edit_row(console: Any, cfg: ResolvedConfig, key: str) -> None:
 
 
 def _build_editor_table(cfg: ResolvedConfig, row_keys: List[str], selected: int) -> Any:
-    from rich import box
+    # Default ``Table``/``Panel`` (same box/padding as ``32d5820``). DEF-010: if any cell
+    # wraps, Rich pads every cell in that row to the same height (blank “spacer” lines
+    # between borders). ``no_wrap`` + ellipsis on **all** columns prevents that without
+    # changing the inner box style (``ROUNDED``) or zero padding experiments.
     from rich.table import Table
     from rich.text import Text
 
-    # DEF-009: Rich's default ``Table`` box is ``HEAVY_HEAD``, which draws heavy
-    # horizontal rules (U+2501). On tight vertical space the inner table frame can
-    # visually merge with the ``Panel`` top border (light U+2500). ``ROUNDED`` uses
-    # light box drawing throughout so the nested frame stays visually consistent.
-    table = Table(
-        show_header=True,
-        header_style="bold cyan",
-        expand=True,
-        box=box.ROUNDED,
-    )
-    table.add_column("Setting", style="white", no_wrap=True)
-    table.add_column("Value", style="green")
-    table.add_column("Source", style="dim")
+    table = Table(show_header=True, header_style="bold cyan", expand=True)
+    _nw = {"no_wrap": True, "overflow": "ellipsis"}
+    table.add_column("Setting", style="white", **_nw)
+    table.add_column("Value", style="green", **_nw)
+    table.add_column("Source", style="dim", **_nw)
     for i, key in enumerate(row_keys):
         label, val = _row_display(cfg, key)
         src = _field_source(cfg, key)

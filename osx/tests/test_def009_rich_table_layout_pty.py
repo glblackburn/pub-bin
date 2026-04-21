@@ -1,4 +1,4 @@
-"""DEF-009: regression tests for Rich pre-run table / panel layout corruption (PTY transcript).
+"""DEF-009 / DEF-010: regression tests for Rich pre-run table / panel layout (PTY transcript).
 
 See ``docs/osx/defects/def-009-rich-pre-run-tui-table-layout-corruption.md``.
 """
@@ -11,24 +11,36 @@ from typing import Any
 
 import pytest
 
-from def009_layout_heuristics import layout_corruption_reason, strip_csi
+from def009_layout_heuristics import (
+    def010_vertical_spacer_reason,
+    layout_corruption_reason,
+    strip_csi,
+)
 
 pytest.importorskip("rich", reason="Rich pre-run editor tests need rich")
 
 
 def test_def009_clean_synthetic_rich_panel_has_no_corruption() -> None:
-    """Sanity: default Rich Panel+Table render must not trip heuristics."""
+    """Sanity: production-shaped Panel+Table (legacy ``32d5820`` layout) must not trip heuristics."""
     from rich.console import Console
     from rich.panel import Panel
     from rich.table import Table
     from rich.text import Text
 
     buf = io.StringIO()
-    c = Console(file=buf, width=120, force_terminal=True, color_system="truecolor")
+    # Tall virtual console: short PTYs can fuse inner ``HEAVY_HEAD`` rules with the panel.
+    c = Console(
+        file=buf,
+        width=120,
+        height=80,
+        force_terminal=True,
+        color_system="truecolor",
+    )
     t = Table(show_header=True, header_style="bold cyan", expand=True)
-    t.add_column("Setting", style="white", no_wrap=True)
-    t.add_column("Value", style="green")
-    t.add_column("Source", style="dim")
+    _nw = {"no_wrap": True, "overflow": "ellipsis"}
+    t.add_column("Setting", style="white", **_nw)
+    t.add_column("Value", style="green", **_nw)
+    t.add_column("Source", style="dim", **_nw)
     t.add_row(
         Text("Mode", style="bold black on bright_cyan"),
         Text("learn", style="bold black on bright_cyan"),
@@ -42,6 +54,61 @@ def test_def009_clean_synthetic_rich_panel_has_no_corruption() -> None:
         )
     )
     assert layout_corruption_reason(buf.getvalue()) is None
+
+
+def test_def010_narrow_panel_table_has_no_spacer_only_interior_rows() -> None:
+    """DEF-010: long Value/Source must not wrap to extra pipe-only rows (Rich row_height)."""
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.text import Text
+
+    buf = io.StringIO()
+    c = Console(
+        file=buf,
+        width=56,
+        height=40,
+        force_terminal=True,
+        color_system="truecolor",
+    )
+    t = Table(show_header=True, header_style="bold cyan", expand=True)
+    _nw = {"no_wrap": True, "overflow": "ellipsis"}
+    t.add_column("Setting", style="white", **_nw)
+    t.add_column("Value", style="green", **_nw)
+    t.add_column("Source", style="dim", **_nw)
+    t.add_row(
+        Text("Mode", style="bold black on bright_cyan"),
+        Text("learn" + "x" * 120, style="bold black on bright_cyan"),
+        Text("cli" + "y" * 120, style="bold black on bright_cyan"),
+    )
+    c.print(
+        Panel(
+            t,
+            title="[bold cyan]macOS mouse click[/] — review / edit",
+            border_style="cyan",
+        )
+    )
+    out = buf.getvalue()
+    assert def010_vertical_spacer_reason(out) is None, out[:2000]
+
+
+def test_def010_heuristic_still_flags_synthetic_spacer_transcript() -> None:
+    """If spacer-only interior lines reappear in captures, ``layout_corruption_reason`` flags them."""
+    spacer = "│ │" + " " * 60 + "│" + " " * 50 + "│" + " " * 8
+    transcript = (
+        "╭─ macOS mouse click — review / edit ─╮\n"
+        "│ ╭───────────────────────────────╮ │\n"
+        f"{spacer}\n"
+        "│ │ \x1b[1mMode\x1b[0m │ learn │ cli │\n"
+    )
+    assert def010_vertical_spacer_reason(transcript) is not None
+    r = layout_corruption_reason(transcript)
+    assert r is not None and "DEF-010" in r and "spacer" in r.lower()
+
+
+def test_def010_short_pipe_only_line_not_flagged() -> None:
+    """Avoid false positives on very short ``│`` fragments."""
+    assert layout_corruption_reason("│ │ │\n") is None
 
 
 def test_def009_detects_doubled_light_vertical() -> None:
@@ -92,7 +159,7 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
     repo_root: Path,
     tmp_path: Path,
 ) -> None:
-    """Live PTY: transcript must not show DEF-009 fused panel/table (40×120, debug on)."""
+    """Live PTY: stderr interleave / doubled pipes / spacers (not HEAVY_HEAD fuse line)."""
     pytest.importorskip("pexpect", reason="pty tests need pexpect")
 
     from pty_harness import base_child_env, spawn_clicker_pexpect
@@ -124,7 +191,9 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
         child.expect("review / edit", timeout=60)
         base = _transcript_after_editor_banner(child)
         transcript = _drain_until_setting_from(child, base, "Mode", timeout=15.0)
-        reason = layout_corruption_reason(transcript)
+        reason = layout_corruption_reason(
+            transcript, ignore_fused_panel_heavy_line=True
+        )
         assert reason is None, reason
     finally:
         try:

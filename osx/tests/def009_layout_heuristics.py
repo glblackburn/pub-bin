@@ -1,4 +1,4 @@
-"""DEF-009: heuristics to detect Rich pre-run table / panel layout corruption in PTY transcripts.
+"""DEF-009 / DEF-010: heuristics for Rich pre-run table / panel layout issues in PTY transcripts.
 
 See ``docs/osx/defects/def-009-rich-pre-run-tui-table-layout-corruption.md``.
 """
@@ -56,6 +56,39 @@ def _is_probable_editor_table_line(line: str) -> bool:
     return any(m in line for m in markers)
 
 
+def def010_vertical_spacer_reason(transcript: str) -> str | None:
+    """Return DEF-010 reason if any line is a spacer-only interior row, else ``None``.
+
+    Use this when asserting the editor does not emit Rich ``row_height`` padding rows,
+    without applying other DEF-009 heuristics that false-positive on narrow ``HEAVY_HEAD``
+    tables (e.g. legitimate ``┃┃`` next to the panel border).
+    """
+    for raw in transcript.splitlines():
+        vis = strip_csi(raw)
+        if _is_spacer_only_inner_table_row(vis):
+            return (
+                "DEF-010: vertical spacer row (table interior with only pipes/spaces, "
+                "typical of Rich row_height padding when a cell wrapped): "
+                f"{raw[:240]!r}"
+            )
+    return None
+
+
+def _is_spacer_only_inner_table_row(vis: str) -> bool:
+    """True if stripped line is only column pipes + whitespace (DEF-010 row-height padding).
+
+    Rich aligns every cell in a row to ``max`` rendered line count; wrapped cells create
+    apparent blank interior rows. Real header/data rows always include some non-pipe
+    printable content; rule rows use ``├``, ``─``, corners, etc.
+    """
+    if len(vis) < 25:
+        return False
+    pipe_like = vis.count("│") + vis.count("┃")
+    if pipe_like < 3:
+        return False
+    return bool(re.fullmatch(r"[\s│┃]+", vis))
+
+
 def _fused_panel_top_with_inner_heavy_rules(vis: str) -> bool:
     """Detect Panel outer top (``╭`` + light ``─``) fused onto inner Table heavy rules (``━``)."""
     if "╭" not in vis:
@@ -67,17 +100,34 @@ def _fused_panel_top_with_inner_heavy_rules(vis: str) -> bool:
     return True
 
 
-def layout_corruption_reason(transcript: str) -> str | None:
-    """Return a human-readable reason if DEF-009-style corruption is detected, else ``None``."""
+def layout_corruption_reason(
+    transcript: str,
+    *,
+    ignore_fused_panel_heavy_line: bool = False,
+) -> str | None:
+    """Return a human-readable reason if DEF-009/DEF-010 layout issues are detected, else ``None``.
+
+    ``ignore_fused_panel_heavy_line``: when True, skip the ``╭``+``━`` same-line fusion check.
+    Default Rich ``HEAVY_HEAD`` nested ``Table`` can trip that heuristic even without
+    stdout/stderr interleave; live PTY tests use this with the legacy editor layout while
+    ``test_def009_detects_fused_panel_top_and_inner_heavy_rules`` still guards the signal.
+    """
     for raw in transcript.splitlines():
         vis = strip_csi(raw)
-        if _fused_panel_top_with_inner_heavy_rules(vis):
+        if not ignore_fused_panel_heavy_line and _fused_panel_top_with_inner_heavy_rules(vis):
             return (
                 "DEF-009: panel top (╭…─) fused on one line with inner table heavy rules "
                 f"(━ U+2501); truncated or merged box draw: {raw[:240]!r}"
             )
         if "│" not in raw and "┃" not in raw:
             continue
+        # DEF-010: must run before ``_is_probable_editor_table_line`` (spacer rows lack labels).
+        if _is_spacer_only_inner_table_row(vis):
+            return (
+                "DEF-010: vertical spacer row (table interior with only pipes/spaces, "
+                "typical of Rich row_height padding when a cell wrapped): "
+                f"{raw[:240]!r}"
+            )
         if not _is_probable_editor_table_line(raw):
             continue
         # Telemetry merged into a row that still shows table borders (stdout/stderr interleave).

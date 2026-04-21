@@ -46,6 +46,11 @@ def spawn_clicker_pexpect(
     """
     cmd = [sys.executable, str(SCRIPT_PATH), *args]
     merged = base_child_env(dict(env) if env else None)
+    # Rich reads ``COLUMNS`` / ``LINES`` before ``get_terminal_size``; keep env aligned
+    # with the pseudo-TTY geometry or layout tests lie (e.g. wide PTY but ``COLUMNS=120``).
+    if dimensions is not None:
+        rows, cols = dimensions
+        merged = {**merged, "LINES": str(rows), "COLUMNS": str(cols)}
     kw: dict[str, Any] = {
         "timeout": timeout,
         "maxread": maxread,
