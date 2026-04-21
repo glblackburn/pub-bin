@@ -32,6 +32,7 @@ import json
 import os
 import signal
 import sys
+from datetime import datetime
 import termios
 import tty
 import time
@@ -373,6 +374,11 @@ def _debug_tui_log_path() -> Optional[str]:
     return p if p else None
 
 
+def _debug_tui_ts_wall() -> str:
+    """Wall time for TUI debug lines: ISO-8601 with ms and a numeric UTC offset."""
+    return datetime.now().astimezone().isoformat(timespec="milliseconds")
+
+
 def _reset_debug_tui_log_sink() -> None:
     """Close optional log file; reset flags (new editor session or tests)."""
     global _debug_tui_log_file, _debug_tui_log_failed
@@ -406,9 +412,15 @@ def _debug_tui_append_file(file_line: str) -> None:
 def _debug_tui_write_line(payload: Dict[str, Any]) -> None:
     if not _debug_tui_env_enabled():
         return
-    # Log file: one JSON object per line (``jq``-friendly). Stderr: same JSON with grep prefix.
-    raw = json.dumps(payload, separators=(",", ":")) + "\n"
-    sys.stderr.write(_DEBUG_TUI_STATE_PREFIX + raw)
+    # Log file: one JSON object per line (``jq``-friendly). Stderr: ``ts_wall``, a space,
+    # then ``MACOS_MOUSE_CLICK_TUI_STATE `` + same JSON (``ts_wall`` / ``ts_mono_ns`` in body).
+    ts_wall = _debug_tui_ts_wall()
+    ts_mono_ns = time.monotonic_ns()
+    body: Dict[str, Any] = dict(payload)
+    body["ts_wall"] = ts_wall
+    body["ts_mono_ns"] = ts_mono_ns
+    raw = json.dumps(body, separators=(",", ":")) + "\n"
+    sys.stderr.write(f"{ts_wall} {_DEBUG_TUI_STATE_PREFIX}{raw}")
     sys.stderr.flush()
     _debug_tui_append_file(raw)
 
@@ -423,8 +435,9 @@ def _debug_tui_emit(
 ) -> None:
     """Emit one TUI state record (stderr + optional log file).
 
-    Stderr uses ``MACOS_MOUSE_CLICK_TUI_STATE `` + JSON; the optional log file
-    stores **JSON only** (one compact object per line) so tools like ``jq`` work
+    Stderr uses ``<ts_wall> MACOS_MOUSE_CLICK_TUI_STATE `` + JSON (``ts_wall`` and
+    ``ts_mono_ns`` are in the JSON too); the optional log file stores **JSON only**
+    (one compact object per line) so tools like ``jq`` work
     per line and with ``jq -n '[inputs]'``.
 
     ``event`` is ``draw`` / ``after_key`` in the Rich editor. See

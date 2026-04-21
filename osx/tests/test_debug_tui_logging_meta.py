@@ -9,10 +9,12 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import textwrap
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -26,13 +28,14 @@ TUI_PREFIX = "MACOS_MOUSE_CLICK_TUI_STATE "
 
 
 def _iter_tui_payloads(text: str) -> Iterator[dict[str, Any]]:
-    """Parse stderr lines (with prefix) or log-file lines (raw JSON only)."""
+    """Parse stderr lines (optional ``ts_wall`` before prefix) or log-file lines (raw JSON)."""
     for line in text.splitlines():
         s = line.strip()
         if not s:
             continue
-        if s.startswith(TUI_PREFIX):
-            yield json.loads(s[len(TUI_PREFIX) :])
+        if TUI_PREFIX in s:
+            idx = s.index(TUI_PREFIX)
+            yield json.loads(s[idx + len(TUI_PREFIX) :])
         elif s.startswith("{"):
             yield json.loads(s)
 
@@ -48,24 +51,47 @@ def _reset_debug_tui_sink() -> Any:
 
 def test_json_contract_on_fixture_lines() -> None:
     """Checklist #3: every state line parses; required keys and types per ``event``."""
+    tw = "2026-04-20T15:23:41.527-07:00"
+    tm = 9123456789012345
+    base_ts = f'"ts_wall":"{tw}","ts_mono_ns":{tm},'
     sample = (
-        TUI_PREFIX
-        + '{"selected_index":0,"row_key":"mode","setting_label":"Mode",'
+        tw
+        + " "
+        + TUI_PREFIX
+        + "{"
+        + base_ts
+        + '"selected_index":0,"row_key":"mode","setting_label":"Mode",'
         '"value_text":"learn","source":"cli","event":"draw"}\n'
+        + tw
+        + " "
         + TUI_PREFIX
-        + '{"selected_index":1,"row_key":"count","setting_label":"Count",'
+        + "{"
+        + base_ts
+        + '"selected_index":1,"row_key":"count","setting_label":"Count",'
         '"value_text":"2","source":"cli","event":"after_key","last_key":"down"}\n'
+        + tw
+        + " "
         + TUI_PREFIX
-        + '{"event":"run","running_text":"mode=learn count=2 delay=0.0s",'
+        + "{"
+        + base_ts
+        + '"event":"run","running_text":"mode=learn count=2 delay=0.0s",'
         '"mode":"learn","count":2,"delay":0.0,"anchor_x":null,"anchor_y":null}\n'
+        + tw
+        + " "
         + TUI_PREFIX
-        + '{"event":"anchor","mode":"learn","anchor_x":3691.3,"anchor_y":-63.9,'
+        + "{"
+        + base_ts
+        + '"event":"anchor","mode":"learn","anchor_x":3691.3,"anchor_y":-63.9,'
         '"message":"Anchor recorded at (3691.3, -63.9). Warmup: sleeping 0.0s…",'
         '"warmup_delay":0.0}\n'
     )
     for obj in _iter_tui_payloads(sample):
         ev = obj["event"]
         assert ev in ("draw", "after_key", "run", "anchor")
+        assert isinstance(obj["ts_wall"], str)
+        assert isinstance(obj["ts_mono_ns"], int)
+        datetime.fromisoformat(obj["ts_wall"])
+        assert not obj["ts_wall"].endswith("Z"), "use numeric offset, not Z-only UTC"
         if ev in ("draw", "after_key"):
             assert isinstance(obj["selected_index"], int)
             assert isinstance(obj["row_key"], str)
@@ -126,7 +152,7 @@ def test_file_sink_duplicates_stderr_lines(
     capsys: pytest.CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
-    """Checklist #5: file lines with prefix byte-identical to stderr lines (order)."""
+    """Checklist #5: file JSON lines match stderr JSON (same objects, same order)."""
     log_path = tmp_path / "tui.log"
     monkeypatch.setenv("MACOS_MOUSE_CLICK_DEBUG_TUI", "1")
     monkeypatch.setenv("MACOS_MOUSE_CLICK_DEBUG_TUI_LOG", str(log_path))
@@ -138,13 +164,49 @@ def test_file_sink_duplicates_stderr_lines(
     mmc._debug_tui_emit(cfg, rk, 0, event="draw")
     mmc._debug_tui_emit(cfg, rk, 0, event="after_key", last_key="down")
     err = capsys.readouterr().err
-    stderr_json_lines = [
-        ln[len(TUI_PREFIX) :]
-        for ln in err.splitlines()
-        if ln.startswith(TUI_PREFIX)
-    ]
+    stderr_json_lines = []
+    for ln in err.splitlines():
+        if TUI_PREFIX not in ln:
+            continue
+        idx = ln.index(TUI_PREFIX)
+        stderr_json_lines.append(ln[idx + len(TUI_PREFIX) :])
     file_lines = [ln for ln in log_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
     assert stderr_json_lines == file_lines
+
+
+def test_ts_wall_parseable_ts_mono_increases_stderr_matches_file(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    """Phase 1: ``ts_wall`` ISO parseable; ``ts_mono_ns`` strictly increases; stderr wall prefix."""
+    log_path = tmp_path / "ts.ndjson"
+    monkeypatch.setenv("MACOS_MOUSE_CLICK_DEBUG_TUI", "1")
+    monkeypatch.setenv("MACOS_MOUSE_CLICK_DEBUG_TUI_LOG", str(log_path))
+    import macos_mouse_click as mmc
+
+    cfg = mmc.ResolvedConfig()
+    cfg.set_field("mode", "learn", "cli")
+    rk = mmc.editor_row_keys(cfg)
+    mmc._debug_tui_emit(cfg, rk, 0, event="draw")
+    mmc._debug_tui_emit(cfg, rk, 0, event="after_key", last_key="down")
+    err = capsys.readouterr().err
+    tui_lines = [ln for ln in err.splitlines() if TUI_PREFIX in ln]
+    assert len(tui_lines) == 2
+    iso_head = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}")
+    for ln in tui_lines:
+        assert iso_head.match(ln), ln[:80]
+        pre, _, rest = ln.partition(TUI_PREFIX)
+        assert pre.strip()
+        assert rest.startswith("{")
+        obj = json.loads(rest)
+        datetime.fromisoformat(obj["ts_wall"])
+        assert not obj["ts_wall"].endswith("Z")
+        assert pre.strip() == obj["ts_wall"]
+    objs_err = list(_iter_tui_payloads(err))
+    objs_file = list(_iter_tui_payloads(log_path.read_text(encoding="utf-8")))
+    assert objs_err == objs_file
+    assert objs_err[0]["ts_mono_ns"] < objs_err[1]["ts_mono_ns"]
 
 
 def test_no_default_log_file_when_log_env_unset(

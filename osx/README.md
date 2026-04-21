@@ -17,10 +17,10 @@ When the script shows the **Rich** review/edit table (TTY + Rich, not `-Y/--yes`
 
 | Sink | Format |
 |------|--------|
-| **stderr** | `MACOS_MOUSE_CLICK_TUI_STATE ` + compact JSON + newline (prefix for `grep` / human scans in mixed Rich output). |
-| **log file** (`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`) | **JSON only** + newline — each non-empty line is a single value `jq` can parse. |
+| **stderr** | **Wall time** (ISO-8601 with ms and numeric offset, e.g. `2026-04-20T15:23:41.527-07:00`), a space, then `MACOS_MOUSE_CLICK_TUI_STATE ` + compact JSON + newline. The JSON repeats **`ts_wall`** and includes **`ts_mono_ns`** (integer, `time.monotonic_ns()`), so operators see a new line at a glance even when the rest of the payload repeats. |
+| **log file** (`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`) | **JSON only** + newline — each non-empty line is a single value `jq` can parse (same object as after the `MACOS_MOUSE_CLICK_TUI_STATE ` marker on stderr). |
 
-Payload: compact JSON from `json.dumps(..., separators=(",", ":"))` (no spaces after commas/colons).
+Payload: compact JSON from `json.dumps(..., separators=(",", ":"))` (no spaces after commas/colons). Every record includes **`ts_wall`** (string) and **`ts_mono_ns`** (int).
 
 - **Rich table** (`event` = `draw` or `after_key`): `selected_index`, `row_key`, `setting_label`, `value_text`, `source`, and on `after_key` also `last_key` (return value of `read_raw_key()` for that wait).
 - **Run start** (`event` = `run`): emitted **right after** the **Running:** line for every successful start (Rich TUI after you press **S**, or CLI / `-Y`). Fields: `running_text` (same text as after `Running: `), `mode`, `count`, `delay`, `anchor_x` / `anchor_y` (`null` until known — fixed mode sets them from CLI; learn / at-cursor leave them `null` here).
@@ -99,10 +99,10 @@ cat debug.json | jq -n '[inputs]' | jq .
 
 Plain `cat debug.json | jq .` only parses the **first** value in many `jq` versions; use **`jq -n '[inputs]'`** (or line-at-a-time loops) for the full session.
 
-**stderr** (mixed with Rich and other text): strip the prefix, then parse:
+**stderr** (mixed with Rich and other text): find `MACOS_MOUSE_CLICK_TUI_STATE `, then parse the JSON after it (ignore the leading wall-clock token):
 
 ```bash
-grep '^MACOS_MOUSE_CLICK_TUI_STATE ' tui-stderr.ndjson | sed 's/^MACOS_MOUSE_CLICK_TUI_STATE //' | jq .
+grep 'MACOS_MOUSE_CLICK_TUI_STATE ' tui-stderr.ndjson | sed 's/^.*MACOS_MOUSE_CLICK_TUI_STATE //' | jq .
 ```
 
 ### Tests
