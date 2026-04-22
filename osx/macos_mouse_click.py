@@ -281,11 +281,43 @@ def _restore_terminal(fd: int, attrs: List) -> None:
     termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
 
+def _tty_setraw_now(fd: int) -> None:
+    """Enter raw mode with ``TCSANOW`` (not ``tty.setraw``'s default ``TCSAFLUSH``).
+
+    ``TCSAFLUSH`` discards unread input; on PTY + ``pexpect`` that can remove bytes
+    the next editor loop needs before ``_read_raw_key_impl`` runs.
+    """
+    mode = termios.tcgetattr(fd)
+    new = list(mode)
+    tty.cfmakeraw(new)
+    termios.tcsetattr(fd, termios.TCSANOW, new)
+
+
 def _flush_stdout_safe() -> None:
     """Push Rich frame bytes to the TTY before stderr (DEF-009: avoid stdout/stderr interleave)."""
     try:
         sys.stdout.flush()
     except (OSError, BrokenPipeError, ValueError):
+        pass
+
+
+def _sync_rich_console_size(console: Any) -> None:
+    """Refresh Rich ``Console`` dimensions from the TTY (resize / PTY ``setwinsize``).
+
+    If ``COLUMNS`` / ``LINES`` were set when ``Console()`` was constructed, Rich keeps
+    fixed ``_width`` / ``_height`` and never re-queries ``ioctl`` — stale layout after
+    resize. Sync from ``os.get_terminal_size(sys.stdout)`` before each full redraw.
+
+    Call this **after** restoring cooked line discipline for the paint (see
+    ``_run_rich_pre_run_editor_loop``), matching the ``32d5820`` hand-off baseline.
+    """
+    try:
+        wh = os.get_terminal_size(sys.stdout.fileno())
+    except (OSError, AttributeError, ValueError):
+        return
+    try:
+        console.size = (wh.columns, wh.lines)
+    except Exception:
         pass
 
 
@@ -765,7 +797,8 @@ def run_rich_pre_run_editor(cfg: ResolvedConfig, _rich: Any) -> bool:
     fd_in = _kbd_tty_fd_get()
     _rich_editor_tty_cooked_attrs = termios.tcgetattr(fd_in)
     try:
-        tty.setraw(fd_in)
+        # Raw mode only around ``_read_raw_key_impl`` (see loop). Persistent raw across
+        # ``console.clear`` / ``print`` regressed layout vs. ``32d5820`` (hand-off).
         return _run_rich_pre_run_editor_loop(
             cfg, console, row_keys, selected, fd_in
         )
@@ -789,6 +822,10 @@ def _run_rich_pre_run_editor_loop(
         if not row_keys:
             row_keys = editor_row_keys(cfg)
         selected = max(0, min(selected, len(row_keys) - 1))
+        cooked = _rich_editor_tty_cooked_attrs
+        if cooked is not None:
+            termios.tcsetattr(fd_in, termios.TCSANOW, cooked)
+        _sync_rich_console_size(console)
         table = _build_editor_table(cfg, row_keys, selected)
         console.clear()
         _flush_stdout_safe()
@@ -808,6 +845,7 @@ def _run_rich_pre_run_editor_loop(
         # box drawing on a single TTY. Flush the Rich frame to the kernel first.
         _flush_stdout_safe()
         _debug_tui_emit(cfg, row_keys, selected, event="draw")
+        _tty_setraw_now(fd_in)
         key = _read_raw_key_impl(fd_in)
         if key in ("up", "down"):
             selected = _tui_bump_selected_for_arrow_key(
@@ -838,6 +876,9 @@ def _run_rich_pre_run_editor_loop(
             continue
         if key == "enter":
             rk = row_keys[selected]
+            if cooked is not None:
+                termios.tcsetattr(fd_in, termios.TCSANOW, cooked)
+            _sync_rich_console_size(console)
             console.clear()
             _edit_row(console, cfg, rk)
             row_keys = editor_row_keys(cfg)

@@ -414,7 +414,7 @@ def test_after_key_down_then_draw_pexpect(pexpect_module: Any, tmp_path: Path) -
             pass
         child.send("\x1b[B")
         deadline = time.monotonic() + 8.0
-        draws_after: list[dict[str, Any]] = []
+        ok = False
         while time.monotonic() < deadline:
             try:
                 child.read_nonblocking(size=500_000, timeout=0)
@@ -422,18 +422,32 @@ def test_after_key_down_then_draw_pexpect(pexpect_module: Any, tmp_path: Path) -
                 pass
             text = log_path.read_text(encoding="utf-8")
             payloads = list(_iter_tui_payloads(text))
-            after_keys = [
-                p for p in payloads if p.get("event") == "after_key" and p.get("last_key") == "down"
-            ]
-            if not after_keys:
+            draw_idx = [i for i, p in enumerate(payloads) if p.get("event") == "draw"]
+            if not draw_idx:
                 time.sleep(0.05)
                 continue
-            idx = payloads.index(after_keys[0])
-            draws_after = [p for p in payloads[idx + 1 :] if p.get("event") == "draw"]
-            if draws_after:
+            down_idx = [
+                i
+                for i, p in enumerate(payloads)
+                if p.get("event") == "after_key" and p.get("last_key") == "down"
+            ]
+            if not down_idx:
+                time.sleep(0.05)
+                continue
+            first_draw = draw_idx[0]
+            down_after_first = [i for i in down_idx if i > first_draw]
+            if not down_after_first:
+                time.sleep(0.05)
+                continue
+            d0 = down_after_first[0]
+            if any(i > d0 for i in draw_idx):
+                ok = True
                 break
             time.sleep(0.05)
-        assert draws_after, "expected a draw after down after_key within timeout"
+        assert ok, (
+            "expected a draw event in the log after the first Down (after_key down); "
+            "cooked-then-raw editor loop should log draw, after_key, draw, …"
+        )
         child.send("q")
         try:
             child.expect(pexpect.EOF, timeout=20)

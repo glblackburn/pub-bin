@@ -6,6 +6,7 @@ See ``docs/osx/defects/def-009-rich-pre-run-tui-table-layout-corruption.md``.
 from __future__ import annotations
 
 import io
+import time
 from pathlib import Path
 from typing import Any
 
@@ -195,6 +196,68 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
             transcript, ignore_fused_panel_heavy_line=True
         )
         assert reason is None, reason
+    finally:
+        try:
+            child.send("q")
+            child.expect(pexpect.EOF, timeout=15)
+        except Exception:
+            child.close(force=True)
+
+
+@pytest.mark.darwin
+@pytest.mark.table_nav
+def test_def009_editor_layout_after_pty_resize_pexpect(
+    pexpect_module: Any,
+    repo_root: Path,
+    tmp_path: Path,
+) -> None:
+    """PTY ``setwinsize`` then redraw (Down): layout heuristics stay clean (plan-agent-rich-pre-run)."""
+    pytest.importorskip("pexpect", reason="pty tests need pexpect")
+
+    from pty_harness import base_child_env, spawn_clicker_pexpect
+    from test_rich_table_nav_down_pty import (
+        _drain_until_setting_from,
+        _transcript_after_editor_banner,
+    )
+
+    pexpect = pexpect_module
+    log_path = Path(tmp_path) / "def009-resize.ndjson"
+    env = base_child_env(
+        {
+            "TERM": "xterm-256color",
+            "MACOS_MOUSE_CLICK_DEBUG_TUI": "1",
+            "MACOS_MOUSE_CLICK_DEBUG_TUI_LOG": str(log_path),
+        }
+    )
+    child = spawn_clicker_pexpect(
+        pexpect,
+        ["--learn", "--interactive", "-n", "2", "-d", "3.5"],
+        cwd=repo_root,
+        env=env,
+        timeout=120,
+        dimensions=(40, 120),
+        maxread=2_000_000,
+    )
+    child.delaybeforesend = 0.2
+    try:
+        child.expect("review / edit", timeout=60)
+        base = _transcript_after_editor_banner(child)
+        t0 = _drain_until_setting_from(child, base, "Mode", timeout=15.0)
+        r0 = layout_corruption_reason(t0, ignore_fused_panel_heavy_line=True)
+        assert r0 is None, r0
+        assert def010_vertical_spacer_reason(t0) is None, t0[:2000]
+
+        child.setwinsize(28, 72)
+        time.sleep(0.35)
+        try:
+            child.read_nonblocking(size=500_000, timeout=2)
+        except Exception:
+            pass
+        child.send("\x1b[B")
+        t1 = _drain_until_setting_from(child, t0, "Count", timeout=20.0)
+        r1 = layout_corruption_reason(t1, ignore_fused_panel_heavy_line=True)
+        assert r1 is None, r1
+        assert def010_vertical_spacer_reason(t1) is None, t1[:2000]
     finally:
         try:
             child.send("q")

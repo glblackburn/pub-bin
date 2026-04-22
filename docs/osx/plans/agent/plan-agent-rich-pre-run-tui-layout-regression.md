@@ -8,16 +8,16 @@ related:
 todos:
   - id: "repro-ab"
     content: "Reproduce 32d5820 vs HEAD (same Terminal profile); capture transcripts + terminal size/env; note resize + spacer symptoms"
-    status: pending
+    status: cancelled
   - id: "isolate-cause"
     content: "Run ordered experiments (cooked-around-draw, Console stdout binding, dimension-stale vs fusion); pick minimal fix path without breaking DEF-006 /dev/tty"
-    status: pending
+    status: completed
   - id: "pty-resize-test"
     content: "Add pexpect PTY test: setwinsize after first draw; assert def009/def010 heuristics on merged transcript"
-    status: pending
+    status: completed
   - id: "implement-verify"
     content: "Implement fix; make -C osx test + manual QA; add/trim docs/osx/defects def-010 if needed"
-    status: pending
+    status: completed
 isProject: false
 ---
 # Rich pre-run TUI layout and resize (DEF-009 / DEF-010 follow-up)
@@ -101,3 +101,13 @@ Goal: close the gap where **CI passes** but **real TTY fails**.
 ## Repo hygiene (AI standards)
 
 - When you are ready to commit: follow the **two-step** commit workflow from [`.cursorrules`](../../../../.cursorrules) / [`README-AI-CODING-STANDARDS.md`](../../../../README-AI-CODING-STANDARDS.md).
+
+## Implementation note (2026-04-21, revised)
+
+**Shipped in ``osx/macos_mouse_click.py``:**
+
+1. **Hypothesis A (layout):** Restore **cooked** line discipline with ``termios.tcsetattr(..., TCSANOW)`` before each ``clear``/``print``, then **raw** only for ``_read_raw_key_impl`` (no ``tty.setraw`` wrapping the whole editor). Matches the ``32d5820`` hand-off baseline.
+2. **Hypothesis C (resize):** ``_sync_rich_console_size(console)`` after cooked restore so Rich’s ``Console`` width/height track ``ioctl``/PTY size, not only ``COLUMNS``/``LINES`` at construction.
+3. **Raw without flush:** ``_tty_setraw_now`` uses ``cfmakeraw`` + ``tcsetattr(..., TCSANOW)`` instead of ``tty.setraw`` (default ``TCSAFLUSH``), which could discard PTY bytes the next loop needs.
+
+**Tests:** ``test_def009_editor_layout_after_pty_resize_pexpect`` (``osx/tests/test_def009_rich_table_layout_pty.py``). ``test_after_key_down_then_draw_pexpect`` (``osx/tests/test_debug_tui_logging_meta.py``) asserts a **draw** logged **after** the first **after_key** with ``last_key`` ``down`` that follows the first **draw** (index-based, avoids ``list.index`` on dict equality edge cases).
