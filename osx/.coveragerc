@@ -1,0 +1,14 @@
+# Coverage for macos_mouse_click.py (Plan 11). Used via: make -C osx test-coverage
+# Invoked with --cov-config from repo root; paths are relative to that cwd.
+
+[run]
+relative_files = true
+branch = false
+
+[report]
+precision = 1
+show_missing = true
+skip_covered = false
+
+# Uncomment after a stable baseline if CI should fail on regressions:
+# fail_under = 70

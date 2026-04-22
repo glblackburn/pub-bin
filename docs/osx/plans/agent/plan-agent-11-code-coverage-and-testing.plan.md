@@ -3,19 +3,19 @@
 todos:
   - id: "cov-01-baseline"
     content: "Run coverage locally on macOS; record baseline % and largest uncovered regions (macos_mouse_click.py)."
-    status: pending
+    status: completed
   - id: "cov-02-tooling"
     content: "Add pytest-cov + osx/.coveragerc; Makefile COV_MODULE + coverage target (html+term+xml+term-missing, --cov-config); .gitignore; osx/README.md."
-    status: pending
+    status: completed
   - id: "cov-03-ci-artifact"
     content: "Optional: CI step to emit coverage XML/HTML artifact on macos-mouse-click workflow (no third-party token required for v1)."
-    status: pending
+    status: completed
   - id: "cov-04-gaps-tests"
     content: "Prioritize tests for pure helpers, argparse branches, and non-PTY paths; defer flaky PTY unless high value."
     status: pending
   - id: "cov-05-gap-doc"
     content: "Optional: add dated coverage-gap markdown under docs/osx/ (pattern from network-tools/capture test-coverage-analysis.md) when baseline exists."
-    status: pending
+    status: completed
 isProject: false
 ---
 # Plan 11 — Code coverage reporting and coverage-driven tests

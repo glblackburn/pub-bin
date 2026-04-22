@@ -21,7 +21,31 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps and run tests (osx Makefile)
+      - name: Install deps and run tests + coverage (osx Makefile)
         run: |
           make -C osx test-setup
-          make -C osx test
+          make -C osx test-report-coverage
+
+      - name: Upload coverage XML
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: osx/coverage.xml
+          if-no-files-found: ignore
+
+      - name: Upload coverage HTML
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: osx/htmlcov/
+          if-no-files-found: ignore
+
+      - name: Upload JUnit report
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-xml
+          path: osx/tests/reports/junit.xml
+          if-no-files-found: ignore

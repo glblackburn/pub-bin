@@ -106,6 +106,20 @@ Plain `cat debug.json | jq .` only parses the **first** value in many `jq` versi
 grep 'MACOS_MOUSE_CLICK_TUI_STATE ' tui-stderr.ndjson | sed 's/^.*MACOS_MOUSE_CLICK_TUI_STATE //' | jq .
 ```
 
+### Code coverage (Plan 11)
+
+From repo root, with a venv (`make -C osx test-setup` once):
+
+| Target | Purpose |
+|--------|---------|
+| `make -C osx test-coverage` (alias: `coverage`) | Full pytest with **`pytest-cov`**: terminal **missing lines**, **`osx/htmlcov/`** (open `index.html`), **`osx/coverage.xml`**. Uses **`osx/.coveragerc`**. |
+| `make -C osx coverage-quick` | Same reports but **`-m "not table_nav"`** — faster when you care mostly about non-table-nav PTY tests. |
+| `make -C osx test-report-coverage` | **One** pytest run: **JUnit** (`osx/tests/reports/junit.xml`) **and** the same coverage outputs (used in **CI**). |
+
+Artifacts (`htmlcov/`, `.coverage`, `coverage.xml`) are **gitignored**; download **`coverage-xml`** / **`coverage-html`** from the **macOS mouse click tests** workflow for trends between runs.
+
+Gap analysis template / notes: **`docs/osx/macos-mouse-click-coverage-gap.md`**.
+
 ### Tests
 
 - `osx/tests/test_debug_tui_logging_meta.py` — behavior of the TUI debug logger (gates, JSON, file vs stderr, append across processes, etc.).
