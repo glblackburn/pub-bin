@@ -30,8 +30,11 @@ Ten synthetics with **0.25 s** between clicks is only a few seconds, but **large
 
 It complements **[`plan-001-macos-clicker.md`](plan-001-macos-clicker.md)** (signals, `shutdown_requested`, `sleep_interruptible`), **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)** (pre-run only), and **[`plan-004-macos-mouse-click-run-progress-ui.md`](plan-004-macos-mouse-click-run-progress-ui.md)** (post-start **terminal** feedback — still useless if the terminal is not focused).
 
+**Priority note (2026):** Operator feedback ranks **“get out of infinite / unsupervised runs”** above **pretty progress** ([plan 04](plan-004-macos-mouse-click-run-progress-ui.md)). **`count=0`** with **`-Y`**, **`delay=0`**, or a buried terminal means **SIGINT alone** is insufficient; this plan owns **additional stop surfaces** and any **non-terminal** override (file, hotkey, documented `kill`, optional input/mouse heuristics where safe).
+
 ## Table of contents
 
+- [Operator goals (break-out)](#operator-goals-break-out)
 - [Problem](#problem)
 - [Goals](#goals)
 - [Constraints](#constraints)
@@ -40,6 +43,15 @@ It complements **[`plan-001-macos-clicker.md`](plan-001-macos-clicker.md)** (sig
 - [Phases](#phases)
 - [Risks](#risks)
 - [Manual QA](#manual-qa)
+
+## Operator goals (break-out)
+
+Beyond “focus the terminal and **Ctrl+C**,” the product should consider:
+
+1. **`count=0` (infinite)** and **very large finite `-n`** with **small `delay`**: the user must have a **predictable** way to stop without winning a race against the loop (see also **[plan 04 § Operator constraints](plan-004-macos-mouse-click-run-progress-ui.md#operator-constraints-product)** on **`delay=0`** and **`sleep_interruptible`**).
+2. **TTY-attached runs:** optional **Escape** (or similar) as a **cancel** during the synthetic loop **only** if it can be implemented without fighting **`termios`** state used elsewhere and without breaking **`-Y`** / pipe contracts when stdin is not a TTY.
+3. **Spatial “panic” gesture (optional, product-dependent):** e.g. **user moves the mouse far from the anchor** to trigger **`shutdown_requested()`** — requires defining **distance threshold**, interaction with **learn** taps and **Accessibility**, and false positives (accidental bump). Treat as **later** option after **stop file** / documented **`kill`** provenance.
+4. **Cross-link:** Throttled “still alive” output during long runs lives in **[plan 04](plan-004-macos-mouse-click-run-progress-ui.md)**; this plan owns **making stop reachable**.
 
 ## Problem
 
@@ -70,18 +82,20 @@ Today, **in-run stop** is effectively **“switch to the terminal and interrupt�
 | **B** | **`--stop-file PATH`** (or fixed cache path): main loop **polls** mtime / existence between sleeps; operator **`touch`**s file to stop | Simple, scriptable, no global key | Slower worst-case latency = poll interval; path hygiene |
 | **C** | Document **`kill -INT <pid>`** from **Activity Monitor** / another shell + optional **`--pid-file`** | Zero new code if docs-only | Still requires “another terminal” or GUI |
 | **D** | Tiny **companion** process: user runs **`macos_mouse_click_stop`** that signals parent by PID file | Clear separation | Two binaries / install story |
+| **E** | **Mouse-move cancel** (optional): if cursor moves **> D px** from synthetic anchor, set **`shutdown_state`** | Hands-free “panic” without terminal | False positives; Quartz polling cost; learn/tap interaction |
 
 ## Recommended direction
 
-Ship **B** first (**opt-in stop file** + small poll in **`sleep_interruptible`** or at top of loop) for **lowest risk** and **`-Y`** friendliness; add **A** as an **optional** `--global-stop-hotkey` (exact flag TBD) in a later phase once event-tap interaction with **learn** is proven safe.
+Ship **B** first (**opt-in stop file** + small poll in **`sleep_interruptible`** and/or **top of `run_synthetic_loop`**) for **lowest risk** and **`-Y`** / **infinite** friendliness — worst-case latency is the **poll interval**, so document tradeoffs for **`delay=0`**. Add **A** as an **optional** `--global-stop-hotkey` (exact flag TBD) in a later phase once event-tap interaction with **learn** is proven safe. **E** (mouse-move) remains **exploratory** until **B** ships and operator evidence says it is still needed.
 
 ## Phases
 
 ### Phase 1 — Specification
 
 - Finalize **flag names** (`--stop-file`, `--poll-stop-ms`, etc.).
-- Define interaction with **`count=0`** (infinite) and **learn warmup** delay.
+- Define interaction with **`count=0`** (infinite), **`delay=0`**, and **learn warmup** delay (poll points when **`sleep_interruptible`** does not run long).
 - Decide whether **learn tap waiting** phase also honors stop file / hotkey (probably **yes** for consistency).
+- If **Escape** (or stdin line) cancel is in scope for TTY runs: specify exact **when** stdin is read (never block Quartz on **`read`** without a plan) and how it coexists with **[plan 04](plan-004-macos-mouse-click-run-progress-ui.md)** output.
 
 ### Phase 2 — Stop file (recommended first ship)
 

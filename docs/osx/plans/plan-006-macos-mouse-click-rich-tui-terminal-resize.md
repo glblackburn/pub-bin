@@ -8,7 +8,7 @@ todos:
     status: pending
   - id: phase-06-implement-reflow
     content: "Refactor pre-run editor to re-measure Console width/height and redraw table/panel"
-    status: pending
+    status: completed
   - id: phase-06-regression-mt08
     content: "Re-run MT-08; update DEF-005 / plan 02 if behavior changes"
     status: pending
@@ -19,9 +19,15 @@ isProject: false
 
 This document tracks **responsive layout** for the Rich **pre-run editor** in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py): when the operator **resizes the terminal** (narrower, wider, shorter, taller), the **Panel** + **Table** should **reflow** instead of leaving a stale layout with **awkward wrapping** or a **fixed visual size** that no longer matches the window.
 
-It is motivated by **DEF-005** in **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)** (operator **MT-08**, **2026-04-18**): shrinking caused **weird wrap**; expanding the window **did not** grow the rendered UI. Work is **deferred** from v1; no script fix ships until this plan is executed.
+It is motivated by **DEF-005** in **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)** (operator **MT-08**, **2026-04-18**): shrinking caused **weird wrap**; expanding the window **did not** grow the rendered UI. **v1** originally deferred a full SIGWINCH story; **partial fixes** are now in **`osx/macos_mouse_click.py`** (see **Implementation status** below).
 
-Related: **[`plan-004-macos-mouse-click-run-progress-ui.md`](plan-004-macos-mouse-click-run-progress-ui.md)** (post-start **Live** / progress patterns may reuse ideas), **[`plan-003-macos-mouse-click-tui-automation.md`](plan-003-macos-mouse-click-tui-automation.md)** (PTY tests may need **size** assertions after reflow exists).
+### Implementation status (2026-04-21)
+
+**Shipped (partial remediation; tag `osx-mouse-click-working` and follow-ups):** the pre-run loop **restores cooked line discipline** before each **`clear`/`print`**, **`_sync_rich_console_size()`** applies **`os.get_terminal_size`** to the Rich **`Console`** each iteration (so **`COLUMNS`/`LINES`** at process start no longer freeze width after **`pexpect.setwinsize`** or window resize), **`_tty_setraw_now`** avoids **`TCSAFLUSH`** when entering raw mode for key reads, and **[`osx/tests/test_def009_rich_table_layout_pty.py`](../../../osx/tests/test_def009_rich_table_layout_pty.py)** includes **`test_def009_editor_layout_after_pty_resize_pexpect`**. That addresses much of the **stale Rich geometry** and **TTY discipline** angle of MT-08/DEF-005 **without** a dedicated **SIGWINCH** handler or **redraw while blocked in `read`**.
+
+**Still open in this plan:** explicit **SIGWINCH** vs **polling** spec, **minimum width** messaging when the table is too narrow, formal **MT-08** re-run and **plan-02 / DEF-005** table update if owners agree DEF-005 is **fully** vs **partially** addressed.
+
+Related: **[`plan-004-macos-mouse-click-run-progress-ui.md`](plan-004-macos-mouse-click-run-progress-ui.md)** (post-start **Live** / progress patterns may reuse ideas), **[`plan-003-macos-mouse-click-tui-automation.md`](plan-003-macos-mouse-click-tui-automation.md)** (PTY **resize** assertions in DEF-009 tests).
 
 ## Table of contents
 
