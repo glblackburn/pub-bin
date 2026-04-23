@@ -47,6 +47,13 @@ def test_readme_open_defects_have_automated_regressions() -> None:
     )
 
 
+def test_def007_argv_duplicate_learn_points() -> None:
+    err = mmc.argv_duplicate_cli_option_error(
+        ["--learn-points", "-Y", "--learn-points", "3"]
+    )
+    assert err == "--learn-points may only appear once"
+
+
 def test_def007_argv_duplicate_cli_option_error_detects_double_count() -> None:
     err = mmc.argv_duplicate_cli_option_error(
         ["--learn", "-Y", "-n", "1", "-n", "2"]

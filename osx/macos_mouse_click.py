@@ -200,7 +200,11 @@ def wait_for_anchor_click(qz: Any) -> Union[tuple, bool, None]:
 
 
 def default_count_for_mode(mode: str) -> int:
-    return 0 if mode == "learn" else 1
+    if mode == "learn":
+        return 0
+    if mode == "learn_collect":
+        return 0
+    return 1
 
 
 def count_label(n: int) -> str:
@@ -209,6 +213,10 @@ def count_label(n: int) -> str:
 
 def _running_message(cfg: ResolvedConfig) -> str:
     """Human-readable tail of the ``Running:`` line (no ``Running:`` prefix)."""
+    if cfg.mode == "learn_collect":
+        cap = cfg.learn_point_cap
+        cap_s = "infinite" if cap is None else str(cap)
+        return f"mode={cfg.mode} learn_point_cap={cap_s} delay={cfg.delay}s"
     return f"mode={cfg.mode} count={count_label(cfg.count)} delay={cfg.delay}s"
 
 
@@ -219,6 +227,8 @@ class ResolvedConfig:
     y: Optional[float] = None
     count: int = 0
     delay: float = 5.0
+    # learn_collect: None = infinite samples; int >= 1 = stop after N real clicks.
+    learn_point_cap: Optional[int] = None
     sources: Dict[str, str] = field(default_factory=dict)
     assume_yes: bool = False
     used_interactive: bool = False
@@ -230,13 +240,16 @@ class ResolvedConfig:
 
 def resolved_config_for_dry_run_json(cfg: ResolvedConfig) -> Dict[str, Any]:
     """Serializable resolved config for MACOS_MOUSE_CLICK_DRY_RUN_JSON (tests / CI)."""
-    return {
+    d: Dict[str, Any] = {
         "mode": cfg.mode,
         "count": cfg.count,
         "delay": cfg.delay,
         "x": None if cfg.x is None else float(cfg.x),
         "y": None if cfg.y is None else float(cfg.y),
     }
+    if cfg.mode == "learn_collect":
+        d["learn_point_cap"] = cfg.learn_point_cap
+    return d
 
 
 def dry_run_after_start_requested(ns: argparse.Namespace) -> bool:
@@ -441,6 +454,9 @@ def editor_row_keys(cfg: ResolvedConfig) -> List[str]:
     keys: List[str] = ["mode"]
     if cfg.mode == "fixed":
         keys.extend(["x", "y"])
+    elif cfg.mode == "learn_collect":
+        keys.append("learn_point_cap")
+        return keys
     keys.extend(["count", "delay"])
     return keys
 
@@ -599,6 +615,9 @@ def _row_display(cfg: ResolvedConfig, key: str) -> Tuple[str, str]:
         if not cfg.mode:
             return "Delay (s)", "(set mode first)"
         return "Delay (s)", str(cfg.delay)
+    if key == "learn_point_cap":
+        cap = cfg.learn_point_cap
+        return "Max points", "infinite" if cap is None else str(cap)
     return key, ""
 
 
@@ -621,6 +640,8 @@ def _field_source(cfg: ResolvedConfig, key: str) -> str:
         return cfg.sources.get("x", "default") if cfg.x is not None else "—"
     if key == "y":
         return cfg.sources.get("y", "default") if cfg.y is not None else "—"
+    if key == "learn_point_cap":
+        return cfg.sources.get("learn_point_cap", "default")
     return cfg.sources.get(key, "default")
 
 
@@ -631,6 +652,7 @@ def _apply_row_reset(cfg: ResolvedConfig, key: str) -> None:
         cfg.y = None
         for k in ("x", "y"):
             cfg.sources.pop(k, None)
+        cfg.set_field("learn_point_cap", None, "default")
         return
     if key == "x":
         cfg.set_field("x", 0.0, "default")
@@ -643,6 +665,10 @@ def _apply_row_reset(cfg: ResolvedConfig, key: str) -> None:
         return
     if key == "delay":
         cfg.set_field("delay", 5.0, "default")
+        return
+    if key == "learn_point_cap":
+        cfg.set_field("learn_point_cap", None, "default")
+        return
 
 
 def _prompt_cooked(console: Any, prompt: str) -> str:
@@ -666,14 +692,15 @@ def _edit_row(console: Any, cfg: ResolvedConfig, key: str) -> None:
         old_mode = cfg.mode
         console.print(
             Panel(
-                "[cyan]Enter mode[/]: [bold]learn[/] | [bold]fixed[/] | [bold]at-cursor[/]",
+                "[cyan]Enter mode[/]: [bold]learn[/] | [bold]fixed[/] | [bold]at-cursor[/] "
+                "| [bold]learn-collect[/]",
                 title="Edit mode",
                 border_style="cyan",
             )
         )
         raw = _prompt_cooked(
             console,
-            "Mode [learn/fixed/at-cursor, default learn]: ",
+            "Mode [learn/fixed/at-cursor/learn-collect, default learn]: ",
         ).lower()
         if raw in ("", "learn", "l", "1"):
             cfg.set_field("mode", "learn", "tui")
@@ -693,13 +720,41 @@ def _edit_row(console: Any, cfg: ResolvedConfig, key: str) -> None:
             cfg.y = None
             cfg.sources.pop("x", None)
             cfg.sources.pop("y", None)
+        elif raw in ("learn-collect", "learn_collect", "collect", "lc", "4"):
+            cfg.set_field("mode", "learn_collect", "tui")
+            cfg.x = None
+            cfg.y = None
+            cfg.sources.pop("x", None)
+            cfg.sources.pop("y", None)
         else:
             console.print(Text(f"Unrecognized mode: {raw!r}", style="red"))
         # Re-apply mode-specific count default only when mode actually changes,
         # so re-confirming learn does not wipe a CLI -n count.
         if cfg.mode != old_mode:
             cfg.sources.pop("count", None)
+            cfg.sources.pop("learn_point_cap", None)
             apply_defaults(cfg)
+        return
+    if key == "learn_point_cap":
+        cur = "0" if cfg.learn_point_cap is None else str(cfg.learn_point_cap)
+        raw = _prompt_cooked(
+            console,
+            f"Max sample points (0=infinite) [{cur}]: ",
+        )
+        if raw == "":
+            return
+        try:
+            v = int(raw, 10)
+        except ValueError:
+            console.print(Text(f"Invalid integer: {raw!r}", style="red"))
+            return
+        if v < 0:
+            console.print(Text("Value must be >= 0", style="red"))
+            return
+        if v == 0:
+            cfg.set_field("learn_point_cap", None, "tui")
+        else:
+            cfg.set_field("learn_point_cap", v, "tui")
         return
     if key == "x":
         raw = _prompt_cooked(console, f"Anchor X [{cfg.x}]: ")
@@ -866,7 +921,9 @@ def _run_rich_pre_run_editor_loop(
                 time.sleep(1.2)
                 continue
             apply_defaults(cfg)
-            if cfg.count < 0 or cfg.delay < 0:
+            if cfg.delay < 0 or (
+                cfg.mode != "learn_collect" and cfg.count < 0
+            ):
                 console.print(Text("Count and delay must be >= 0.", style="red"))
                 time.sleep(1.2)
                 continue
@@ -899,6 +956,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
 Examples (from repo root; the script is executable: chmod +x osx/macos_mouse_click.py):
   ./osx/macos_mouse_click.py --learn
   ./osx/macos_mouse_click.py --learn -Y
+  ./osx/macos_mouse_click.py --learn-points -Y
+  ./osx/macos_mouse_click.py --learn-points 5 -Y
   ./osx/macos_mouse_click.py --interactive
   ./osx/macos_mouse_click.py -x 400 -y 300 -n 3 -Y
 
@@ -914,6 +973,19 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         action="store_true",
         default=argparse.SUPPRESS,
         help="Learn anchor from first real left click",
+    )
+    p.add_argument(
+        "--learn-points",
+        nargs="?",
+        type=int,
+        const=-1,
+        default=argparse.SUPPRESS,
+        metavar="N",
+        help=(
+            "Collect real click coordinates only (no synthetic clicks). "
+            "Omit N for infinite samples until Ctrl+C; N>=1 stops after N points. "
+            "With -Y, plain text on stdout; otherwise Rich-colored lines on stderr."
+        ),
     )
     p.add_argument(
         "--at-cursor",
@@ -978,11 +1050,13 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
     ``--count=3`` each count as one occurrence. ``-n`` and ``--count`` share
     the same logical option.
     """
-    counts = {"count": 0, "delay": 0, "x": 0, "y": 0}
+    counts = {"count": 0, "delay": 0, "x": 0, "y": 0, "learn_points": 0}
     for tok in argv:
         if tok == "--":
             break
-        if tok in ("-n", "--count") or tok.startswith("--count="):
+        if tok == "--learn-points" or tok.startswith("--learn-points="):
+            counts["learn_points"] += 1
+        elif tok in ("-n", "--count") or tok.startswith("--count="):
             counts["count"] += 1
         elif tok in ("-d", "--delay") or tok.startswith("--delay="):
             counts["delay"] += 1
@@ -1038,6 +1112,8 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
         return "-x / --x may only appear once"
     if counts["y"] > 1:
         return "-y / --y may only appear once"
+    if counts["learn_points"] > 1:
+        return "--learn-points may only appear once"
     return None
 
 
@@ -1047,18 +1123,28 @@ def validate_ns(ns: argparse.Namespace) -> Optional[str]:
     atc = vd.get("at_cursor", False)
     has_x = "x" in vd
     has_y = "y" in vd
+    learn_pts = "learn_points" in vd
+    if learn_pts:
+        lpv = vd["learn_points"]
+        if lpv != -1 and lpv < 1:
+            return "Invalid --learn-points N (use N >= 1, or omit N for infinite)"
     if has_x ^ has_y:
         return "Both -x and -y are required together for fixed mode"
-    n_modes = sum([bool(learn), bool(atc), bool(has_x and has_y)])
+    n_modes = sum([bool(learn), bool(atc), bool(has_x and has_y), learn_pts])
     if n_modes > 1:
-        return "Use only one of --learn, --at-cursor, or -x with -y"
+        return (
+            "Use only one of --learn, --learn-points, --at-cursor, or -x with -y"
+        )
     return None
 
 
 def mode_fully_on_cli(ns: argparse.Namespace) -> bool:
     vd = vars(ns)
     return bool(
-        vd.get("learn") or vd.get("at_cursor") or ("x" in vd and "y" in vd)
+        vd.get("learn")
+        or vd.get("at_cursor")
+        or ("x" in vd and "y" in vd)
+        or ("learn_points" in vd)
     )
 
 
@@ -1070,6 +1156,13 @@ def namespace_to_cfg(ns: argparse.Namespace) -> ResolvedConfig:
     )
     if vd.get("learn"):
         cfg.set_field("mode", "learn", "cli")
+    elif "learn_points" in vd:
+        lpv = int(vd["learn_points"])
+        cfg.set_field("mode", "learn_collect", "cli")
+        if lpv == -1:
+            cfg.set_field("learn_point_cap", None, "cli")
+        else:
+            cfg.set_field("learn_point_cap", lpv, "cli")
     elif vd.get("at_cursor"):
         cfg.set_field("mode", "at_cursor", "cli")
     elif "x" in vd and "y" in vd:
@@ -1093,7 +1186,8 @@ def prompt_mode_interactive() -> str:
         "Select mode:\n"
         "  1) learn — first real left click sets anchor\n"
         "  2) fixed — use X and Y coordinates\n"
-        "  3) at-cursor — anchor is mouse position when clicking starts",
+        "  3) at-cursor — anchor is mouse position when clicking starts\n"
+        "  4) learn-collect — record click coordinates only (no synthetic clicks)",
         file=sys.stderr,
     )
     choice = prompt_str("Choice", "1").lower()
@@ -1103,6 +1197,8 @@ def prompt_mode_interactive() -> str:
         return "fixed"
     if choice in ("3", "at-cursor", "at_cursor", "a", "c"):
         return "at_cursor"
+    if choice in ("4", "learn-collect", "learn_collect", "collect", "lc"):
+        return "learn_collect"
     print(f"Unrecognized choice: {choice!r}", file=sys.stderr)
     sys.exit(2)
 
@@ -1144,7 +1240,22 @@ def run_interactive_prompts(cfg: ResolvedConfig) -> None:
         if cfg.y is None:
             cfg.set_field("y", prompt_float_value("Anchor Y", 0.0), "prompt")
 
-    if "count" not in cfg.sources:
+    if cfg.mode == "learn_collect" and "learn_point_cap" not in cfg.sources:
+        raw = prompt_str("Max sample points (0=infinite)", "0").strip()
+        try:
+            v = int(raw, 10)
+        except ValueError:
+            print(f"Invalid integer: {raw!r}", file=sys.stderr)
+            sys.exit(2)
+        if v < 0:
+            print("Value must be >= 0", file=sys.stderr)
+            sys.exit(2)
+        if v == 0:
+            cfg.set_field("learn_point_cap", None, "prompt")
+        else:
+            cfg.set_field("learn_point_cap", v, "prompt")
+
+    if cfg.mode != "learn_collect" and "count" not in cfg.sources:
         d = default_count_for_mode(cfg.mode)
         cfg.set_field(
             "count",
@@ -1165,6 +1276,12 @@ def run_interactive_prompts(cfg: ResolvedConfig) -> None:
 def apply_defaults(cfg: ResolvedConfig) -> None:
     if not cfg.mode:
         return
+    if cfg.mode == "learn_collect":
+        if "learn_point_cap" not in cfg.sources:
+            cfg.set_field("learn_point_cap", None, "default")
+        if "delay" not in cfg.sources:
+            cfg.set_field("delay", 5.0, "default")
+        return
     if "count" not in cfg.sources:
         cfg.set_field("count", default_count_for_mode(cfg.mode), "default")
     if "delay" not in cfg.sources:
@@ -1183,11 +1300,20 @@ def print_confirmation_sheet(cfg: ResolvedConfig) -> None:
             f"({cfg.sources.get('x', '?')}, {cfg.sources.get('y', '?')})",
             file=sys.stderr,
         )
-    print(
-        f"  count         = {count_label(cfg.count)}  "
-        f"({cfg.sources.get('count', 'default')})",
-        file=sys.stderr,
-    )
+    if cfg.mode == "learn_collect":
+        cap = cfg.learn_point_cap
+        cap_s = "infinite" if cap is None else str(cap)
+        print(
+            f"  learn_point_cap = {cap_s}  "
+            f"({cfg.sources.get('learn_point_cap', 'default')})",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            f"  count         = {count_label(cfg.count)}  "
+            f"({cfg.sources.get('count', 'default')})",
+            file=sys.stderr,
+        )
     print(
         f"  delay (s)     = {cfg.delay}  ({cfg.sources.get('delay', 'default')})",
         file=sys.stderr,
@@ -1227,6 +1353,68 @@ def run_synthetic_loop(qz: Any, x: float, y: float, count: int, delay: float) ->
                 print("Stopped.", file=sys.stderr)
                 return 130
     return 0
+
+
+_LEARN_COLLECT_DRY_FAKE: List[Tuple[float, float]] = [
+    (111.0, 222.0),
+    (333.25, 444.5),
+    (10.0, 20.0),
+]
+_LEARN_COLLECT_LINE_STYLES = ("green", "yellow", "magenta", "cyan")
+
+
+def learn_collect_plain_text_line(index: int, x: float, y: float) -> str:
+    return f"{index} {x:.4f} {y:.4f}"
+
+
+def emit_learn_collect_dry_run_stdout_samples(cfg: ResolvedConfig) -> None:
+    """Deterministic stdout lines for ``learn_collect`` dry-run (tests / CI)."""
+    cap = cfg.learn_point_cap
+    if cap is None:
+        n_out = len(_LEARN_COLLECT_DRY_FAKE)
+    else:
+        n_out = min(cap, 50)
+    for i in range(n_out):
+        x, y = _LEARN_COLLECT_DRY_FAKE[i % len(_LEARN_COLLECT_DRY_FAKE)]
+        print(learn_collect_plain_text_line(i + 1, x, y), flush=True)
+
+
+def run_learn_collect_flow(qz: Any, cfg: ResolvedConfig) -> int:
+    """Record real left clicks; plain stdout with -Y, else Rich-colored stderr."""
+    cap = cfg.learn_point_cap
+    n = 0
+    while True:
+        if shutdown_requested():
+            print("Stopped.", file=sys.stderr)
+            return 130
+        if cap is not None and n >= cap:
+            return 0
+        print(
+            "Waiting for next left click (Ctrl+C to stop)…",
+            file=sys.stderr,
+            flush=True,
+        )
+        pt = wait_for_anchor_click(qz)
+        if pt is False:
+            return 2
+        if pt is None:
+            if shutdown_requested():
+                print("Stopped.", file=sys.stderr)
+                return 130
+            print("Error: no anchor click received.", file=sys.stderr)
+            return 2
+        n += 1
+        x, y = float(pt[0]), float(pt[1])
+        line = learn_collect_plain_text_line(n, x, y)
+        if cfg.assume_yes:
+            print(line, flush=True)
+        else:
+            from rich.console import Console
+
+            st = _LEARN_COLLECT_LINE_STYLES[(n - 1) % len(_LEARN_COLLECT_LINE_STYLES)]
+            Console(stderr=True).print(f"[{st}]{line}[/]")
+        if cap is not None and n >= cap:
+            return 0
 
 
 def run_learn_flow(qz: Any, cfg: ResolvedConfig) -> int:
@@ -1282,8 +1470,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if ns.assume_yes and not mode_fully_on_cli(ns):
         print(
-            "Error: -Y/--yes requires --learn, --at-cursor, or both -x and -y "
-            "on the command line.",
+            "Error: -Y/--yes requires --learn, --learn-points, --at-cursor, "
+            "or both -x and -y on the command line.",
             file=sys.stderr,
         )
         return 2
@@ -1304,7 +1492,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if cfg.mode == "" and not can_tui:
         print(
-            "Error: specify --learn, --at-cursor, or both -x and -y, "
+            "Error: specify --learn, --learn-points, --at-cursor, or both -x and -y, "
             "or use --interactive, or install rich and rerun without -Y.",
             file=sys.stderr,
         )
@@ -1330,7 +1518,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("Error: fixed mode requires both x and y.", file=sys.stderr)
         return 2
 
-    if cfg.count < 0:
+    if cfg.mode != "learn_collect" and cfg.count < 0:
         print("Error: count must be >= 0", file=sys.stderr)
         return 2
     if cfg.delay < 0:
@@ -1346,15 +1534,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     if can_tui:
         from rich.console import Console
 
-        Console(stderr=True).print(
-            f"[green]Running:[/] mode={cfg.mode} count={count_label(cfg.count)} "
-            f"delay={cfg.delay}s"
-        )
+        Console(stderr=True).print(f"[green]Running:[/] {_running_message(cfg)}")
     else:
-        print(
-            f"Running: mode={cfg.mode} count={count_label(cfg.count)} delay={cfg.delay}s",
-            file=sys.stderr,
-        )
+        print(f"Running: {_running_message(cfg)}", file=sys.stderr)
 
     if not can_tui:
         _reset_debug_tui_log_sink()
@@ -1362,6 +1544,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if dry_run_after_start_requested(ns):
         emit_dry_run_json_line(cfg)
+        if cfg.mode == "learn_collect":
+            emit_learn_collect_dry_run_stdout_samples(cfg)
         return 0
 
     qz = import_quartz()
@@ -1371,6 +1555,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         if cfg.mode == "learn":
             return run_learn_flow(qz, cfg)
+        if cfg.mode == "learn_collect":
+            return run_learn_collect_flow(qz, cfg)
         return run_fixed_or_cursor_flow(qz, cfg)
     except KeyboardInterrupt:
         print("Stopped.", file=sys.stderr)

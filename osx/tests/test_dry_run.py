@@ -31,6 +31,19 @@ def test_resolved_config_for_dry_run_json() -> None:
     d2 = mmc.resolved_config_for_dry_run_json(cfg2)
     assert d2["x"] == 10.0 and d2["y"] == 20.5
 
+    cfg3 = ResolvedConfig(
+        mode="learn_collect", count=0, delay=1.0, learn_point_cap=None
+    )
+    d3 = mmc.resolved_config_for_dry_run_json(cfg3)
+    assert d3["mode"] == "learn_collect"
+    assert d3["learn_point_cap"] is None
+
+    cfg4 = ResolvedConfig(
+        mode="learn_collect", count=0, delay=1.0, learn_point_cap=2
+    )
+    d4 = mmc.resolved_config_for_dry_run_json(cfg4)
+    assert d4["learn_point_cap"] == 2
+
 
 def test_dry_run_requested_flag_and_env() -> None:
     p = mmc.build_arg_parser()
@@ -98,6 +111,54 @@ def test_subprocess_learn_y_dry_run_exits_before_quartz(
     assert payload["delay"] == 0.0
     assert payload["x"] is None and payload["y"] is None
     assert "Quartz" not in r.stderr or "MACOS_MOUSE_CLICK_DRY_RUN_JSON" in r.stderr
+
+
+def test_subprocess_learn_collect_dry_run_infinite_stdout(
+    repo_root: Path, script_path: Path
+) -> None:
+    r = _run_script(
+        repo_root,
+        script_path,
+        ["--learn-points", "-Y", "--dry-run-after-start"],
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "Running:" in r.stderr
+    m = re.search(
+        r"MACOS_MOUSE_CLICK_DRY_RUN_JSON (\{.*\})\s*$",
+        r.stderr,
+        re.MULTILINE,
+    )
+    assert m, r.stderr
+    payload = json.loads(m.group(1))
+    assert payload["mode"] == "learn_collect"
+    assert payload["learn_point_cap"] is None
+    lines = [ln for ln in r.stdout.splitlines() if ln.strip()]
+    assert lines == [
+        "1 111.0000 222.0000",
+        "2 333.2500 444.5000",
+        "3 10.0000 20.0000",
+    ]
+
+
+def test_subprocess_learn_collect_dry_run_capped_stdout(
+    repo_root: Path, script_path: Path
+) -> None:
+    r = _run_script(
+        repo_root,
+        script_path,
+        ["--learn-points", "2", "-Y", "--dry-run-after-start"],
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    m = re.search(
+        r"MACOS_MOUSE_CLICK_DRY_RUN_JSON (\{.*\})\s*$",
+        r.stderr,
+        re.MULTILINE,
+    )
+    assert m, r.stderr
+    payload = json.loads(m.group(1))
+    assert payload["learn_point_cap"] == 2
+    lines = [ln for ln in r.stdout.splitlines() if ln.strip()]
+    assert lines == ["1 111.0000 222.0000", "2 333.2500 444.5000"]
 
 
 def test_subprocess_dry_run_env_var(repo_root: Path, script_path: Path) -> None:
