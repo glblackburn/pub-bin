@@ -1,12 +1,12 @@
 # macOS clicker documentation reorganization (review plan)
 
-This document specifies a **directory and content split** for everything that documents **`osx/macos_mouse_click.py`**: product plans, agent/session plans, and **DEF-xxx** defects. It is a **review artifact** only until stakeholders sign off; implementation should follow the phases below in order.
+This document specifies a **directory and content split** for everything that documents **`osx/macos_mouse_click.py`**: product plans, agent/session plans, and **DEF-xxx** defects (through **DEF-009** in the live tree). It is a **review artifact** only until stakeholders sign off; implementation should follow the phases below in order.
 
 ## Goals
 
 1. **Single osx doc hub** under **`docs/osx/`** so operators and agents do not hunt across **`docs/plans/`**, **`docs/plans/agent/`**, and embedded defect prose.
 2. **`docs/osx/plans/`** — all plan-style documents for the clicker (numbered **01–08**, handoffs, and former **`docs/plans/agent/`** files that belong to this program).
-3. **`docs/osx/defects/`** — one **detail file per DEF-xxx**, extracted from the long-form audit in **plan 02** today.
+3. **`docs/osx/defects/`** — one **detail file per DEF-xxx** (see **DEF-001**–**DEF-009** in [`defects/README.md`](defects/README.md)), extracted from the long-form audit in **plan 02** today.
 4. **Cross-links** — each plan that references a defect links to **`../defects/def-###-….md`**; each defect file links back to **owning plan(s)** (e.g. `plan-002`, `plan-003`, agent design plan).
 5. **Index READMEs** — **`docs/osx/plans/README.md`** and **`docs/osx/defects/README.md`** with a **lookup table**: id, date opened, date completed (if any), status, one-line title, **markdown link** to the detail document.
 6. **Repository hygiene** — update **all in-repo pointers** (script comments, **`osx/README.md`**, tests, **`.cursorrules`**, **`docs/plans/README.md`**) so nothing still points at removed paths.
@@ -21,7 +21,7 @@ This document specifies a **directory and content split** for everything that do
 | Location | Role |
 |----------|------|
 | [`plans/plan-001-macos-clicker.md`](plans/plan-001-macos-clicker.md) | Core product spec |
-| [`plans/plan-002-macos-mouse-click-terminal-ux.md`](plans/plan-002-macos-mouse-click-terminal-ux.md) | UX overlay + **Defect summary** table; **DEF-001–008** narrative in [`defects/`](defects/README.md) |
+| [`plans/plan-002-macos-mouse-click-terminal-ux.md`](plans/plan-002-macos-mouse-click-terminal-ux.md) | UX overlay + **Defect summary** table; **DEF-001–009** narrative in [`defects/`](defects/README.md) |
 | [plan-003](plans/plan-003-macos-mouse-click-tui-automation.md) … [plan-008](plans/plan-008-macos-mouse-click-stop-during-run.md) | Follow-on product plans (**003**–**008**) |
 | [`plans/plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md`](plans/plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) | Session handoff (clicker context) |
 | [`plans/agent/plan-agent-new-test-up-down-navigation.plan.md`](plans/agent/plan-agent-new-test-up-down-navigation.plan.md) | Agent plan: navigation tests + Phase 2 logging |
@@ -44,8 +44,8 @@ This document specifies a **directory and content split** for everything that do
     Examples: `plan-agent-new-test-up-down-navigation.plan.md`, `plan-agent-def-006-tui-arrow-keys.plan.md`, `plan-agent-arrow-key-double-press-analysis.plan.md`, `plan-agent-osx-dry-refactor.plan.md`.
   - **Handoff / narrative docs:** **`plan-handoff-`** + date + short slug (no `###`).  
     Example: `plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md`.
-- **Defects** — every defect detail file **starts with `def-`**, then **`###`** = **zero-padded defect id** (`001` … `008`) + kebab slug.  
-  Examples: `def-001-console-input-highlight.md`, `def-006-tui-arrow-multi-press.md`, `def-007-duplicate-n-flag-last-wins.md`, `def-008-residual-arrow-double-press.md`.  
+- **Defects** — every defect detail file **starts with `def-`**, then **`###`** = **zero-padded defect id** (`001` … `009`, etc.) + kebab slug.  
+  Examples: `def-001-console-input-highlight.md`, `def-006-tui-arrow-multi-press.md`, `def-007-duplicate-n-flag-last-wins.md`, `def-008-residual-arrow-double-press.md`, `def-009-rich-pre-run-tui-table-layout-corruption.md`.  
   Human-readable **DEF-001** spelling stays in document **titles** and README tables; **filenames** use the **`def-###`** prefix for stable sorting and grep.
 
 ## Target layout
@@ -74,6 +74,7 @@ docs/osx/
     def-002-arrow-misread-as-esc.md
     …
     def-008-residual-arrow-double-press.md
+    def-009-rich-pre-run-tui-table-layout-corruption.md
 ```
 
 Exact **kebab slugs** for `def-###-…` and non-numbered `plan-…` files should mirror the current **DEF-xxx** / plan titles (adjust only for ASCII and length).
@@ -124,7 +125,7 @@ Populate from the existing summary table in plan 02.
 1. **Create tree** — `mkdir -p docs/osx/plans/agent docs/osx/defects`.
 2. **`git mv`** + **rename** — move numbered **01–08**, **HANDOFF**, and **osx-related** `docs/plans/agent/*.plan.md` into **`docs/osx/plans/`** (and **`docs/osx/plans/agent/`**), applying the **`plan-###`** / **`plan-agent-`** / **`plan-handoff-`** rules above.
 3. **Author** **`docs/osx/plans/README.md`** and **`docs/osx/defects/README.md`** with lookup tables.
-4. **Extract defects** — create **`def-001`…`def-008`** files; then **replace** long subsections in **`plan-002`** with links (keep workflow text that is not defect-specific).
+4. **Extract defects** — create **`def-001`…`def-009`** (and later ids) detail files; then **replace** long subsections in **`plan-002`** with links (keep workflow text that is not defect-specific).
 5. **Update references** — ripgrep for `docs/plans/0[1-8]-macos`, `docs/plans/agent/` (osx files), `DEF-00x` anchors; patch **`.cursorrules`** to state canonical agent plans for clicker live under **`docs/osx/plans/agent/`** (or flat under `docs/osx/plans/`).
 6. **`docs/plans/README.md`** — add a prominent **“macOS clicker docs moved to `docs/osx/`”** stanza with link to **`docs/osx/README.md`**; keep non-clicker plans listed in `docs/plans/`.
 7. **`docs/osx/README.md`** — hub page linking **Plans**, **Defects**, and [`osx/README.md`](../../osx/README.md) (operator env / jq).
@@ -152,7 +153,7 @@ Populate from the existing summary table in plan 02.
 ## Success criteria
 
 - `rg "docs/plans/02-macos-mouse-click-terminal-ux"` from repo still finds **at least one** valid path **or** a stub redirect in `docs/plans/` if you choose stub pattern.
-- All **DEF-001–008** bodies exist under **`docs/osx/defects/`** as **`def-001`…`def-008`** files with matching README rows.
+- All **DEF-001–009** bodies exist under **`docs/osx/defects/`** as **`def-001`…`def-009`** files with matching README rows (extend the numeric range as new defects are filed).
 - **`osx/macos_mouse_click.py`** header comment points at the new navigation plan path.
 - **`docs/osx/README.md`** is the single entry point for “where is clicker engineering docs?”
 

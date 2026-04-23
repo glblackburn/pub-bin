@@ -4,6 +4,7 @@ Cursor / Create-Plan artifacts for **`osx/macos_mouse_click.py`** (PTY tests, DE
 
 | File | Summary |
 |------|---------|
+| [plan-agent-osx-docs-hub-hygiene.plan.md](plan-agent-osx-docs-hub-hygiene.plan.md) | **`docs/osx`** inventory alignment (DEF-009), loop script repo baseline, hub path pytest, script doc pointer. |
 | [plan-agent-new-test-up-down-navigation.plan.md](plan-agent-new-test-up-down-navigation.plan.md) | Rich table **Down** PTY test + phased logging design. |
 | [plan-agent-def-006-tui-arrow-keys.plan.md](plan-agent-def-006-tui-arrow-keys.plan.md) | DEF-006 CSI / **`read_raw_key`** timing (implemented). |
 | [plan-agent-arrow-key-double-press-analysis.plan.md](plan-agent-arrow-key-double-press-analysis.plan.md) | DEF-008 residual double-press analysis. |
@@ -12,6 +13,7 @@ Cursor / Create-Plan artifacts for **`osx/macos_mouse_click.py`** (PTY tests, DE
 | [plan-agent-plan-09-phase-3-resume.plan.md](plan-agent-plan-09-phase-3-resume.plan.md) | Plan-09 resume: agent-proxy operator checklist, CI, Phase 3+ draft. |
 | [plan-agent-10-consolidate-dry-run-flag.plan.md](plan-agent-10-consolidate-dry-run-flag.plan.md) | Plan 10: single **`--dry-run`**: observability + no UI automation; phased rename, full-path no-op layer, progress UI hook. |
 | [plan-agent-11-code-coverage-and-testing.plan.md](plan-agent-11-code-coverage-and-testing.plan.md) | Plan 11: **pytest-cov**, Makefile/CI reporting, baseline then targeted tests for `macos_mouse_click.py`. |
+| [plan-agent-12-learn-points-collect.plan.md](plan-agent-12-learn-points-collect.plan.md) | Plan 12 / **plan-010:** **`learn_collect`** — Rich log under settings (infinite samples, rotating line colors); exit with zero captures; **`-Y`** plain text; dry-run fake lines for tests; no autoclicker. |
 | [plan-agent-rich-pre-run-tui-layout-regression.md](plan-agent-rich-pre-run-tui-layout-regression.md) | Rich pre-run editor layout/resize regression (`32d5820` vs `a0c621f`), PTY tests, fix phases. |
 
 **Product plans:** **[`../README.md`](../README.md)** · **Defects:** **[`../../defects/README.md`](../../defects/README.md)** · **Other agent plans (non-clicker):** [`docs/plans/agent/README.md`](../../../plans/agent/README.md)

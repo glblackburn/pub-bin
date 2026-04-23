@@ -16,6 +16,8 @@ Stop automated clicking: Ctrl+C (SIGINT) or kill -INT/-TERM <pid>.
 Tests / CI: use --dry-run-after-start or env MACOS_MOUSE_CLICK_DRY_RUN=1 to print
 MACOS_MOUSE_CLICK_DRY_RUN_JSON on stderr and exit after Running without Quartz.
 
+Plans, defects, and agent session notes: docs/osx/README.md (repo root).
+
 Coordinates are Quartz global display points (logical points); multi-monitor
 layouts can shift expected positions.
 
