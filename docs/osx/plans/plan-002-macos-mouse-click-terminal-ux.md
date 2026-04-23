@@ -356,6 +356,7 @@ Full narrative for each **DEF-001**–**DEF-009** lives under [`docs/osx/defects
 | DEF-008 | [def-008-residual-arrow-double-press.md](../defects/def-008-residual-arrow-double-press.md) |
 | DEF-009 | [def-009-rich-pre-run-tui-table-layout-corruption.md](../defects/def-009-rich-pre-run-tui-table-layout-corruption.md) |
 
+**Doc reorg (DEF bodies):** Long-form reproduction and resolution text for each **DEF-001**–**DEF-009** lives only under **[`../defects/`](../defects/README.md)** (`def-###-….md`). This plan keeps the **Defect summary** table, **Manual verification** blurb, workflow, and the link matrix above—no duplicate full narratives here (see **[`../OSX-DOCS-REORGANIZATION-PLAN.md`](../OSX-DOCS-REORGANIZATION-PLAN.md)**).
 
 ## Manual QA checklist (after implementation)
 

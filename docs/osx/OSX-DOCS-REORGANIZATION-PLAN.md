@@ -1,6 +1,18 @@
 # macOS clicker documentation reorganization (review plan)
 
-This document specifies a **directory and content split** for everything that documents **`osx/macos_mouse_click.py`**: product plans, agent/session plans, and **DEF-xxx** defects (through **DEF-009** in the live tree). It is a **review artifact** only until stakeholders sign off; implementation should follow the phases below in order.
+This document specifies a **directory and content split** for everything that documents **`osx/macos_mouse_click.py`**: product plans, agent/session plans, and **DEF-xxx** defects (through **DEF-009** in the live tree). The **migration phases below have been executed** in the repo; the body that follows is the historical specification plus checklists (the opening “review artifact until sign-off” wording is **obsolete**—see **Execution status**). For day-to-day navigation, start at **[`README.md`](README.md)** (hub).
+
+## Execution status (as of 2026-04)
+
+| Phase (checklist below) | Status |
+|-------------------------|--------|
+| Create tree; `git mv` + rename to **`docs/osx/plans/`** and **`docs/osx/plans/agent/`** | Done |
+| Author **`docs/osx/plans/README.md`** and **`docs/osx/defects/README.md`** | Done (indexes extended with dates in READMEs; see those files) |
+| Extract **`def-001`…`def-009`**; thin **plan-002** inlined DEF prose where duplicated | Done — detail narratives live under **`def-###`**; **plan-002** keeps the summary table, workflow, and links (no duplicate long-form DEF bodies beyond table rows) |
+| Update pointers (**`.cursorrules`**, **`osx/`**, **`docs/plans/README.md`**, stubs) | Done |
+| Optional: **Opened/Completed** columns on plan/defect index tables | Done — **`plans/README.md`** and **`defects/README.md`** |
+
+**Residual (optional):** Move this file under **`plans/`** only if you want all meta-plans colocated; keeping it at **`docs/osx/OSX-DOCS-REORGANIZATION-PLAN.md`** is fine.
 
 ## Goals
 
@@ -159,4 +171,4 @@ Populate from the existing summary table in plan 02.
 
 ---
 
-**Next step:** Review this plan; after sign-off, execute **Migration phases** in one or more focused commits (docs-only first, then pointer sweep).
+**Next step (historical):** ~~Review and sign off, then execute migration~~ — **completed.** Further doc work is incremental (new **`plan-###`**, **`def-###`**, agent plans) under **`docs/osx/`**; legacy **`docs/plans/`** paths remain as stub redirects where listed in **`docs/plans/README.md`**.
