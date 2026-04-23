@@ -5,7 +5,7 @@ Golden argv (learn + interactive, ``editor_row_keys`` = mode/count/delay only):
 ``--learn --interactive -n 2 -d 3.5``
 
 Requires **pexpect**, **rich**, and **darwin** (PTY + real TUI). Marked ``table_nav``;
-excluded from ``make -C osx test-quick`` (``table_nav``) to keep the default suite fast.
+included in ``make -C osx test-quick`` on macOS (adds ~10s vs non-``table_nav`` subset).
 
 See ``docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md``.
 """

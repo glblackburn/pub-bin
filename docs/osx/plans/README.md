@@ -15,6 +15,7 @@ Canonical product and UX specs for **`osx/macos_mouse_click.py`**. Agent/session
 | plan-007 | TUI field-edit input | **Roadmap** | [plan-007-macos-mouse-click-tui-field-edit-input.md](plan-007-macos-mouse-click-tui-field-edit-input.md) |
 | plan-008 | Stop during run | **Roadmap** | [plan-008-macos-mouse-click-stop-during-run.md](plan-008-macos-mouse-click-stop-during-run.md) |
 | plan-009 | TUI Up/Down arrows — phased remediation | **Roadmap** | [plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
+| plan-010 | Learn-point collect (`--learn-points`) | **Shipped** | [plan-010-macos-mouse-click-learn-points-collect.md](plan-010-macos-mouse-click-learn-points-collect.md) |
 | plan-handoff | LinkedIn draft session (2026-04-18) | Session note | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
 | hand-off | Rich pre-run TUI layout (session to next agent) | Session note | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
 

@@ -104,6 +104,7 @@ def layout_corruption_reason(
     transcript: str,
     *,
     ignore_fused_panel_heavy_line: bool = False,
+    ignore_merged_debug_tui_rows: bool = False,
 ) -> str | None:
     """Return a human-readable reason if DEF-009/DEF-010 layout issues are detected, else ``None``.
 
@@ -111,6 +112,11 @@ def layout_corruption_reason(
     Default Rich ``HEAVY_HEAD`` nested ``Table`` can trip that heuristic even without
     stdout/stderr interleave; live PTY tests use this with the legacy editor layout while
     ``test_def009_detects_fused_panel_top_and_inner_heavy_rules`` still guards the signal.
+
+    ``ignore_merged_debug_tui_rows``: when True, do not treat ``MACOS_MOUSE_CLICK_TUI_STATE``
+    inside a table-looking line as corruption. With ``MACOS_MOUSE_CLICK_DEBUG_TUI=1``,
+    pexpect (single master FD) merges child stderr into the same transcript as stdout, so
+    telemetry can appear appended to box-drawing lines without Rich actually corrupting layout.
     """
     for raw in transcript.splitlines():
         vis = strip_csi(raw)
@@ -131,7 +137,10 @@ def layout_corruption_reason(
         if not _is_probable_editor_table_line(raw):
             continue
         # Telemetry merged into a row that still shows table borders (stdout/stderr interleave).
-        if "MACOS_MOUSE_CLICK_TUI_STATE" in raw:
+        if (
+            not ignore_merged_debug_tui_rows
+            and "MACOS_MOUSE_CLICK_TUI_STATE" in raw
+        ):
             return (
                 "DEF-009: MACOS_MOUSE_CLICK_TUI_STATE appears inside a table row "
                 f"(stderr/stdout interleaving): {raw[:240]!r}"

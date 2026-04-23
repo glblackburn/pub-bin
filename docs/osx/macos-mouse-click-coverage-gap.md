@@ -4,7 +4,7 @@
 
 ## How to refresh numbers
 
-1. On **macOS**, from repo root: `make -C osx test-setup` (once), then `make -C osx test-coverage` (or `make -C osx coverage-quick` to skip `table_nav` tests).
+1. On **macOS**, from repo root: `make -C osx test-setup` (once), then `make -C osx test-coverage` or `make -C osx coverage-quick` (both include **`table_nav`** on darwin).
 2. Open **`osx/htmlcov/index.html`** and note overall **line %** (or read the terminal summary).
 3. Fill **Baseline snapshot** below (commit hash, date, command used).
 
@@ -14,9 +14,9 @@
 |--------|--------|
 | **Date** | 2026-04-22 |
 | **Git commit** | _update after each refresh — `git rev-parse --short HEAD`_ |
-| **Command** | `make -C osx coverage-quick` (excludes `table_nav`) |
+| **Command** | `make -C osx coverage-quick` |
 | **Line coverage (approx.)** | **~29%** on `osx/macos_mouse_click.py` (example: 851 stmts, 601 miss) |
-| **Notes** | Full suite: `make -C osx test-coverage`; `table_nav` PTY tests can be timing-sensitive on loaded hosts. |
+| **Notes** | **`table_nav`** PTY tests run in `coverage-quick` on darwin; they can be timing-sensitive on loaded hosts. |
 
 ## Largest gaps (prioritize)
 

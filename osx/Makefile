@@ -33,11 +33,11 @@ help:
 	@echo "osx / macOS mouse click test targets (from repo: make -C osx <target>)"
 	@echo "  test-setup   Create .venv under osx/ and pip install requirements-test.txt"
 	@echo "  test         Full pytest (verbose)"
-	@echo "  test-quick   pytest -q --tb=short (excludes table_nav)"
+	@echo "  test-quick   pytest -q --tb=short (includes table_nav on darwin)"
 	@echo "  test-report  JUnit XML -> osx/tests/reports/junit.xml"
 	@echo "  test-report-coverage  One pytest: JUnit + coverage (HTML/XML under osx/)"
 	@echo "  test-coverage / coverage  pytest --cov (HTML, term-missing, coverage.xml)"
-	@echo "  coverage-quick  Same as coverage but excludes table_nav marker"
+	@echo "  coverage-quick  Same as coverage (full suite incl. table_nav on darwin)"
 	@echo "  test-timings Slowest tests (--durations=25)"
 	@echo "  test-clean   Drop pytest caches, __pycache__, junit, coverage artifacts"
 
@@ -56,7 +56,7 @@ test: check-venv
 	cd "$(REPO_ROOT)" && $(PYTEST_BASE) -v
 
 test-quick: check-venv
-	cd "$(REPO_ROOT)" && $(PYTEST_BASE) -q --tb=short -m "not table_nav"
+	cd "$(REPO_ROOT)" && $(PYTEST_BASE) -q --tb=short
 
 test-report: check-venv
 	@mkdir -p "$(OSX_DIR)/tests/reports"
@@ -76,7 +76,7 @@ test-coverage coverage: check-venv
 	@echo "Coverage XML:  $(COV_XML)"
 
 coverage-quick: check-venv
-	cd "$(REPO_ROOT)" && COVERAGE_FILE="$(COV_DATA)" $(PYTEST_BASE) -v -m "not table_nav" $(PYTEST_COV_FLAGS)
+	cd "$(REPO_ROOT)" && COVERAGE_FILE="$(COV_DATA)" $(PYTEST_BASE) -v $(PYTEST_COV_FLAGS)
 	@echo "Coverage HTML: $(COV_HTML)/index.html"
 	@echo "Coverage XML:  $(COV_XML)"
 

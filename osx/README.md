@@ -2,6 +2,17 @@
 
 Synthetic left-click automation for macOS (see `macos_mouse_click.py` and repo root docs).
 
+## Learn-point collect (`--learn-points`)
+
+Record **multiple** real left-button positions in one session (Rich log under the table, or plain text with **`-Y`**). Mutually exclusive with **`--learn`**, **`-x/-y`**, and **`--at-cursor`**. Product spec: **[`docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md`](../docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md)**.
+
+```bash
+./osx/macos_mouse_click.py --learn-points
+./osx/macos_mouse_click.py --learn-points -Y
+./osx/macos_mouse_click.py --learn-points 5 -Y
+./osx/macos_mouse_click.py --learn-points -Y --dry-run-after-start
+```
+
 ## Debugging options
 
 ### Rich pre-run editor: `MACOS_MOUSE_CLICK_DEBUG_TUI`
@@ -113,7 +124,7 @@ From repo root, with a venv (`make -C osx test-setup` once):
 | Target | Purpose |
 |--------|---------|
 | `make -C osx test-coverage` (alias: `coverage`) | Full pytest with **`pytest-cov`**: terminal **missing lines**, **`osx/htmlcov/`** (open `index.html`), **`osx/coverage.xml`**. Uses **`osx/.coveragerc`**. |
-| `make -C osx coverage-quick` | Same reports but **`-m "not table_nav"`** — faster when you care mostly about non-table-nav PTY tests. |
+| `make -C osx coverage-quick` | Same pytest/cov flags as **`test-coverage`** (full collection, including **`table_nav`** on darwin; alias for a shorter name in docs). |
 | `make -C osx test-report-coverage` | **One** pytest run: **JUnit** (`osx/tests/reports/junit.xml`) **and** the same coverage outputs (used in **CI**). |
 
 Artifacts (`htmlcov/`, `.coverage`, `coverage.xml`) are **gitignored**; download **`coverage-xml`** / **`coverage-html`** from the **macOS mouse click tests** workflow for trends between runs.

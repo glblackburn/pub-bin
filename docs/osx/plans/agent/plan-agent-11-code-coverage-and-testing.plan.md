@@ -12,7 +12,7 @@ todos:
     status: completed
   - id: "cov-04-gaps-tests"
     content: "Prioritize tests for pure helpers, argparse branches, and non-PTY paths; defer flaky PTY unless high value."
-    status: pending
+    status: completed
   - id: "cov-05-gap-doc"
     content: "Optional: add dated coverage-gap markdown under docs/osx/ (pattern from network-tools/capture test-coverage-analysis.md) when baseline exists."
     status: completed
@@ -33,7 +33,7 @@ A quick scan of sibling projects for **how coverage is implemented, reported, an
 | Pattern | Where | Takeaway for `osx/` |
 |--------|--------|---------------------|
 | **`COV_MODULE` + `test-coverage` Makefile target** | [`LinkedIn-posts/Makefile`](../../../../LinkedIn-posts/Makefile), [`network-tools/capture/Makefile`](../../../../network-tools/capture/Makefile) | Single variable for `--cov=…`; target runs pytest with **html + term + xml** (`--cov-report=html --cov-report=term --cov-report=xml`). Echo where to open `htmlcov/index.html`. |
-| **Exclude slow markers on coverage runs** | `LinkedIn-posts` uses `-m "not integration_real"` on `test-coverage` | Mirror with `-m "not table_nav"` or similar if full PTY suite skews signal or runtime (document tradeoff). |
+| **Exclude slow markers on coverage runs** | `LinkedIn-posts` uses `-m "not integration_real"` on `test-coverage` | `osx/Makefile` **`coverage-quick`** runs the full suite (including **`table_nav`** on darwin); use a custom `-m` locally if you need a faster coverage pass. |
 | **`clean` removes coverage junk** | Both Makefiles: `htmlcov`, `.coverage`, sometimes `coverage.xml` | Align `make -C osx test-clean` (or `coverage-clean`) with the same list. |
 | **Gap analysis / “trend” as a living doc** | [`network-tools/capture/docs/test-coverage-analysis.md`](../../../../network-tools/capture/docs/test-coverage-analysis.md) | Dated snapshot: **current %, target %, gap**, component table, **prioritized missing regions** (e.g. entire `main()` untested). Re-run coverage after milestones and **revise the doc** (or add a new dated section) — this is the main **human trend** mechanism found. |
 | **`--cov-config=.coveragerc`** | Mentioned in [`docs/analyze-tcpdump-plan.md`](../../../../docs/analyze-tcpdump-plan.md) (Makefile snippet) | Prefer explicit `--cov-config=osx/.coveragerc` in Makefile so cwd-independent behavior matches capture’s intent. |
@@ -90,6 +90,8 @@ Use the HTML / missing-line report to queue work:
 4. **Rich / PTY** only where prior plans (**plan-003**, DEF-009 tests) show stable patterns; do not block coverage goals on flaky full-table drives.
 
 Document in PRs which **lines** or **functions** each new test is meant to cover (brief).
+
+**cov-04 closure (2026-04):** Added [`osx/tests/test_learn_collect_helpers.py`](../../../../osx/tests/test_learn_collect_helpers.py) for **`learn_collect_plain_text_line`** and **`emit_learn_collect_dry_run_stdout_samples`** (pure stdout paths, no Quartz). Further argparse / `main()` gaps remain fair game for follow-up PRs.
 
 ## Risks
 

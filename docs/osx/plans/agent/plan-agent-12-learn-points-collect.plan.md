@@ -3,25 +3,27 @@
 todos:
   - id: "doc-plan-010"
     content: "Add plan-010 product spec + docs/osx/plans/README row (TUI + text -Y + tests)"
-    status: pending
+    status: completed
   - id: "cli-config"
     content: "Argparse learn_collect mode, validate_ns, mode_fully_on_cli, ResolvedConfig, optional cap N vs infinite"
-    status: pending
+    status: completed
   - id: "rich-layout-thread"
     content: "Rich composite layout (table + log strip); rotating Text styles; integrate tap via thread+queue"
-    status: pending
+    status: completed
   - id: "text-y-dryrun"
     content: "Plain-text coordinate lines with -Y; dry-run / test-only deterministic output without tap"
-    status: pending
+    status: completed
   - id: "tests-impact"
     content: "New tests per matrix; adjust dry_run/mt09/def009/open_defects if argparse or main paths change"
-    status: pending
+    status: completed
   - id: "operator-doc"
     content: "osx/README.md + agent README index"
-    status: pending
+    status: completed
 isProject: false
 ---
 # Plan 12 — Learn-point collect (TUI log, no autoclicker)
+
+**Delivery (2026-04):** Shipped in `osx/macos_mouse_click.py` (`--learn-points`, `run_learn_collect_flow`, dry-run stdout). Product spec: [`plan-010-macos-mouse-click-learn-points-collect.md`](../plan-010-macos-mouse-click-learn-points-collect.md). Operator notes: [`osx/README.md`](../../../../osx/README.md).
 
 ## Naming constraints
 

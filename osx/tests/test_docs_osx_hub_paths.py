@@ -10,6 +10,7 @@ REPO_ROOT = OSX_DIR.parent
 _EXPECTED_FILES = (
     "docs/osx/README.md",
     "docs/osx/plans/README.md",
+    "docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md",
     "docs/osx/plans/agent/README.md",
     "docs/osx/defects/README.md",
     "docs/osx/OSX-DOCS-REORGANIZATION-PLAN.md",

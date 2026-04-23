@@ -30,10 +30,10 @@ todos:
     status: completed
   - id: "phase-3-fix-production"
     content: "Phase 3: fix macos_mouse_click.py (etc.) until new tests pass; remove xfail/marker gating if used"
-    status: pending
+    status: completed
   - id: "verify-ci"
     content: "After Phase 3: make -C osx test-quick green; existing CSI/SS3 down tests unchanged"
-    status: pending
+    status: completed
   - id: "debug-readme-osx"
     content: "One-off: osx/README.md — TUI debug env vars, large log capture, dry-run pointer"
     status: completed
@@ -336,6 +336,12 @@ Implement as a **separate** pytest test function/method from test case 1 so fail
 **Documentation (one-off request):** [`osx/README.md`](../../../../osx/README.md) — operator-focused summary of **`MACOS_MOUSE_CLICK_DEBUG_TUI`** / **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`**, how to generate **large** log files (interactive use, per-run paths + concat, pexpect stress), stderr-only capture, **`MACOS_MOUSE_CLICK_DRY_RUN`** / **`--dry-run-after-start`**, unwritable log path behavior, a minimal parse example, and pointers to this plan and the meta/table tests. Tracked as todo **`debug-readme-osx`** (completed).
 
 **Follow-up (log file + `jq`):** Log file lines are **raw JSON only** (no `MACOS_MOUSE_CLICK_TUI_STATE` prefix) so **`tail -1 file | jq .`**, **`jq -n '[inputs]' < file`**, etc. work; stderr keeps the prefix for grep in mixed output. Documented in **`osx/README.md`** and plan **Phase 2 — Logging design** above.
+
+## Phase 3 delivery record (2026-04)
+
+- **Rich table nav:** [`osx/tests/test_rich_table_nav_down_pty.py`](../../../../osx/tests/test_rich_table_nav_down_pty.py) normative cases 1–2 **pass** on darwin with debug NDJSON correlation (`_wait_latest_nav_setting` handles `after_key` vs `draw` ordering).
+- **DEF-009 PTY + debug TUI:** [`layout_corruption_reason`](../../../../osx/tests/def009_layout_heuristics.py) gained **`ignore_merged_debug_tui_rows`** so merged pexpect transcripts (stderr telemetry on the same FD as stdout) do not false-positive as Rich layout corruption when **`MACOS_MOUSE_CLICK_DEBUG_TUI=1`** is intentional ([`test_def009_rich_table_layout_pty.py`](../../../../osx/tests/test_def009_rich_table_layout_pty.py) passes with that flag).
+- **CI / default target:** [`osx/Makefile`](../../../../osx/Makefile) **`test-quick`** and **`coverage-quick`** no longer exclude **`table_nav`**; full **`make -C osx test-quick`** includes table-nav + DEF-009 pexpect tests on macOS.
 
 ## Out of scope (this plan document)
 

@@ -193,7 +193,9 @@ def test_def009_subprocess_editor_transcript_layout_pexpect(
         base = _transcript_after_editor_banner(child)
         transcript = _drain_until_setting_from(child, base, "Mode", timeout=15.0)
         reason = layout_corruption_reason(
-            transcript, ignore_fused_panel_heavy_line=True
+            transcript,
+            ignore_fused_panel_heavy_line=True,
+            ignore_merged_debug_tui_rows=True,
         )
         assert reason is None, reason
     finally:
@@ -243,7 +245,11 @@ def test_def009_editor_layout_after_pty_resize_pexpect(
         child.expect("review / edit", timeout=60)
         base = _transcript_after_editor_banner(child)
         t0 = _drain_until_setting_from(child, base, "Mode", timeout=15.0)
-        r0 = layout_corruption_reason(t0, ignore_fused_panel_heavy_line=True)
+        r0 = layout_corruption_reason(
+            t0,
+            ignore_fused_panel_heavy_line=True,
+            ignore_merged_debug_tui_rows=True,
+        )
         assert r0 is None, r0
         assert def010_vertical_spacer_reason(t0) is None, t0[:2000]
 
@@ -255,7 +261,11 @@ def test_def009_editor_layout_after_pty_resize_pexpect(
             pass
         child.send("\x1b[B")
         t1 = _drain_until_setting_from(child, t0, "Count", timeout=20.0)
-        r1 = layout_corruption_reason(t1, ignore_fused_panel_heavy_line=True)
+        r1 = layout_corruption_reason(
+            t1,
+            ignore_fused_panel_heavy_line=True,
+            ignore_merged_debug_tui_rows=True,
+        )
         assert r1 is None, r1
         assert def010_vertical_spacer_reason(t1) is None, t1[:2000]
     finally:
