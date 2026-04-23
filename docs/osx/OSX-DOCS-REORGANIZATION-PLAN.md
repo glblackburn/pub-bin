@@ -9,7 +9,7 @@ This document specifies a **directory and content split** for everything that do
 | Create tree; `git mv` + rename to **`docs/osx/plans/`** and **`docs/osx/plans/agent/`** | Done |
 | Author **`docs/osx/plans/README.md`** and **`docs/osx/defects/README.md`** | Done (indexes extended with dates in READMEs; see those files) |
 | Extract **`def-001`…`def-009`**; thin **plan-002** inlined DEF prose where duplicated | Done — detail narratives live under **`def-###`**; **plan-002** keeps the summary table, workflow, and links (no duplicate long-form DEF bodies beyond table rows) |
-| Update pointers (**`.cursorrules`**, **`osx/`**, **`docs/plans/README.md`**, stubs) | Done |
+| Update pointers (**`.cursorrules`**, **`osx/`**, **`docs/plans/README.md`** stub → **`docs/osx/plans/README.md`**) | Done |
 | Optional: **Opened/Completed** columns on plan/defect index tables | Done — **`plans/README.md`** and **`defects/README.md`** |
 
 **Residual (optional):** Move this file under **`plans/`** only if you want all meta-plans colocated; keeping it at **`docs/osx/OSX-DOCS-REORGANIZATION-PLAN.md`** is fine.
@@ -17,11 +17,11 @@ This document specifies a **directory and content split** for everything that do
 ## Goals
 
 1. **Single osx doc hub** under **`docs/osx/`** so operators and agents do not hunt across **`docs/plans/`**, **`docs/plans/agent/`**, and embedded defect prose.
-2. **`docs/osx/plans/`** — all plan-style documents for the clicker (numbered **01–08**, handoffs, and former **`docs/plans/agent/`** files that belong to this program).
+2. **`docs/osx/plans/`** — all plan-style documents for the clicker (numbered product **`plan-001`…`plan-010`**, handoffs, and clicker **`plan-agent-*`** session plans).
 3. **`docs/osx/defects/`** — one **detail file per DEF-xxx** (see **DEF-001**–**DEF-009** in [`defects/README.md`](defects/README.md)), extracted from the long-form audit in **plan 02** today.
 4. **Cross-links** — each plan that references a defect links to **`../defects/def-###-….md`**; each defect file links back to **owning plan(s)** (e.g. `plan-002`, `plan-003`, agent design plan).
 5. **Index READMEs** — **`docs/osx/plans/README.md`** and **`docs/osx/defects/README.md`** with a **lookup table**: id, date opened, date completed (if any), status, one-line title, **markdown link** to the detail document.
-6. **Repository hygiene** — update **all in-repo pointers** (script comments, **`osx/README.md`**, tests, **`.cursorrules`**, **`docs/plans/README.md`**) so nothing still points at removed paths.
+6. **Repository hygiene** — update **all in-repo pointers** (script comments, **`osx/README.md`**, tests, **`.cursorrules`**, thin **`docs/plans/README.md`**) so nothing still points at removed paths.
 
 ## Non-goals (this pass)
 
@@ -41,16 +41,16 @@ This document specifies a **directory and content split** for everything that do
 | [`plans/agent/plan-agent-arrow-key-double-press-analysis.plan.md`](plans/agent/plan-agent-arrow-key-double-press-analysis.plan.md) | Analysis: DEF-008 |
 | [`plans/agent/plan-agent-osx-dry-refactor.plan.md`](plans/agent/plan-agent-osx-dry-refactor.plan.md) | Agent plan: osx test DRY |
 | [`plans/agent/plan-agent-automation-deep-dive.plan.md`](plans/agent/plan-agent-automation-deep-dive.plan.md) | Plan 03 automation deep dive (clicker-scoped) |
-| [`../plans/README.md`](../plans/README.md) / [`../plans/agent/README.md`](../plans/agent/README.md) | Top-level **`docs/plans/`** index + non-clicker agent plans |
+| [`../plans/README.md`](../plans/README.md) / [`../plans/agent/README.md`](../plans/agent/README.md) | Thin **`docs/plans/`** pointer to **`docs/osx/plans/`** + non-clicker agent plans |
 
-**Redirects:** old paths under **`docs/plans/`** (e.g. `01-macos-clicker.md`, **`docs/plans/agent/new-test-…`**) are **stub files** pointing here — see **[`docs/plans/README.md`](../plans/README.md)**.
+**Legacy `docs/plans/` paths:** former **`01`–`08`**.md / **`HANDOFF-…`** / old **`docs/plans/agent/*.plan.md`** names for the clicker were removed after the move; use **[`docs/osx/plans/README.md`](plans/README.md)** as the single plan index; **[`docs/plans/README.md`](../plans/README.md)** is a short pointer for **`docs/plans/`** visitors only.
 
-**Pointers elsewhere (must update after move):** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py), [`osx/README.md`](../../osx/README.md), [`osx/tests/test_rich_table_nav_down_pty.py`](../../osx/tests/test_rich_table_nav_down_pty.py), [`osx/tests/_tmp_tty_probe.py`](../../osx/tests/_tmp_tty_probe.py), [`.cursorrules`](../../.cursorrules) (agent plan path rule).
+**Pointers elsewhere (historical sweep; done):** [`osx/macos_mouse_click.py`](../../osx/macos_mouse_click.py), [`osx/README.md`](../../osx/README.md), [`osx/tests/test_rich_table_nav_down_pty.py`](../../osx/tests/test_rich_table_nav_down_pty.py), [`osx/tests/_tmp_tty_probe.py`](../../osx/tests/_tmp_tty_probe.py), [`.cursorrules`](../../.cursorrules) (agent plan path rule) — should reference **`docs/osx/`** for clicker docs.
 
 ## File naming convention (required)
 
 - **Plans** — every plan file name **starts with `plan-`**, then:
-  - **Numbered product plans (old 01–08):** **`plan-###-`** + kebab slug, where **`###`** is the **zero-padded plan number** (`001` … `008`) so directory sort matches program order.  
+  - **Numbered product plans (old 01–08, extended to 09–10):** **`plan-###-`** + kebab slug, where **`###`** is the **zero-padded plan number** (`001` … `010`, etc.) so directory sort matches program order.  
     Examples: `plan-001-macos-clicker.md`, `plan-002-macos-mouse-click-terminal-ux.md`, `plan-008-macos-mouse-click-stop-during-run.md`.
   - **Session / agent plans (no program number):** **`plan-agent-`** + kebab base name + optional **`.plan.md`**.  
     Examples: `plan-agent-new-test-up-down-navigation.plan.md`, `plan-agent-def-006-tui-arrow-keys.plan.md`, `plan-agent-arrow-key-double-press-analysis.plan.md`, `plan-agent-osx-dry-refactor.plan.md`.
@@ -135,13 +135,13 @@ Populate from the existing summary table in plan 02.
 ## Migration phases (execution checklist)
 
 1. **Create tree** — `mkdir -p docs/osx/plans/agent docs/osx/defects`.
-2. **`git mv`** + **rename** — move numbered **01–08**, **HANDOFF**, and **osx-related** `docs/plans/agent/*.plan.md` into **`docs/osx/plans/`** (and **`docs/osx/plans/agent/`**), applying the **`plan-###`** / **`plan-agent-`** / **`plan-handoff-`** rules above.
+2. **`git mv`** + **rename** — move numbered **01–08** (later extended to **plan-009** / **plan-010**), **HANDOFF**, and **osx-related** `docs/plans/agent/*.plan.md` into **`docs/osx/plans/`** (and **`docs/osx/plans/agent/`**), applying the **`plan-###`** / **`plan-agent-`** / **`plan-handoff-`** rules above. Legacy **`docs/plans/`** stub redirects were **removed**; the plan index and shortcuts live only under **`docs/osx/plans/README.md`** (thin **`docs/plans/README.md`** pointer).
 3. **Author** **`docs/osx/plans/README.md`** and **`docs/osx/defects/README.md`** with lookup tables.
 4. **Extract defects** — create **`def-001`…`def-009`** (and later ids) detail files; then **replace** long subsections in **`plan-002`** with links (keep workflow text that is not defect-specific).
 5. **Update references** — ripgrep for `docs/plans/0[1-8]-macos`, `docs/plans/agent/` (osx files), `DEF-00x` anchors; patch **`.cursorrules`** to state canonical agent plans for clicker live under **`docs/osx/plans/agent/`** (or flat under `docs/osx/plans/`).
-6. **`docs/plans/README.md`** — add a prominent **“macOS clicker docs moved to `docs/osx/`”** stanza with link to **`docs/osx/README.md`**; keep non-clicker plans listed in `docs/plans/`.
+6. **`docs/plans/README.md`** — thin pointer to **`docs/osx/plans/README.md`**; non-clicker session plans remain under **`docs/plans/agent/`**.
 7. **`docs/osx/README.md`** — hub page linking **Plans**, **Defects**, and [`osx/README.md`](../../osx/README.md) (operator env / jq).
-8. **Verify** — `rg 'docs/plans/02-macos|plan-002-macos'` from repo root; run link check mentally on relative paths from new files.
+8. **Verify** — e.g. `rg 'plan-002-macos-mouse-click-terminal-ux'` finds **`docs/osx/plans/plan-002-…`**; run link check mentally on relative paths from new files.
 
 ## Policy updates
 
@@ -152,7 +152,7 @@ Populate from the existing summary table in plan 02.
 
 | Risk | Mitigation |
 |------|------------|
-| External URLs (GitHub, LinkedIn drafts) point at old paths | Prefer **`git mv`**; add short **redirect note** in old `docs/plans/README.md`; update LinkedIn drafts only if republished |
+| External URLs (GitHub, LinkedIn drafts) point at old paths | Prefer **`git mv`**; **`docs/plans/README.md`** remains a short pointer; update LinkedIn drafts only if republished |
 | Deep relative links (`../../osx/`) break | Recompute from **`docs/osx/plans/`** depth (often one more `..` than from `docs/plans/`) |
 | Duplicate “plan 02” defect workflow vs defects folder | Keep **workflow** in 02; keep **detail narrative** only under **`docs/osx/defects/`** |
 
@@ -164,11 +164,11 @@ Populate from the existing summary table in plan 02.
 
 ## Success criteria
 
-- `rg "docs/plans/02-macos-mouse-click-terminal-ux"` from repo still finds **at least one** valid path **or** a stub redirect in `docs/plans/` if you choose stub pattern.
+- Canonical plan paths and the merged plan index live under **`docs/osx/plans/`** (e.g. **`plan-002-macos-mouse-click-terminal-ux.md`**, **[`README.md`](plans/README.md)**); **`docs/plans/README.md`** is a one-screen pointer only.
 - All **DEF-001–009** bodies exist under **`docs/osx/defects/`** as **`def-001`…`def-009`** files with matching README rows (extend the numeric range as new defects are filed).
 - **`osx/macos_mouse_click.py`** header comment points at the new navigation plan path.
 - **`docs/osx/README.md`** is the single entry point for “where is clicker engineering docs?”
 
 ---
 
-**Next step (historical):** ~~Review and sign off, then execute migration~~ — **completed.** Further doc work is incremental (new **`plan-###`**, **`def-###`**, agent plans) under **`docs/osx/`**; legacy **`docs/plans/`** paths remain as stub redirects where listed in **`docs/plans/README.md`**.
+**Next step (historical):** ~~Review and sign off, then execute migration~~ — **completed.** Further doc work is incremental (new **`plan-###`**, **`def-###`**, agent plans) under **`docs/osx/`**; **`docs/plans/README.md`** is a thin entry for **`docs/plans/`** visitors only (no duplicate stub files under **`docs/plans/`** for the clicker).

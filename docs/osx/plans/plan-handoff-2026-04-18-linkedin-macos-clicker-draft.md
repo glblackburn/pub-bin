@@ -128,7 +128,7 @@ This section records **what we worked on together in this session**, how decisio
 - **`README-AI-CODING-STANDARDS.md`** / **`.cursorrules`**: commits require a **two-step** flow—**“commit”** means *show* message, **all files**, and **per-file change summary**; **never** commit in the same assistant turn; wait for explicit confirmation (**yes**, **proceed**, **commit with full message**, etc.).
 - **Commit message style** was aligned with **existing `pub-bin` history**: `LinkedIn: …` one-line subjects; bodies often **2–4 factual sentences** plus **`Made-with: Cursor`**.
 - User asked for **short + long** message variants in the preview; the **long** form was used for the final record commit **`e8e40be`** (`git commit -F` with a message file).
-- **Commits in the LinkedIn-only stack:** `4c9d3c7` → `d18b68d` → `e8e40be` (see above). **`HANDOFF-2026-04-18-linkedin-macos-clicker-draft.md`** was added **after** `e8e40be` and may still be **uncommitted** until you add it in a follow-up commit.
+- **Commits in the LinkedIn-only stack:** `4c9d3c7` → `d18b68d` → `e8e40be` (see above). This handoff (canonical filename **`plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md`**) was added **after** `e8e40be` and may still be **uncommitted** until you add it in a follow-up commit.
 
 ### Artifacts produced or touched
 

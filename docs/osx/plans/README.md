@@ -1,8 +1,35 @@
 # macOS clicker plans (`docs/osx/plans/`)
 
-Canonical product and UX specs for **`osx/macos_mouse_click.py`**. Agent/session plans for this program sit in **[`agent/`](agent/README.md)**.
+**Canonical index** for product and UX specs (**`plan-###-`…** filenames), session hand-offs, status legend, and agent routing for **`osx/macos_mouse_click.py`**. **Implementation:** **[`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py)**. **Parent hub:** **[`../README.md`](../README.md)**. **Defects:** **[`../defects/README.md`](../defects/README.md)**.
 
-**Hand-off** session notes (`hand-off-*.md`) summarize work for the next agent; they are not normative product specs.
+This file is the **only** full plan index for the clicker (content formerly in **`docs/plans/README.md`** is merged here); **[`../../plans/README.md`](../../plans/README.md)** is a short pointer for **`docs/plans/`** visitors.
+
+## Cursor / agent session plans
+
+Machine-generated or working-session plans for **non–mouse-clicker** work stay under **[`docs/plans/agent/`](../../plans/agent/README.md)** with **kebab-case, no spaces** filenames.
+
+**Mouse-clicker** session plans live under **[`agent/`](agent/README.md)** in this directory (see **`.cursorrules`**). Do **not** treat `~/.cursor/plans/` as the canonical location for pub-bin work — copy or author plans into the appropriate **`…/plans/agent/`** tree.
+
+## Shortcut: legacy plan numbers **01**–**10**
+
+The lookup table below is authoritative; this table maps the old **01**–**10** labels to the same files.
+
+| Plan | Document |
+|------|----------|
+| **01** | [plan-001 — macOS clicker](plan-001-macos-clicker.md) |
+| **02** | [plan-002 — terminal UX](plan-002-macos-mouse-click-terminal-ux.md) |
+| **03** | [plan-003 — TUI automation](plan-003-macos-mouse-click-tui-automation.md) |
+| **04** | [plan-004 — run progress UI](plan-004-macos-mouse-click-run-progress-ui.md) |
+| **05** | [plan-005 — target preview](plan-005-macos-mouse-click-target-preview.md) |
+| **06** | [plan-006 — Rich TUI resize](plan-006-macos-mouse-click-rich-tui-terminal-resize.md) |
+| **07** | [plan-007 — field-edit input](plan-007-macos-mouse-click-tui-field-edit-input.md) |
+| **08** | [plan-008 — stop during run](plan-008-macos-mouse-click-stop-during-run.md) |
+| **09** | [plan-009 — TUI Up/Down phased remediation](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
+| **10** | [plan-010 — learn-point collect](plan-010-macos-mouse-click-learn-points-collect.md) |
+
+## Plan index (dates and status)
+
+**Hand-off** session notes (`hand-off-*.md`, `plan-handoff-*.md`) summarize work for the next agent; they are not normative product specs.
 
 **Dates:** **Opened** is the **first** commit date (`git log --follow --diff-filter=A`, `%cs`, ISO) for each file under **`docs/osx/plans/`**. **Completed** is **—** for **Roadmap** or **Session note** rows. For **Shipped** / **Closed (v1)**, **Completed** is the **last** commit date on that file (proxy for last doc revision), not a separate product sign-off.
 
@@ -21,10 +48,22 @@ Canonical product and UX specs for **`osx/macos_mouse_click.py`**. Agent/session
 | plan-handoff | LinkedIn draft session (2026-04-18) | 2026-04-18 | — | Session note | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
 | hand-off | Rich pre-run TUI layout (session to next agent) | 2026-04-21 | — | Session note | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
 
-Status meanings match the former **`docs/plans/README.md`** legend: **Shipped** = normative behavior spec matches the script; **Closed (v1)** = that plan’s v1 milestone signed off in-doc; **Roadmap** = future work.
+**Status (summary):** **Shipped** = normative behavior spec matches the script; **Closed (v1)** = that plan’s v1 milestone signed off in-doc; **Roadmap** = future work.
 
-**Defects:** **[`../defects/README.md`](../defects/README.md)**.
+## Plan 01 (**Shipped**) vs plan 02 (**Closed (v1)**)
 
-**Agent session plans** (status + dates): **[`agent/README.md`](agent/README.md)**.
+Both statuses align with **code you can run today**, but they answer **different questions**.
 
-**Parent hub:** **[`../README.md`](../README.md)**.
+**Plan 01** is the **core product / behavior spec**: learn vs fixed vs at-cursor, Quartz, **`-Y`**, signals, confirmation rules, and so on. **Shipped** means the **described behavior is what `osx/macos_mouse_click.py` implements** — plan **01** remains the **long-lived normative reference** for semantics. It does **not** mean “every YAML todo in plan 01 is completed”; the frontmatter tracker can lag while the spec still matches the script.
+
+**Plan 02** is **only the terminal UX layer**: the Rich **pre-run** table, keybindings, operator checklist **MT-01–MT-09**, and **DEF-xxx** records for that surface. **Closed (v1)** means **that plan’s own v1 delivery is finished and signed off in the document** (editor shipped, manual matrix done, defects triaged or deferred as written). Follow-on UX lives in **plans 03–10** and later plans, not as open v1 work inside plan **02**.
+
+| | Plan **01** | Plan **02** |
+|---|-------------|-------------|
+| **What it covers** | Whole clicker **behavior** | **TTY Rich** experience **before** Quartz |
+| **What the status emphasizes** | “Spec matches **shipped** core behavior” | “**This UX plan’s v1** milestone is **done**” |
+| **“Done?”** | Core behavior: **yes** for v1. Plan file todos: **may still be messy**. | v1 UX work: **yes**, by the plan’s own closure section. |
+
+So: **both** tie to shipped reality for their **scopes**; **Shipped** labels the **semantic reference**, **Closed (v1)** labels the **closed UX program** for that release line.
+
+**Agent session plans** (per-file status + dates): **[`agent/README.md`](agent/README.md)**.
