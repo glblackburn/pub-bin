@@ -9,14 +9,15 @@ Each pass I cleared easy wins: missing bullets, stale labels, obvious defects. A
 𝐖𝐡𝐚𝐭 𝐭𝐡𝐚𝐭 𝐥𝐨𝐨𝐤𝐞𝐝 𝐥𝐢𝐤𝐞 𝐢𝐧 𝐭𝐡𝐞 𝐫𝐞𝐩𝐨:  
 
 ▶ Closed the Rich pre-run terminal work for v1 when the written checks matched what I had actually run, and pointed deferrals at specific plans instead of a vague someday pile.  
-▶ Added docs/plans/README​.md so shipped clicker behavior and the closed editor UX are different questions on the index.  
+▶ Moved clicker docs under docs/osx/ and merged the plan index into docs/osx/plans/README​.md so shipped behavior and closed editor UX stay one readable story next to the code.  
+▶ Shipped --learn-points for batch anchor captures without turning the utility into a second product.  
 ▶ Sketched longer automation on the roadmap and called out where I'm still the human at the keyboard.  
 
 𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
 
-The script stays a narrow utility. The plans are what helped me settle back: small slices, honest snapshots of state, and a visible parking lot for bigger changes.
+The script stays a narrow utility. Pytest keeps the small surface honest. The plans are what helped me settle back: small slices, honest snapshots of state, and a visible parking lot for bigger changes.
 
-https://github.com/glblackburn/pub-bin/tree/main/docs/plans
+https://github.com/glblackburn/pub-bin/tree/main/docs/osx
 https://github.com/glblackburn/pub-bin/blob/main/osx/macos_mouse_click.py
 
 All OS builds: https://cookieclicker.com/

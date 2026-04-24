@@ -1,6 +1,6 @@
 # Handoff: LinkedIn draft (Apr 18, 2026) — macOS clicker / scaffolding post
 
-Session note for the next person or agent working from **`pub-bin`**. This file is **not** a numbered plan; it captures **marketing copy + repo state** tied to the same macOS clicker effort as plans **01–08**.
+Session note for the next person or agent working from **`pub-bin`**. This file is **not** a numbered plan; it captures **marketing copy + repo state** tied to the same macOS clicker effort as plans **01–10** (engineering backbone: **[`README.md`](README.md)** in this folder under **`docs/osx/`**).
 
 ## macOS clicker plans — engineering context (linked)
 
@@ -9,13 +9,15 @@ Start at the **[plans README / index](README.md)** under **`docs/osx/plans/`** (
 | Plan | Document | Notes |
 |------|----------|--------|
 | **01** | [plan-001-macos-clicker.md](plan-001-macos-clicker.md) | **Shipped** behavior spec for [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py). |
-| **02** | [plan-002-macos-mouse-click-terminal-ux.md](plan-002-macos-mouse-click-terminal-ux.md) | **Closed (v1)** Rich pre-run TTY, **MT-01–MT-09**, **DEF-001–005**; touchpoints to **03–08**. |
+| **02** | [plan-002-macos-mouse-click-terminal-ux.md](plan-002-macos-mouse-click-terminal-ux.md) | **Closed (v1)** Rich pre-run TTY, **MT-01–MT-09**, **DEF-001–009** summary table; touchpoints to **03–10**. |
 | **03** | [plan-003-macos-mouse-click-tui-automation.md](plan-003-macos-mouse-click-tui-automation.md) | **Roadmap** — pytest / PTY / CI for TUI paths. |
 | **04** | [plan-004-macos-mouse-click-run-progress-ui.md](plan-004-macos-mouse-click-run-progress-ui.md) | **Roadmap** — post-Start progress UI. |
 | **05** | [plan-005-macos-mouse-click-target-preview.md](plan-005-macos-mouse-click-target-preview.md) | **Roadmap** — target preview / show-before-run. |
 | **06** | [plan-006-macos-mouse-click-rich-tui-terminal-resize.md](plan-006-macos-mouse-click-rich-tui-terminal-resize.md) | **Roadmap** — **SIGWINCH** / reflow (**DEF-005** deferred here). |
 | **07** | [plan-007-macos-mouse-click-tui-field-edit-input.md](plan-007-macos-mouse-click-tui-field-edit-input.md) | **Roadmap** — field-edit input (**DEF-004** deferred here). |
 | **08** | [plan-008-macos-mouse-click-stop-during-run.md](plan-008-macos-mouse-click-stop-during-run.md) | **Roadmap** — stop during **`-Y`** / long runs without foreground terminal. |
+| **09** | [plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) | **Roadmap** — TUI Up/Down phased remediation (**DEF-006** / **DEF-008** context). |
+| **10** | [plan-010-macos-mouse-click-learn-points-collect.md](plan-010-macos-mouse-click-learn-points-collect.md) | **Shipped** — **`--learn-points`** batch anchor capture. |
 
 ## April 18, 2026 — commit history and code changes (summary)
 
@@ -48,7 +50,7 @@ Order matches `git log --reverse --since=2026-04-18 --until=2026-04-19`.
 - **`366a04d`** — Add **[plan 07](plan-007-macos-mouse-click-tui-field-edit-input.md)**; **DEF-004** deferred; **plan 02** **Closed (v1)**; plan **03** scope points to plan **07**.
 - **`fa31edc`** — Add **[README.md](README.md)** plans index; add **[plan 08](plan-008-macos-mouse-click-stop-during-run.md)**; link from plan **02**.
 
-After **`a96d6fe`**, there are **no further Python changes** that day—only **`docs/plans/`**, then **LinkedIn** commits below.
+After **`a96d6fe`**, there are **no further Python changes** that calendar day until documentation churn—**`docs/plans/`** held the plans index **then**. **Later work** moved the clicker doc hub to **`docs/osx/`**, merged the long plan index into **`docs/osx/plans/README.md`**, removed legacy stub paths under **`docs/plans/`**, and refreshed the Apr 18 LinkedIn draft (**revision 5**, **2026-04**) to match (see **Files to open next**).
 
 ### LinkedIn drafts (`LinkedIn-posts/`)
 
@@ -87,7 +89,7 @@ Newest first:
 - **First line (hook):** Cookie Clicker as a **deliberate bounded target** (one tab, low-prestige scope)—then the script as the small mechanism and the game as the playground.
 - **Through-line:** Still perspective **“scaffolding, not software”** in substance: **plan documents and a roadmap** did the heavy lifting (easy wins per pass vs numbered follow-ons); bullets are phrased as **outcomes** (closed pre-run work when checks matched reality, index clarifies shipped vs closed editor, roadmap honesty about human-in-the-loop) rather than plan-number sprint notes.
 - **Tone:** Straight, not self-deprecating; earlier “Don’t judge me!” / heavy footgun thread was replaced over revisions.
-- **Links in post:** `docs/plans` and **`osx/macos_mouse_click.py`** on GitHub, Cookie Clicker official + web tab URLs; hashtags include **`#Planning`**.
+- **Links in post:** **`docs/osx`** tree on GitHub (hub for plans/defects) and **`osx/macos_mouse_click.py`** blob, Cookie Clicker official + web tab URLs; hashtags include **`#Planning`**.
 
 The **`.md`** file contains an **indented mirror** of the **`.txt`** (strip four leading spaces per line to diff against the posting file). **Revision notes** and **five possible perspectives** (reference) live there too.
 
@@ -97,7 +99,7 @@ This section records **what we worked on together in this session**, how decisio
 
 ### Goals and scope
 
-- **Primary artifact:** a **LinkedIn-ready plain-text post** about the macOS mouse-click utility work, aligned with real repo state under **`docs/plans/`** and the **`osx/macos_mouse_click.py`** program (plans **01–08** are the engineering backbone; the post is narrative, not a spec).
+- **Primary artifact:** a **LinkedIn-ready plain-text post** about the macOS mouse-click utility work, aligned with real repo state under **`docs/osx/`** and the **`osx/macos_mouse_click.py`** program (plans **01–10** and the index in **[`README.md`](README.md)** are the engineering backbone; the post is narrative, not a spec).
 - **Secondary artifact:** a **companion Markdown draft** in `LinkedIn-posts/drafts/` with revision history, optional framing notes, and a **byte-accurate mirror** of the posting file for GitHub review.
 - **Explicit non-goals in this thread:** no changes to the Python clicker implementation, no new plan numbers, no CI changes—**copy, structure, tone, and repo hygiene** around the draft and handoff.
 
@@ -116,6 +118,7 @@ This section records **what we worked on together in this session**, how decisio
    - Moved **“Don’t judge me!”** to **line 1** as the LinkedIn hook, then removed it when the user asked for **less comedy and less self-deprecation**; **first line became “Small scope, on purpose.”** (later superseded by rev 4).
 7. **Final public spine (rev 3):** professional hook → Cookie Clicker as the stated automation target → scaffolding → plan/roadmap rhythm → three repo bullets → closing beat (**narrow utility** vs **plans helping settle back**), links, **`#Planning`**.
 8. **Fourth revision (post-review):** scene-first Cookie open; shorter paragraphs; outcome-shaped bullets; **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** instead of “punchline”; script URL added; removed “links at the end” parenthetical.
+9. **Fifth revision (2026-04, doc-tree catch-up):** LinkedIn **`.txt`** / mirror updated for **`docs/osx/`** canonical tree, merged plan index story, shipped **`--learn-points`**, short **pytest** line in the lesson, and GitHub **`docs/osx`** link (see companion **`.md`** revision notes).
 
 ### Markdown and mirror mechanics (analysis)
 
@@ -143,17 +146,17 @@ This section records **what we worked on together in this session**, how decisio
 - **Voice:** user wanted **credibility without performative humility**—avoid **guilt**, **“toy”** self-dismissal, and **punch-down humor** unless they explicitly revert.
 - **Truth vs hype:** deferrals are **documented plan/feature work**, not defects-by-default; **easy wins** in plans are allowed to include real **defects** when the fix is immediate—the distinction is **capture and intent**, not shame.
 - **If the post drifts again:** re-read the **five perspectives** in the draft **`.md`**; pick **one** spine before expanding technical detail.
-- **If engineering work resumes:** numbered plans **03–08** and **plan 02** closure notes remain the **source of truth**; the LinkedIn file is **marketing aligned to**, not replacing, those docs.
+- **If engineering work resumes:** numbered plans **03–10** (roadmap rows plus shipped **10**) and **plan 02** closure notes remain the **source of truth**; the LinkedIn file is **marketing aligned to**, not replacing, those docs.
 
 ## Related engineering docs (same initiative)
 
-- **Plan 01–08** in this directory — especially **02** (TTY UX, closed v1) if the narrative needs to stay aligned with shipped behavior vs roadmap deferrals.
+- **Plan 01–10** in this directory — especially **02** (TTY UX, closed v1) and **10** (**`--learn-points`**) if the narrative needs to stay aligned with shipped behavior vs roadmap deferrals.
 
 ## Suggested next steps
 
 1. **`git pull`** / **`git push`** when appropriate (confirm **ahead 3** is still accurate).
 2. **Publish** the LinkedIn post from the **`.txt`**; add the LinkedIn activity URL to the draft **`.md`** and to [`LinkedIn-posts/LinkedIn-posts.md`](../../../LinkedIn-posts/LinkedIn-posts.md) if that is how published posts are indexed.
-3. Any **new plan work** continues in numbered **`NN-…md`** files per [`README.md`](README.md) conventions.
+3. Any **new plan work** continues as **`plan-###-….md`** (and agent **`plan-agent-…`**) per [`README.md`](README.md) conventions under **`docs/osx/plans/`**.
 
 ## AI / git conventions (this repo)
 

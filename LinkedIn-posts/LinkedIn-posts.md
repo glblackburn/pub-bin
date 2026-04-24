@@ -10,7 +10,7 @@
 ### Draft Posts
 
 - ⏳ [React2Shell Server Part 4: Lessons Learned](drafts/react2shell-server-part4.txt)
-- ⏳ [April 18, 2026 — macOS clicker plans & manual QA](drafts/2026-04-18-macos-mouse-click-plans-session.md) — plain text: [`2026-04-18-macos-mouse-click-plans-session.txt`](drafts/2026-04-18-macos-mouse-click-plans-session.txt)
+- ⏳ [April 18, 2026 — macOS clicker plans & manual QA](drafts/2026-04-18-macos-mouse-click-plans-session.md) — plain text: [`2026-04-18-macos-mouse-click-plans-session.txt`](drafts/2026-04-18-macos-mouse-click-plans-session.txt) — revision **5** (GitHub **`docs/osx`** hub in post)
 
 ### Published Posts
 

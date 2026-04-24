@@ -50,5 +50,5 @@ while (true) ; do
     echo "click the cookie"
     ${mouse_click} -d 0 -x 1600.8 -y -410.9 -n 3000 -Y
     date
-    sleep 25
+    sleep 30
 done

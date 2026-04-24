@@ -6,7 +6,7 @@
 
 **Plain text (posting source):** [`2026-04-18-macos-mouse-click-plans-session.txt`](2026-04-18-macos-mouse-click-plans-session.txt)
 
-**Repo:** [pub-bin / docs/plans](https://github.com/glblackburn/pub-bin/tree/main/docs/plans)
+**Repo:** [pub-bin / docs/osx](https://github.com/glblackburn/pub-bin/tree/main/docs/osx)
 
 ---
 
@@ -25,14 +25,15 @@ The indented block below is regenerated from the plain-text draft (four leading 
     𝐖𝐡𝐚𝐭 𝐭𝐡𝐚𝐭 𝐥𝐨𝐨𝐤𝐞𝐝 𝐥𝐢𝐤𝐞 𝐢𝐧 𝐭𝐡𝐞 𝐫𝐞𝐩𝐨:  
     
     ▶ Closed the Rich pre-run terminal work for v1 when the written checks matched what I had actually run, and pointed deferrals at specific plans instead of a vague someday pile.  
-    ▶ Added docs/plans/README​.md so shipped clicker behavior and the closed editor UX are different questions on the index.  
+    ▶ Moved clicker docs under docs/osx/ and merged the plan index into docs/osx/plans/README​.md so shipped behavior and closed editor UX stay one readable story next to the code.  
+    ▶ Shipped --learn-points for batch anchor captures without turning the utility into a second product.  
     ▶ Sketched longer automation on the roadmap and called out where I'm still the human at the keyboard.  
     
     𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:  
     
-    The script stays a narrow utility. The plans are what helped me settle back: small slices, honest snapshots of state, and a visible parking lot for bigger changes.
+    The script stays a narrow utility. Pytest keeps the small surface honest. The plans are what helped me settle back: small slices, honest snapshots of state, and a visible parking lot for bigger changes.
     
-    https://github.com/glblackburn/pub-bin/tree/main/docs/plans
+    https://github.com/glblackburn/pub-bin/tree/main/docs/osx
     https://github.com/glblackburn/pub-bin/blob/main/osx/macos_mouse_click.py
     
     All OS builds: https://cookieclicker.com/
@@ -45,8 +46,9 @@ The indented block below is regenerated from the plain-text draft (four leading 
 
 ## Revision notes
 
-- **Current `.txt`:** revision **4** below; bullets in this section that mention `-Y` / Ctrl+C describe **earlier** drafts only.
-- **Fourth revision:** scene-first open (Cookie as bounded target); split “needle” ideas into short paragraphs; outcome-shaped bullets (less plan-number jargon); **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** instead of “punchline”; drop parenthetical link aside; add **script** URL next to `docs/plans`.
+- **Current `.txt`:** revision **5** below; bullets in this section that mention `-Y` / Ctrl+C describe **earlier** drafts only.
+- **Fifth revision (2026-04):** align with repo after **`docs/osx/`** consolidation — GitHub tree link **`docs/osx`** (was **`docs/plans`**); replace stale **`docs/plans/README​.md`** bullet with merged index under **`docs/osx/plans/README​.md`**; add shipped **`--learn-points`** bullet; add fourth roadmap bullet unchanged; **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** gains one short **pytest** clause (~55 tests under **`osx/tests`**); character count still well under 3k.
+- **Fourth revision:** scene-first open (Cookie as bounded target); split “needle” ideas into short paragraphs; outcome-shaped bullets (less plan-number jargon); **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** instead of “punchline”; drop parenthetical link aside; add **script** URL next to the **`docs/plans`** tree link (that tree link was later superseded by **`docs/osx`** in rev 5).
 - First draft read like a sprint demo (abstract bullets, no hook). Rewrote after re-reading published posts: lead with the `-Y` / Ctrl+C footgun, fake `rich` on `PYTHONPATH`, then `docs/plans/` work.
 - Second revision: Cookie Clicker confessional + “back into AI-assisted dev” framing, official and web URLs, shortened link labels for LinkedIn character cap.
 - **Third revision:** adopt perspective **1. Scaffolding, not software**—the script as a small focus object; main story is developing and revising plan docs and a feature roadmap, clearing easy fixes per pass and deferring heavier items to numbered follow-ons with real thinking time.
