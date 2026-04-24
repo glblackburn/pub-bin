@@ -6,6 +6,8 @@
 
 **Plain text (posting source):** [`2026-04-18-macos-mouse-click-plans-session.txt`](2026-04-18-macos-mouse-click-plans-session.txt)
 
+**Git-derived revision table (companion):** [`2026-04-18-macos-mouse-click-plans-session-revision-summary.md`](2026-04-18-macos-mouse-click-plans-session-revision-summary.md)
+
 **Repo:** [pub-bin / docs/osx](https://github.com/glblackburn/pub-bin/tree/main/docs/osx)
 
 ---
