@@ -1,6 +1,6 @@
 ## April 18, 2026
 
-**LinkedIn draft:** opens on **practicing building something small with an AI coding agent**, then **plans driving a simple app**, **Cookie Clicker as a bounded automation target**, and **AI-assisted planning and documentation**—terminology hub, cross-linked plans, **[`DEVELOPMENT_NARRATIVE.md`](https://github.com/glblackburn/pub-bin/blob/main/docs/osx/plans/DEVELOPMENT_NARRATIVE.md)**, and numbered session screenshots under **`docs/osx/screenshots/`** (plain text in `2026-04-18-macos-mouse-click-plans-session.txt`).
+**LinkedIn draft:** opens on **practicing a small build with an AI agent**, then **planning for functional outcomes** plus **automated tests as guardrails**, **Cookie Clicker as a bounded target**, **human vs agent split**, and **maintainable docs** (glossary, narrative, screenshots). Revision **8** drops numbered-plan framing (plain text in `2026-04-18-macos-mouse-click-plans-session.txt`).
 
 **Status:** ⏳ Publication pending — LinkedIn URL will be added after posting
 
@@ -16,23 +16,21 @@ The indented block below is regenerated from the plain-text draft (four leading 
 
     I wanted to practice building something small with an AI coding agent beside me.
     
-    This was an intentional focus on building plans to drive changes to a simple application.
+    I picked a narrow macOS utility with concrete behavior: easy to describe, easy to break in small ways. The work I cared about was planning that steers good functional outcomes (what should change, what must hold, what done looks like) and an automated test suite that keeps every change honest. Those two are the guardrails; the rest is execution.
     
-    Cookie Clicker is the automation target on purpose. The game is intentionally small and bounded (one browser tab, a tight repetition loop). That keeps the automation story tractable. Bounded scope is the point, not a product narrative about Cookie Clicker.
+    Cookie Clicker became the automation target because it is small and bounded. One browser tab and a repetitive loop are enough to stress the tool while keeping the whole problem visible.
     
-    A tiny macOS script sends the clicks into that tab.
+    A tiny script sends the clicks there.
     
-    The shift that mattered: planning and design took most of my attention (roadmap shape, defect semantics, terminal behavior), while the agent handled the long tail of edits. Propagating shared definitions across dozens of markdown files, tightening cross-links from the hub to plans and tests, and keeping a running development narrative stopped feeling like a multi-evening merge conflict with myself.
+    The shift that mattered was where the time went. Reasoning about behavior and walking failures in the suite stayed with me. The agent was best on the long tail in the repo: many documents, cross-links, and turning "we should update that" into finished prose instead of a branch that only lives in my head.
     
-    𝐖𝐡𝐚𝐭 𝐭𝐡𝐚𝐭 𝐥𝐨𝐨𝐤𝐞𝐝 𝐥𝐢𝐤𝐞 𝐢𝐧 𝐭𝐡𝐞 𝐫𝐞𝐩𝐨:
+    What that looked like in practice:
     
-    ▶ A central terminology page with an index so CSI/SS3/PTY and the rest of the acronym soup stay defined once and linked everywhere readers need a reminder.
-    ▶ A chronological DEVELOPMENT_NARRATIVE​.md next to the plans: purpose, phases, tradeoffs, and pointers that stay aligned with what the code and pytest actually cover.
-    ▶ Session screenshots captured the doc work itself; numbering and kebab-case names kept a visual audit trail in git next to the narrative instead of losing it to a desktop folder.
+    ▶ One shared glossary so recurring vocabulary is defined once and reused across the doc tree.
+    ▶ A chronological development narrative alongside the specs, so phases and decisions stay traceable as the repo grows.
+    ▶ Session screenshots checked in with readable names, so visual evidence sits beside the story instead of dying on a desktop.
     
-    𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:
-    
-    The script stays a narrow utility; pytest keeps the surface honest. The bigger win is documentation as a first-class product: design history and intent stay consistent with the implementation for far less manual bookkeeping. Cross-referencing at scale becomes realistic because the agent does the repetitive glue while I focus on what should stay true.
+    The lesson is bigger than any single file. Good functional outcomes need more than clever code. They need clear intent, tests that do not rot, and documentation people will maintain so history and purpose stay aligned with what ships.
     
     https://github.com/glblackburn/pub-bin/tree/main/docs/osx
     https://github.com/glblackburn/pub-bin/blob/main/docs/osx/plans/DEVELOPMENT_NARRATIVE.md
@@ -47,7 +45,9 @@ The indented block below is regenerated from the plain-text draft (four leading 
 
 ## Revision notes
 
-- **Current `.txt`:** revision **6** below; bullets in this section that mention `-Y` / Ctrl+C describe **earlier** drafts only.
+- **Current `.txt`:** revision **8** below; bullets in this section that mention `-Y` / Ctrl+C describe **earlier** drafts only.
+- **Eighth revision (2026-04):** replace **numbered-plans / roadmap** framing with **planning that steers functional outcomes** and **automated tests** as the accountability loop; **split human work** (behavior, failing tests) from **agent work** (long doc edits); bullet **"next to the plans"** → **"alongside the specs"**; lesson closes on **intent + tests + maintainable docs**. Cookie sentence later drops **“platform rewrite”** phrasing for a plainer close (**stress the tool / whole problem visible**). ~2.0k characters (under 3k).
+- **Seventh revision (2026-04):** **bigger-picture** pass for LinkedIn: lead with **human vs agent division of labor**, **plans and roadmap as the spine**, **Cookie as bounded practice surface**; **strip low-level terminal jargon** (no **CSI/SS3/PTY** name-check); bullets speak to **glossary / narrative / screenshots** in plain language; lesson stresses **maintainable docs** and **tax on updates**, not file names. ~1973 characters (under 3k).
 - **Sixth revision (2026-04):** refocus on **AI agents for planning/design** over rote implementation; **documentation at scale** (central **`TERMINOLOGY.md`** + index, **`DEVELOPMENT_NARRATIVE.md`**, **`docs/osx/screenshots/`** sequence **01–09**); emphasize **cross-referencing** and **design history in sync** with code/tests; add narrative + script links; hashtags add **`#AI`** / **`#Documentation`**; ~2274 characters (under 3k). **Copy tweak:** opener is **“I wanted to practice building something small with an AI coding agent beside me.”** (no **“end-to-end”**); then plans → Cookie as bounded target → script. Dropped the mid-sentence **em-dash aside** on the macOS utility; **replaced long em-dash chains** with short sentences, a colon, or parentheses so the scan is not one long dash rhythm. **Links:** Cookie target is the **web tab** only (`https://orteil.dashnet.org/cookieclicker/`); dropped **`cookieclicker.com`**.
 - **Fifth revision (2026-04):** align with repo after **`docs/osx/`** consolidation — GitHub tree link **`docs/osx`** (was **`docs/plans`**); replace stale **`docs/plans/README​.md`** bullet with merged index under **`docs/osx/plans/README​.md`**; add shipped **`--learn-points`** bullet; add fourth roadmap bullet unchanged; **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** gains one short **pytest** clause (~55 tests under **`osx/tests`**); character count still well under 3k.
 - **Fourth revision:** scene-first open (Cookie as bounded target); split “needle” ideas into short paragraphs; outcome-shaped bullets (less plan-number jargon); **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** instead of “punchline”; drop parenthetical link aside; add **script** URL next to the **`docs/plans`** tree link (that tree link was later superseded by **`docs/osx`** in rev 5).
