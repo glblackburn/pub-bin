@@ -379,7 +379,9 @@ def _read_raw_key_impl(fd: int) -> str:
     if ch == "\x04":
         return "ctrl_d"
     if ch == "\x1b":
-        # Arrow keys are ESC [ A / ESC [ B (CSI) or ESC O A / ESC O B (SS3).
+        # Arrow keys use CSI (Control Sequence Introducer) bytes ESC [ … A/B or
+        # SS3-style ESC O … A/B (historical "Single Shift 3" terminal encoding).
+        # PTY tests in osx/tests/ drive this path under a pseudo-terminal (pexpect).
         # A short select after ESC mis-reads the prefix as lone Escape → false
         # "cancel". Use generous waits and full CSI tails (e.g. ESC [ 1 ; 3 B).
         ch2 = wait_byte(0.4)

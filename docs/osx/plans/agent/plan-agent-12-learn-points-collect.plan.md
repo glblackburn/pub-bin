@@ -23,6 +23,9 @@ isProject: false
 ---
 # Plan 12 — Learn-point collect (TUI log, no autoclicker)
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 **Delivery (2026-04):** Shipped in `osx/macos_mouse_click.py` (`--learn-points`, `run_learn_collect_flow`, dry-run stdout). Product spec: [`plan-010-macos-mouse-click-learn-points-collect.md`](../plan-010-macos-mouse-click-learn-points-collect.md). Operator notes: [`osx/README.md`](../../../../osx/README.md).
 
 ## Naming constraints

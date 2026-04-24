@@ -6,6 +6,9 @@ related_plans:
 ---
 
 ### DEF-008: Residual Up/Down double press (investigation)
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 - **Analysis plan (in-repo):** [`plan-agent-arrow-key-double-press-analysis.plan.md`](../plans/agent/plan-agent-arrow-key-double-press-analysis.plan.md)
 - **Frontmatter todo:** `defect-def-008-tui-arrow-double-press-residual` (**completed** for log semantics).
 - **Status:** **Fixed** (script) — **`after_key`** debug lines now use the **post-navigation** **`selected`** row for **Up**/**Down**, so **`selected_index` / `row_key` / `setting_label`** match the highlight the operator sees after one arrow key.

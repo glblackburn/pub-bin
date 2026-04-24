@@ -5,6 +5,9 @@ related_plans:
 ---
 
 ### DEF-002: Arrow keys mis-read as cancel (Escape)
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 - **Frontmatter todo:** `defect-def-002-arrow-misread-as-esc` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py).
 - **Manual verification:** **Passed** — **2026-04-18**, operator on `yoda.local`. `./osx/macos_mouse_click.py --learn -n 5000 -d 0`: **Up**/**Down** repeatedly across rows — no crash, no spurious exit. **Enter** edits: stray / special characters could appear in the prompt buffer; **input validation** rejected invalid values (**DEF-004** / **[plan 07](plan-007-macos-mouse-click-tui-field-edit-input.md)** track cleaner input handling when prioritized).

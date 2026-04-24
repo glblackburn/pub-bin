@@ -41,6 +41,9 @@ isProject: false
 ---
 # Plan: New independent test for Up/Down (TTY) navigation diagnosis
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 ## Goal
 
 Add **new** automated coverage to narrow the “settings table Up/Down / highlight” problem without modifying existing tests or the current CSI **Down** harness. Work may proceed in two tracks: (1) low-level **`read_raw_key`** symmetry for **Up** (`A`), and (2) **end-to-end** Rich table behavior: **normative test case 1** (one Down, `A`/`B`/`C`), and **normative test case 2** (two Downs, explicit **Setting** labels **Mode → Count → Delay (s)** with specific CLI constraints).

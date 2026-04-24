@@ -22,6 +22,9 @@ isProject: false
 ---
 # Rich pre-run TUI layout and resize (DEF-009 / DEF-010 follow-up)
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 ## Context (from hand-off + code)
 
 - **Reporter “good” revision:** `32d5820bf068047eb6271894a697b63d05073283` — no empty spacer lines, resize felt correct in Terminal.app.

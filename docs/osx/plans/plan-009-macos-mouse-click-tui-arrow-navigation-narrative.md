@@ -17,6 +17,9 @@ isProject: false
 
 # Plan 09: Rich TUI Up and Down arrow navigation — phased remediation
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 This document is the **working plan** to drive **Up** / **Down** arrow behavior in the Rich pre-run table toward stable, predictable navigation and **trustworthy diagnostics**. The **normative outcome** of the whole plan is **[Plan goal: Target use case (acceptance)](#plan-goal-target-use-case-acceptance)**—one physical keypress moves the highlight exactly **one row** in the expected direction, with logs that operators and agents can trust. Work starts with **better logging (Phase 1)**, then **runs tests and analyzes evidence (Phase 2)** using automated tests, AI-driven manual checks, and **user** manual runs with full log bundles fed back for analysis. **Further phases (Phase 3+)** are **not specified here**; they will be written **after Phase 2** results (remaining bugs, environment-specific issues, or deeper instrumentation).
 
 **Normative UX and checklist:** **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)**  

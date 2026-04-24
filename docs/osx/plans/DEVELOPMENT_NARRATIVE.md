@@ -1,5 +1,8 @@
 # Development Narrative: macOS Mouse Click Utility
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 This document is a **chronological, human-oriented story** of how **`osx/macos_mouse_click.py`**, its companion **`osx/macos_mouse_click_loop.sh`** operator loop, and the clicker documentation evolved in **`pub-bin`**. It is **not normative**: behavior, acceptance criteria, and defect records remain in **[plan-001-macos-clicker.md](plan-001-macos-clicker.md)** through **[plan-010-macos-mouse-click-learn-points-collect.md](plan-010-macos-mouse-click-learn-points-collect.md)**, **[../defects/](../defects/README.md)**, and **[README.md](README.md)** (plan index).
 
 Sources: `git log` on **`osx/macos_mouse_click.py`** and **`osx/macos_mouse_click_loop.sh`**, plus **`docs/osx/`**, **`osx/tests/`**, and the plan/defect files named below.

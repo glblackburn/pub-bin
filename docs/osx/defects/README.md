@@ -1,5 +1,8 @@
 # macOS clicker defects (`docs/osx/defects/`)
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 Detail files for **DEF-001**–**DEF-009**. The **Defect summary** table (status, fix SHAs, manual verification) remains canonical in **[`../plans/plan-002-macos-mouse-click-terminal-ux.md`](../plans/plan-002-macos-mouse-click-terminal-ux.md)**; update the table and the matching **`def-###`** file together when closing a defect.
 
 **Completed** = date the defect was **resolved in process** (fix landed, deferred, or automated verification recorded). **—** means still open for **manual verification** or no single completion date (align with plan-002 **Manual verification** column).

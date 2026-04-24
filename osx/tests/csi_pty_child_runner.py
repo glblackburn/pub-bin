@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Run in a fresh interpreter (no pytest): PTY + handshake + read_raw_key.
 
+Terminology (see ``docs/osx/TERMINOLOGY.md``):
+- **CSI** = Control Sequence Introducer (terminal bytes often starting ``ESC`` ``[``).
+- **SS3-style** = arrow bytes introduced by ``ESC`` ``O`` instead of ``ESC`` ``[``.
+- **PTY** = pseudo-terminal; pytest spawns this helper under a PTY with timed writes.
+
 Invoked by test_read_raw_key_csi.py to avoid fork() inside pytest's process.
 
 The parent must not write ``ESC`` and ``[`` in the same syscall as ``B`` with a

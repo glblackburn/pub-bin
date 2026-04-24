@@ -1,4 +1,7 @@
-"""Plan 03: MT-09 legacy --interactive without Rich (PTY + PYTHONPATH fake rich)."""
+"""Plan 03: MT-09 legacy --interactive without Rich (PTY + PYTHONPATH fake rich).
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+"""
 
 from __future__ import annotations
 

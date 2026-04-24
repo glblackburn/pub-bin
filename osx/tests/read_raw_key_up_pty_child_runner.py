@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Run in a fresh interpreter (no pytest): PTY + handshake + read_raw_key (Up).
 
+Terminology (see ``docs/osx/TERMINOLOGY.md``):
+- **CSI** = Control Sequence Introducer (terminal bytes often starting ``ESC`` ``[``).
+- **SS3-style** = arrow bytes introduced by ``ESC`` ``O`` instead of ``ESC`` ``[``.
+- **PTY** = pseudo-terminal; pytest spawns this helper under a PTY with timed writes.
+
 Same staggered-write rationale as ``csi_pty_child_runner.py``, but the final
 byte is **``A``** (CSI ``ESC [ … A`` / SS3 ``ESC O A``) so ``read_raw_key()``
 should return ``up`` after the slow tail.

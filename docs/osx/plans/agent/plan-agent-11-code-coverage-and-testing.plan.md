@@ -20,6 +20,9 @@ isProject: false
 ---
 # Plan 11 — Code coverage reporting and coverage-driven tests
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 ## Scope
 
 Primary code under test: **[`osx/macos_mouse_click.py`](../../../../osx/macos_mouse_click.py)** (single large module). Tests live under **[`osx/tests/`](../../../../osx/tests/)**. Orchestration today: **[`osx/Makefile`](../../../../osx/Makefile)** (`make -C osx test`, `test-report`, …), **[`osx/pytest.ini`](../../../../osx/pytest.ini)**, CI **[`.github/workflows/macos-mouse-click.yml`](../../../../.github/workflows/macos-mouse-click.yml)** (Python 3.11, `pytest osx/tests`).

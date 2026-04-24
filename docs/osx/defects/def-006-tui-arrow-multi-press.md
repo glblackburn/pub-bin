@@ -6,6 +6,9 @@ related_plans:
 ---
 
 ### DEF-006: Multiple Up/Down presses per row (CSI timeout)
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 - **Agent plan (design notes):** [`plan-agent-def-006-tui-arrow-keys.plan.md`](../plans/agent/plan-agent-def-006-tui-arrow-keys.plan.md)
 - **Frontmatter todo:** `defect-def-006-tui-arrow-multi-press` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) (`read_raw_key`).

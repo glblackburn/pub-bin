@@ -1,5 +1,8 @@
 # Agent plans — macOS clicker (`docs/osx/plans/agent/`)
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 Cursor / Create-Plan artifacts for **`osx/macos_mouse_click.py`** (PTY tests, DEF-006 / DEF-008 investigations, debug logging, refactors). Filenames use the **`plan-agent-`** prefix.
 
 **Created** / **Updated** are commit dates (`%cs`, ISO) from `git log --follow`: first time the file appeared in history, and the latest commit touching that path. **Status** is derived from each plan’s YAML `todos` (`completed` / `pending` / `cancelled`); plans without todo frontmatter are **Active**. **Done** = every todo is `completed` or `cancelled`. **In progress** = at least one `completed` and one `pending`. **Draft** = all todos `pending`.

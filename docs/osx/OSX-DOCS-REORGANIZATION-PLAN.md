@@ -1,5 +1,8 @@
 # macOS clicker documentation reorganization (review plan)
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 This document specifies a **directory and content split** for everything that documents **`osx/macos_mouse_click.py`**: product plans, agent/session plans, and **DEF-xxx** defects (through **DEF-009** in the live tree). The **migration phases below have been executed** in the repo; the body that follows is the historical specification plus checklists (the opening “review artifact until sign-off” wording is **obsolete**—see **Execution status**). For day-to-day navigation, start at **[`README.md`](README.md)** (hub).
 
 ## Execution status (as of 2026-04)

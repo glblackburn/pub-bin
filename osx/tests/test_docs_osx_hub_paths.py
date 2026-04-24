@@ -11,6 +11,7 @@ _EXPECTED_FILES = (
     "docs/osx/README.md",
     "docs/osx/plans/README.md",
     "docs/osx/plans/DEVELOPMENT_NARRATIVE.md",
+    "docs/osx/TERMINOLOGY.md",
     "docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md",
     "docs/osx/plans/agent/README.md",
     "docs/osx/defects/README.md",

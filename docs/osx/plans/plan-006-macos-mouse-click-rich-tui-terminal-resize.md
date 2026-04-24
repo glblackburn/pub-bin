@@ -17,6 +17,9 @@ isProject: false
 
 # Plan 06: Rich pre-run TUI and terminal resize (SIGWINCH / reflow)
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 This document tracks **responsive layout** for the Rich **pre-run editor** in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py): when the operator **resizes the terminal** (narrower, wider, shorter, taller), the **Panel** + **Table** should **reflow** instead of leaving a stale layout with **awkward wrapping** or a **fixed visual size** that no longer matches the window.
 
 It is motivated by **DEF-005** in **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)** (operator **MT-08**, **2026-04-18**): shrinking caused **weird wrap**; expanding the window **did not** grow the rendered UI. **v1** originally deferred a full SIGWINCH story; **partial fixes** are now in **`osx/macos_mouse_click.py`** (see **Implementation status** below).

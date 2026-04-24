@@ -6,6 +6,8 @@ related_plans:
 
 ### DEF-009: Rich pre-run table / panel layout corruption (double borders, misaligned grid)
 
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 - **Status:** **Fixed** (script) — root cause was Rich’s default ``Table`` box (**``HEAVY_HEAD``**, heavy U+2501 header rules) visually merging with the ``Panel`` light top border on tight TTYs; mitigated with **``box.ROUNDED``** and stdout flush before stderr debug lines.
 - **Severity:** Medium (UX) — readability and trust in the UI; logic and debug NDJSON can still be correct while the frame looks broken.
 - **Opened:** 2026-04-21

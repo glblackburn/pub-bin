@@ -20,6 +20,9 @@ isProject: false
 
 # Plan 07: TUI field-edit input sanitization (**DEF-004**)
 
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 This document is the **implementation roadmap** for **[DEF-004](../defects/def-004-tui-edit-echo-special-chars.md)** (also summarized in **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)**): noisy **`Console.input`** prompts when editing **Mode**, **Count**, **Delay**, or fixed **X**/**Y** in the Rich pre-run table. **Validation already blocks bad values**; the gap is **operator-visible** echo / capture of **control bytes** and **CSI** fragments.
 
 **DEF-004** is **closed (deferred)** in plan **02**: behavior is **acceptable for now**; this plan picks up the **future improvement** without implying an immediate **Fix commit**.

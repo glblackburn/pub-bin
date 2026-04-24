@@ -5,6 +5,9 @@ related_plans:
 ---
 
 ### DEF-004: TUI edit prompts echo or capture special characters
+
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
+
 - **Frontmatter todo:** `defect-def-004-tui-edit-echo-special-chars` (**completed** — filed and **deferred**; no script change in this closure).
 - **Status:** **Closed (deferred)** — UX is **acceptable for now** (validation prevents bad config). Implementation when prioritized: **[plan 07 — TUI field-edit input](plan-007-macos-mouse-click-tui-field-edit-input.md)**.
 - **Manual verification:** **N/A** — documentation-only deferral, not a code fix. After plan **07** ships, set **Manual verification** to **Passed** when regression is done and record **Fix commit** per **Git workflow** above.
