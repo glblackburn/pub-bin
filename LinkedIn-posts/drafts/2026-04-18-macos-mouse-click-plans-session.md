@@ -16,23 +16,23 @@ The indented block below is regenerated from the plain-text draft (four leading 
 
     I wanted to practice building something small with an AI coding agent beside me.
     
-    This was an intentional focus on building plans to drive changes to a simple application—a narrow macOS click utility—so written intent stayed ahead of ad hoc edits.
+    This was an intentional focus on building plans to drive changes to a simple application.
     
-    Cookie Clicker is the automation target on purpose: the game is intentionally small and bounded (one browser tab, a tight repetition loop), which keeps the whole problem tractable—not because the product is "about Cookie Clicker," but because bounded scope is the point.
+    Cookie Clicker is the automation target on purpose. The game is intentionally small and bounded (one browser tab, a tight repetition loop). That keeps the automation story tractable. Bounded scope is the point, not a product narrative about Cookie Clicker.
     
     A tiny macOS script sends the clicks into that tab.
     
-    The shift that mattered: most of my attention went to planning and design—roadmap shape, defect semantics, terminal behavior—while the agent handled the long tail of edits. Propagating shared definitions across dozens of markdown files, tightening cross-links from the hub to plans and tests, and keeping a running development narrative stopped feeling like a multi-evening merge conflict with myself.
+    The shift that mattered: planning and design took most of my attention (roadmap shape, defect semantics, terminal behavior), while the agent handled the long tail of edits. Propagating shared definitions across dozens of markdown files, tightening cross-links from the hub to plans and tests, and keeping a running development narrative stopped feeling like a multi-evening merge conflict with myself.
     
     𝐖𝐡𝐚𝐭 𝐭𝐡𝐚𝐭 𝐥𝐨𝐨𝐤𝐞𝐝 𝐥𝐢𝐤𝐞 𝐢𝐧 𝐭𝐡𝐞 𝐫𝐞𝐩𝐨:
     
     ▶ A central terminology page with an index so CSI/SS3/PTY and the rest of the acronym soup stay defined once and linked everywhere readers need a reminder.
-    ▶ A chronological DEVELOPMENT_NARRATIVE​.md next to the plans—purpose, phases, tradeoffs, and pointers that stay aligned with what the code and pytest actually cover.
+    ▶ A chronological DEVELOPMENT_NARRATIVE​.md next to the plans: purpose, phases, tradeoffs, and pointers that stay aligned with what the code and pytest actually cover.
     ▶ Session screenshots captured the doc work itself; numbering and kebab-case names kept a visual audit trail in git next to the narrative instead of losing it to a desktop folder.
     
     𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧:
     
-    The script stays a narrow utility; pytest keeps the surface honest. The bigger win is documentation as a first-class product: design history and intent stay consistent with the implementation for far less manual bookkeeping—and cross-referencing at scale becomes realistic because the agent does the repetitive glue while I focus on what should stay true.
+    The script stays a narrow utility; pytest keeps the surface honest. The bigger win is documentation as a first-class product: design history and intent stay consistent with the implementation for far less manual bookkeeping. Cross-referencing at scale becomes realistic because the agent does the repetitive glue while I focus on what should stay true.
     
     https://github.com/glblackburn/pub-bin/tree/main/docs/osx
     https://github.com/glblackburn/pub-bin/blob/main/docs/osx/plans/DEVELOPMENT_NARRATIVE.md
@@ -48,7 +48,7 @@ The indented block below is regenerated from the plain-text draft (four leading 
 ## Revision notes
 
 - **Current `.txt`:** revision **6** below; bullets in this section that mention `-Y` / Ctrl+C describe **earlier** drafts only.
-- **Sixth revision (2026-04):** refocus on **AI agents for planning/design** over rote implementation; **documentation at scale** (central **`TERMINOLOGY.md`** + index, **`DEVELOPMENT_NARRATIVE.md`**, **`docs/osx/screenshots/`** sequence **01–09**); emphasize **cross-referencing** and **design history in sync** with code/tests; add narrative + script links; hashtags add **`#AI`** / **`#Documentation`**; ~2380 characters (under 3k). **Copy tweak:** opener is **“I wanted to practice building something small with an AI coding agent beside me.”** (no **“end-to-end”**); then plans → Cookie as bounded target → script. **Links:** Cookie target is the **web tab** only (`https://orteil.dashnet.org/cookieclicker/`); dropped **`cookieclicker.com`**.
+- **Sixth revision (2026-04):** refocus on **AI agents for planning/design** over rote implementation; **documentation at scale** (central **`TERMINOLOGY.md`** + index, **`DEVELOPMENT_NARRATIVE.md`**, **`docs/osx/screenshots/`** sequence **01–09**); emphasize **cross-referencing** and **design history in sync** with code/tests; add narrative + script links; hashtags add **`#AI`** / **`#Documentation`**; ~2274 characters (under 3k). **Copy tweak:** opener is **“I wanted to practice building something small with an AI coding agent beside me.”** (no **“end-to-end”**); then plans → Cookie as bounded target → script. Dropped the mid-sentence **em-dash aside** on the macOS utility; **replaced long em-dash chains** with short sentences, a colon, or parentheses so the scan is not one long dash rhythm. **Links:** Cookie target is the **web tab** only (`https://orteil.dashnet.org/cookieclicker/`); dropped **`cookieclicker.com`**.
 - **Fifth revision (2026-04):** align with repo after **`docs/osx/`** consolidation — GitHub tree link **`docs/osx`** (was **`docs/plans`**); replace stale **`docs/plans/README​.md`** bullet with merged index under **`docs/osx/plans/README​.md`**; add shipped **`--learn-points`** bullet; add fourth roadmap bullet unchanged; **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** gains one short **pytest** clause (~55 tests under **`osx/tests`**); character count still well under 3k.
 - **Fourth revision:** scene-first open (Cookie as bounded target); split “needle” ideas into short paragraphs; outcome-shaped bullets (less plan-number jargon); **𝐓𝐡𝐞 𝐥𝐞𝐬𝐬𝐨𝐧** instead of “punchline”; drop parenthetical link aside; add **script** URL next to the **`docs/plans`** tree link (that tree link was later superseded by **`docs/osx`** in rev 5).
 - First draft read like a sprint demo (abstract bullets, no hook). Rewrote after re-reading published posts: lead with the `-Y` / Ctrl+C footgun, fake `rich` on `PYTHONPATH`, then `docs/plans/` work.
