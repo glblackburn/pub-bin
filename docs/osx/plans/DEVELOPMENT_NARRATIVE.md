@@ -26,6 +26,7 @@ Sources: `git log` on **`osx/macos_mouse_click.py`** and **`osx/macos_mouse_clic
 - [Phase 12: Coverage tooling and Plan 11 documentation](#phase-12-coverage-tooling-and-plan-11-documentation)
 - [Phase 13: Hub polish — agent plan index, Plan 13, unified plan index](#phase-13-hub-polish--agent-plan-index-plan-13-unified-plan-index)
 - [Phase 14: Operator loop wrapper (macos_mouse_click_loop.sh)](#phase-14-operator-loop-wrapper-macos_mouse_click_loopsh)
+- [Phase 15: Terminology glossary and doc screenshots](#phase-15-terminology-glossary-and-doc-screenshots)
 - [Key technical decisions](#key-technical-decisions)
 - [Challenges and solutions](#challenges-and-solutions)
 - [Project evolution timeline (selected commits)](#project-evolution-timeline-selected-commits)
@@ -60,6 +61,7 @@ The engineering story is unusually **documentation-heavy for the line count**: n
 | 12 | **`pytest-cov`** + Plan **11** gap doc | 2026-04-22 | 2026-04-22 | **`485e420`**: coverage targets + **`macos-mouse-click-coverage-gap.md`**. |
 | 13 | Index merge + stub removal + Plan **13** doc | 2026-04-23 | 2026-04-23 | **`29c9246`**: single canonical plan **`README`** under **`docs/osx/plans/`**. |
 | 14 | **`macos_mouse_click_loop.sh`** operator loop | 2026-04-20 | 2026-04-22 | Bash wrapper: cookie burst + building buys; **TUI debug** env; coordinates **local to one setup**. |
+| 15 | **`TERMINOLOGY.md`** + **`docs/osx/screenshots/`** | 2026-04-23 | 2026-04-23 | Central glossary (**CSI** / **SS3** / **PTY** + index); session PNGs renamed **`NN-kebab-case.png`** and tracked for the narrative. |
 
 **Scale signal:** `git log --oneline -- osx/macos_mouse_click.py` shows on the order of **17** commits touching the Python script from first add through **`--learn-points`**. `git log --oneline -- osx/macos_mouse_click_loop.sh` adds **6** commits (**`765f15a`** … **`a40d1b6`**) over **~3 calendar days** in April 2026 — dense burst, not calendar months.
 
@@ -281,6 +283,39 @@ The Python tool is deliberately **general** (coordinates, counts, modes). **`mac
 
 The loop still encodes **machine-specific Quartz coordinates** and **sleep** spacing (**`sleep 30`** after the cookie burst in the tree at narrative time). That is intentional for a **repo-local operator harness**: it documents *how the author ran the tool*, not a portable contract. Anyone reusing it should treat coordinates like **secrets** — wrong for CI, fine for a **bounded personal target**.
 
+## Phase 15: Terminology glossary and doc screenshots
+
+**Timeline:** 2026-04-23  
+**Anchor commit (glossary + doc/test alignment):** **`2474ff7`** — *docs(osx): add TERMINOLOGY glossary and align CSI/SS3/PTY notes*
+
+### Why it landed
+
+**DEF-006** and the **PTY** suite made **CSI** vs **SS3** byte tails a recurring explanation cost. Rather than re-defining acronyms in every plan, the hub gained **[`../TERMINOLOGY.md`](../TERMINOLOGY.md)**: a short **CSI / SS3 / PTY** primer plus an **index of terms** (**JSON**, **NDJSON**, **SIGWINCH**, **SUT**, etc.) with anchor targets for deep links.
+
+### Screenshot captures under **`../screenshots/`**
+
+The same session produced **desktop / terminal** captures documenting the glossary work, the **`git status`** tail during the change, and the **pre-commit** review. They were originally saved with **macOS** default names (`Screenshot …` with spaces, or `Screenshot_…_PM` variants). Two late captures used **`U+202F` NARROW NO-BREAK SPACE** before **`AM`/`PM`**, which is easy to miss in shell globs — renaming avoided that footgun entirely.
+
+**Renaming convention (applied in-repo):**
+
+1. Order captures **chronologically** within the story.
+2. Prefix with a **two-digit sequence** (`01`–`09`, …) so directory listings sort in story order.
+3. Append a **lowercase kebab-case** slug summarizing **what is on screen** (not clock time in the filename).
+
+### Indexed files (`docs/osx/screenshots/`)
+
+| Seq | File | What it shows |
+|-----|------|----------------|
+| 01 | [`01-osx-doc-review-csi-ss3-pty-explainer-and-initial-terminology-md.png`](../screenshots/01-osx-doc-review-csi-ss3-pty-explainer-and-initial-terminology-md.png) | **CSI** / **SS3** / **PTY** explainer and first terminology draft. |
+| 02 | [`02-terminology-bulk-insert-python-script-and-terminology-file-diff.png`](../screenshots/02-terminology-bulk-insert-python-script-and-terminology-file-diff.png) | **`python3 <<'PY'`** bulk-insert script + diff for the shared paragraph. |
+| 03 | [`03-terminology-rename-to-terminology-md-and-glossary-index-expansion.png`](../screenshots/03-terminology-rename-to-terminology-md-and-glossary-index-expansion.png) | Rename to **`TERMINOLOGY.md`** + acronym scan + large glossary / index diff. |
+| 04 | [`04-terminology-workflow-and-repo-git-status-split-desktop.png`](../screenshots/04-terminology-workflow-and-repo-git-status-split-desktop.png) | Split desktop: workflow log + **`git status`** in **`pub-bin`**. |
+| 05 | [`05-terminology-glossary-commit-preview-and-git-status.png`](../screenshots/05-terminology-glossary-commit-preview-and-git-status.png) | Commit preview (message + untracked **`screenshots/`** note) + status. |
+| 06 | [`06-terminology-glossary-commit-file-list-and-git-status.png`](../screenshots/06-terminology-glossary-commit-file-list-and-git-status.png) | Full **46-file** list in preview + **`git status`**. |
+| 07 | [`07-terminology-glossary-commit-diff-hunks-and-user-confirms-yes.png`](../screenshots/07-terminology-glossary-commit-diff-hunks-and-user-confirms-yes.png) | Representative diff hunks + **“proceed / yes”** confirmation. |
+| 08 | [`08-terminology-screenshot-filename-mapping-table-and-ls-renamed-01-07.png`](../screenshots/08-terminology-screenshot-filename-mapping-table-and-ls-renamed-01-07.png) | Mapping table (old **`Screenshot_*`** → descriptive names) + **`ls`** of **`01-`…`07-`**. |
+| 09 | [`09-terminology-screenshot-mv-rename-block-git-status-and-ls-01-07.png`](../screenshots/09-terminology-screenshot-mv-rename-block-git-status-and-ls-01-07.png) | **`mv`** rename block + **`git status`** + **`ls`** after first rename pass. |
+
 ## Key technical decisions
 
 1. **Quartz via PyObjC** — fastest path to **CGEvent**-level control in Python; Accessibility remains an OS policy gate.
@@ -289,6 +324,7 @@ The loop still encodes **machine-specific Quartz coordinates** and **sleep** spa
 4. **Defect split** — keep **plan-002** as the **operator hub** for the TTY while moving long narratives to **`def-###`** files.
 5. **Documentation colocation** — **`docs/osx/`** sits beside **`osx/`** in mental navigation: hub → plans → defects → script.
 6. **Bash loop beside Python** — keep long-running **`-Y`** sequences in **`macos_mouse_click_loop.sh`** so **`macos_mouse_click.py`** stays a **library-grade CLI** without baking one game’s coordinate ladder into Python.
+7. **Track visual evidence beside narrative** — session **PNG** captures live under **`docs/osx/screenshots/`** with **`NN-`** prefixes so **git** history and the **Phase 15** table stay aligned.
 
 ## Challenges and solutions
 
@@ -300,6 +336,8 @@ The loop still encodes **machine-specific Quartz coordinates** and **sleep** spa
 | **Doc drift** vs implementation | Numbered plans + **Closed (v1)** / **Shipped** semantics on **[README.md](README.md)**; handoffs for cross-cutting sessions (**[plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md)**). |
 | **Legacy URLs** after `docs/plans/` stub removal | Prefer **`docs/osx/`** tree links; thin **`docs/plans/README.md`** pointer for repo visitors. |
 | **Hardcoded buy grid** in **`macos_mouse_click_loop.sh`** | Accept as **operator-local**; edit **`-x/-y`** per monitor layout; keep **`-Y`** + **debug** env patterns for Rich investigation. |
+| **Acronym sprawl** in terminal docs | Single **[`TERMINOLOGY.md`](../TERMINOLOGY.md)** hub + short repeated **CSI/SS3/PTY** block where files are read linearly. |
+| **macOS screenshot filenames** | Rename to **ASCII** + sequence prefix; watch for **`U+202F`** before **AM/PM** in system-generated names. |
 
 ## Project evolution timeline (selected commits)
 
@@ -317,6 +355,7 @@ Chronological **high-signal** anchors (read with **`git show <hash>`**):
 - **`7e7c6ee`** — **`--learn-points`** shipped.
 - **`485e420`** — coverage Makefile / **`pytest-cov`** integration.
 - **`29c9246`** — unified **`docs/osx/plans/README.md`** index; stub removal.
+- **`2474ff7`** — **`docs/osx/TERMINOLOGY.md`** glossary + **CSI/SS3/PTY** alignment across **`docs/osx/`** and **`osx/tests/`**.
 - **`765f15a`** / **`32d5820`** / **`22f08fd`** — introduce and grow **`macos_mouse_click_loop.sh`** buy + cookie sequence.
 - **`43a727d`** — trim commented buy lines in the loop while syncing roadmap plans to **shipped** test reality.
 - **`a40d1b6`** — extend / un-comment loop steps (**time machine**, **portal**, **temple**–**cursor**).
@@ -329,6 +368,7 @@ Chronological **high-signal** anchors (read with **`git show <hash>`**):
 4. **Split “summary vs narrative”** for defects — operators want a **table** in plan **02**; engineers want **`def-###`** detail without scrolling a novel inline.
 5. **Colocate docs with code** (**`docs/osx/`**) reduced cross-directory confusion once migration completed.
 6. **Keep “toy orchestration” in shell** — the **`while true`** buy ladder belongs in **`macos_mouse_click_loop.sh`**, which makes the boundary between **product** (Python) and **personal automation** (Bash + coordinates) obvious to future readers.
+7. **Rename doc-session screenshots** — **`NN-kebab-case.png`** under **`docs/osx/screenshots/`** sorts in story order and avoids **Unicode** filename surprises from macOS defaults.
 
 ## Current state
 
@@ -340,6 +380,8 @@ Chronological **high-signal** anchors (read with **`git show <hash>`**):
 - **Defects:** **DEF-001**–**DEF-009** detail files under **`../defects/`**; summary table in **plan-002**.
 - **Tests:** **55** tests collected under **`osx/tests/`** (see **`make -C osx test-quick`**).
 - **Marketing handoff:** LinkedIn draft session captured in **[plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md)** (revision **5** aligned to **`docs/osx/`** links).
+- **Terminology:** **[`../TERMINOLOGY.md`](../TERMINOLOGY.md)** — glossary + index for **`docs/osx/`** tokens (**CSI**, **SS3**, **PTY**, **NDJSON**, signals, etc.).
+- **Session screenshots:** **[`../screenshots/`](../screenshots/)** — **nine** **`NN-….png`** files (Phase **15** table) documenting the glossary rollout and rename hygiene.
 
 ## Future considerations
 
@@ -364,6 +406,6 @@ The arc mirrors the React2Shell narrative pattern: **genesis → phased delivery
 ---
 
 **Project status:** Active (roadmap plans open; script shipped features include **`--learn-points`**).  
-**Last updated:** 2026-04-23 (narrative matches `git` history through **`29c9246`** / **`485e420`** / **`7e7c6ee`** / **`a40d1b6`** loop era).  
+**Last updated:** 2026-04-23 (narrative matches `git` history through **`2474ff7`** glossary + **`docs/osx/screenshots/`** housekeeping in Phase **15**).  
 **Test collection:** 55 tests under **`osx/tests/`** (per `pytest --collect-only`).  
 **Maintainer:** Project owner / contributors per **`pub-bin`** history.
