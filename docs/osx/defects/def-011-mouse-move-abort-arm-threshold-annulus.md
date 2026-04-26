@@ -49,16 +49,25 @@ In **`run_synthetic_loop`**, each loop iteration **before** `post_synthetic_clic
 
 Default **`arm_r`**: **`max(60, 2 × threshold)`** → **60 px** at threshold **20**. **Abort** when **d > 20 px**. So **20 < d ≤ 60** **armed** and **aborted** on the **same** sample, **before the first click** of a new subprocess. Buy ladder **row_spacing** ~**63.5 px** left the cursor **~55 px** from the next row’s target — inside that annulus.
 
+A **second** failure mode appeared after the first fix: with **`n_done > 0`** only, **iteration 2** could still see **`d > threshold`** because **`get_mouse_location`** had not yet reflected the new row (synthetic click vs physical/read cursor), so the burst stopped again on **alchemy_lab**.
+
 **Resolution**
 
-1. **First land (`8e2843c45cc5074c4dc7dc4159f6be01f906f361`):** leave detection runs only when **`n_done > 0`** (at least one synthetic click) so the arm/threshold **annulus** cannot fire on the **first** iteration.
-2. **Follow-up (buy ladder still stopping):** **`ever_within_thr`** — while **`armed`**, track whether the read cursor has ever been **`d ≤ threshold`** of the target; **abort only if** **`armed and n_done > 0 and ever_within_thr and d > threshold`**. That avoids aborting on **iteration 2** when **`get_mouse_location`** still reports the **prior row** (~55 px away) even though a synthetic click already fired (physical pointer / sampling mismatch).
-- **Tests:** [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py) — `test_def011_annulus_no_abort_before_first_click`, `test_def011_stale_cursor_after_first_click_no_abort`, plus existing leave-target abort test.
-- **Docs:** [`osx/README.md`](../../../osx/README.md) in-band stop bullet **2**; module docstring and **`argparse`** help in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py).
+1. **First land:** leave detection runs only when **`n_done > 0`** (at least one synthetic click) so the arm/threshold **annulus** cannot fire on the **first** iteration.
+2. **Second land:** **`ever_within_thr`** — while **`armed`**, track whether the read cursor has ever been **`d ≤ threshold`** of the target; **abort only if** **`armed and n_done > 0 and ever_within_thr and d > threshold`**. That avoids a false stop on **iteration 2** when the read cursor still reflects the **prior ladder row**.
 
-**Git:** `8e2843c45cc5074c4dc7dc4159f6be01f906f361` (first land); record follow-up commit SHA here and in **plan-002** when committed.
+**Tests:** [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py) — `test_def011_annulus_no_abort_before_first_click`, `test_def011_stale_cursor_after_first_click_no_abort`, **`test_abort_when_armed_then_cursor_leaves_target`**.
+
+**Docs:** [`osx/README.md`](../../../osx/README.md) in-band stop bullet **2**; module docstring and **`argparse`** help in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py).
+
+**Git:**
+
+- `8e2843c45cc5074c4dc7dc4159f6be01f906f361` — defer leave check until after first synthetic click (`n_done > 0`).
+- `703ceeb583e835742b3ad8ffea7c6169924ced40` — require **`ever_within_thr`** before treating distance as “left target” (stale read / buy ladder).
 
 **Regression check**
 
 - Default buy ladder: **time_machine** → **portal** → **alchemy_lab** completes **five** clicks each row without spurious stop when the operator does not move the cursor away from the game.
-- Armed then cursor leaves target **after** the first click: still exits **130** (existing **`test_abort_when_armed_then_cursor_leaves_target`**).
+- Armed then cursor leaves target **after** the cursor has been within threshold: still exits **130** (**`test_abort_when_armed_then_cursor_leaves_target`**).
+
+**Automated verification:** `make -C osx test` (**66** tests under **`osx/tests`**, **`osx/pytest.ini`**) passes with the above commits on **`main`**.

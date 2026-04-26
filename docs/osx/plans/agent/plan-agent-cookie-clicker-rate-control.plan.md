@@ -38,7 +38,7 @@ todos:
 
 ## Scope (read this first)
 
-- **DEF-011 (fixed):** Mouse-move annulus on buy ladder (arm radius > threshold before first click) — **defer leave check until after first synthetic click**; see **[`../../defects/def-011-mouse-move-abort-arm-threshold-annulus.md`](../../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**.
+- **DEF-011 (fixed):** Buy-ladder false stops — **`n_done`** gate then **`ever_within_thr`** before leave abort; commits **`8e2843c`** / **`703ceeb`**; see **[`../../defects/def-011-mouse-move-abort-arm-threshold-annulus.md`](../../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**.
 - **This document is planning and design only.** It does not require or imply code changes until a separate, explicit implementation request (e.g. “execute this plan” or a scoped PR).
 - Sections **“Files likely touched”** and **“Acceptance criteria”** describe a **future implementation pass**, not current repo obligations.
 - The YAML **todos** above are a **backlog checklist** for that future pass; they are not in-progress implementation work while this plan remains in design-only mode.
