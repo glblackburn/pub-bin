@@ -30,7 +30,7 @@ related_plans:
 - **Arming:** Leave-target detection **arms** only after the cursor lies within **`--mouse-arm-radius-px`** of the click target `(x, y)`. Default radius: **`max(60, 2 × --mouse-move-threshold-px)`** when the flag is omitted.
 - **Abort (after armed):** Exit **130** if the cursor is **farther than** `--mouse-move-threshold-px` from `(x, y)`.
 - **CLI:** `--mouse-arm-radius-px` (optional; must be **≥** threshold).
-- **Git:** `8fadeb833ae760bf8c6a75fe69ed787270b22a9b`
+- **Git:** `a4361c307e046c3fb2d56ac4932b12d3345cdf01`
 - **Tests:** [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py), [`osx/tests/test_dry_run.py`](../../../osx/tests/test_dry_run.py).
 
 **Regression check**
