@@ -38,6 +38,7 @@ todos:
 
 ## Scope (read this first)
 
+- **DEF-011 (open):** Phase 1 mouse-move abort can **false-stop** the buy ladder when default **arm radius** exceeds **leave threshold** (annulus); canonical write-up: **[`../../defects/def-011-mouse-move-abort-arm-threshold-annulus.md`](../../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**.
 - **This document is planning and design only.** It does not require or imply code changes until a separate, explicit implementation request (e.g. “execute this plan” or a scoped PR).
 - Sections **“Files likely touched”** and **“Acceptance criteria”** describe a **future implementation pass**, not current repo obligations.
 - The YAML **todos** above are a **backlog checklist** for that future pass; they are not in-progress implementation work while this plan remains in design-only mode.
