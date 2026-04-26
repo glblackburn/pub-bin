@@ -7,7 +7,7 @@
 Before starting any work, you MUST read these files in order:
 
 1. **`README-AI-CODING-STANDARDS.md`** - Complete AI coding standards
-   - Git operations policy (NEVER commit without showing commit message first)
+   - Git operations policy (never commit unless asked; when asked, preview then wait for approval)
    - File creation rules
    - Code quality standards
    - Security policies
@@ -21,7 +21,7 @@ Before starting any work, you MUST read these files in order:
 
 After reading the full standards, remember these are the most frequently violated:
 
-1. **Git Commits:** NEVER commit immediately when user says "commit". ALWAYS show commit message FIRST, then wait for confirmation.
+1. **Git:** Never **`git commit`** unless the user asked you to commit (or clearly asked you to handle the commit for this change). When they do: first message = **exact commit message** + **full file list** + **summary of changes** only — **end the response** and wait. Second message = commit only after **explicit approval** (e.g. yes / proceed). Never commit in the same response as the preview.
 
 2. **File Creation:** "Review X" means provide review in conversation, NOT create a review document file. Only create documentation files when explicitly requested.
 
@@ -31,25 +31,13 @@ After reading the full standards, remember these are the most frequently violate
 
 5. **Security:** NEVER commit sensitive data (API keys, tokens, passwords, etc.)
 
-## Protocol for Commits
+## Git (single rule)
 
-**CRITICAL: Two-Step Process (MANDATORY)**
+- **Do not commit unprompted.** Do not run **`git add`** / **`git commit`** after implementation unless the user asked you to commit (or to handle the commit for this work).
+- **When they ask:** first response = **exact commit message** + **complete file list** + **summary of changes** (e.g. per-file `git diff --stat`). **Stop**; do not commit in that response. Ask whether to proceed if helpful.
+- **After explicit approval** in a **follow-up** message (yes / go ahead / proceed — not another bare “commit” alone), run **`git add`** / **`git commit`** in the next response using that message and file set.
 
-When user says "commit", interpret it as "show me what will be committed" - NOT as "go ahead and commit".
-
-**Step 1 - Show Info, Then STOP:**
-1. Show the exact commit message
-2. Show all files that will be committed
-3. Show diff/stat for each file
-4. **END YOUR RESPONSE** - Do NOT commit yet
-5. Ask "Should I proceed with this commit?"
-
-**Step 2 - Wait for Confirmation:**
-6. Wait for user's NEXT message (separate from "commit" request)
-7. User must explicitly confirm (not just "commit" again)
-8. **THEN commit in a NEW response**
-
-**CRITICAL RULE:** NEVER commit in the same response where you show the commit message. The commit must happen in a SEPARATE response after user confirms.
+Bare **“commit”** means *prepare the commit for review*, not *run* **`git commit`** yet.
 
 ## Full Details
 
