@@ -2,10 +2,10 @@
 todos:
   - id: phase1-in-band-abort
     content: "Phase 1: macos_mouse_click.py — mouse-move and/or CGEventTap panic → shutdown_requested; flags; tests or checklist"
-    status: pending
+    status: completed
   - id: phase1-docs-operator-stop
     content: "Phase 1: README — in-band abort, Input Monitoring / Accessibility, Escape limits, Ctrl+C when terminal focused"
-    status: pending
+    status: completed
   - id: phase2-profile-delay-keys
     content: "Phase 2: profile/schema — cookie_click_delay_seconds, post_cookie_settle_seconds, optional chunk keys"
     status: pending
@@ -88,6 +88,8 @@ No single constant works across hardware, browser, and game state; the plan favo
 ## Phase 1 — In-band abort: mouse movement and Escape (feasibility)
 
 **Goal:** While `macos_mouse_click.py` is posting synthetic clicks (especially with positive `-d`), the process also watches for **explicit user intent to stop** that does not depend on terminal focus.
+
+**Open defect (reference semantics):** **[DEF-010](../../defects/def-010-mouse-move-abort-wrong-reference.md)** — first ship compared cursor to **burst-start position** (often the terminal), not the **click target**; causes spurious abort when clicks are far from startup cursor. Fix direction: arm + distance to `(x, y)` or per-iteration delta (see defect body).
 
 ### Is it possible on macOS?
 

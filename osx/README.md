@@ -60,6 +60,22 @@ Loop flags for profile workflow:
 - **`-B <x1|x10|x100>`** optional bulk-mode metadata for operator checks.
 - **`-L <layout>`** optional layout-profile metadata (e.g., `desktop-max`).
 
+### In-band stop (mouse move)
+
+`macos_mouse_click_loop.sh` passes **`--abort-on-mouse-move --mouse-move-threshold-px 20`** to every `macos_mouse_click.py` invocation so a long **`-Y`** burst can be stopped **without terminal focus**: move the physical mouse farther than the threshold (pixels, Euclidean) from where it was when the burst started. The script exits with code **130** and prints a short message on stderr.
+
+Direct runs:
+
+```bash
+./osx/macos_mouse_click.py -x 100 -y 100 -n 500 -d 0 -Y --abort-on-mouse-move
+./osx/macos_mouse_click.py -x 100 -y 100 -n 500 -d 0 -Y \
+  --abort-on-mouse-move --mouse-move-threshold-px 30
+```
+
+**Permissions:** Accessibility is already required for synthetic clicks. Some macOS versions may also prompt under **Privacy & Security → Input Monitoring** for reading global cursor position; grant access for the terminal (or IDE) running the script if prompted.
+
+**Escape key:** A global **Escape** listener is **not** implemented in Phase 1 (the game or browser may consume Escape first). Use **mouse nudge**, **Ctrl+C** in the terminal when it has focus, or **`kill -INT <pid>`** from another shell.
+
 ## Learn-point collect (`--learn-points`)
 
 Record **multiple** real left-button positions in one session (Rich log under the table, or plain text with **`-Y`**). Mutually exclusive with **`--learn`**, **`-x/-y`**, and **`--at-cursor`**. Product spec: **[`docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md`](../docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md)**.

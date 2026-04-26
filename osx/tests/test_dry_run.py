@@ -28,11 +28,21 @@ class _FakeTTY(io.StringIO):
 def test_resolved_config_for_dry_run_json() -> None:
     cfg = ResolvedConfig(mode="learn", count=0, delay=1.25)
     d = mmc.resolved_config_for_dry_run_json(cfg)
-    assert d == {"mode": "learn", "count": 0, "delay": 1.25, "x": None, "y": None}
+    assert d == {
+        "mode": "learn",
+        "count": 0,
+        "delay": 1.25,
+        "x": None,
+        "y": None,
+        "abort_on_mouse_move": False,
+        "mouse_move_threshold_px": 20.0,
+    }
 
     cfg2 = ResolvedConfig(mode="fixed", count=2, delay=0.0, x=10.0, y=20.5)
     d2 = mmc.resolved_config_for_dry_run_json(cfg2)
     assert d2["x"] == 10.0 and d2["y"] == 20.5
+    assert d2["abort_on_mouse_move"] is False
+    assert d2["mouse_move_threshold_px"] == 20.0
 
     cfg3 = ResolvedConfig(
         mode="learn_collect", count=0, delay=1.0, learn_point_cap=None
@@ -40,12 +50,14 @@ def test_resolved_config_for_dry_run_json() -> None:
     d3 = mmc.resolved_config_for_dry_run_json(cfg3)
     assert d3["mode"] == "learn_collect"
     assert d3["learn_point_cap"] is None
+    assert d3["abort_on_mouse_move"] is False
 
     cfg4 = ResolvedConfig(
         mode="learn_collect", count=0, delay=1.0, learn_point_cap=2
     )
     d4 = mmc.resolved_config_for_dry_run_json(cfg4)
     assert d4["learn_point_cap"] == 2
+    assert d4["mouse_move_threshold_px"] == 20.0
 
 
 def test_dry_run_requested_flag_and_env() -> None:

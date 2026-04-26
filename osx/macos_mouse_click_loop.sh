@@ -162,7 +162,8 @@ function click_target {
     target_y=${3}
     target_n=${4}
     echo "${label}"
-    "${mouse_click}" -d 0 -x "${target_x}" -y "${target_y}" -n "${target_n}" -Y
+    "${mouse_click}" -d 0 -x "${target_x}" -y "${target_y}" -n "${target_n}" -Y \
+        --abort-on-mouse-move --mouse-move-threshold-px 20
 }
 
 function detect_profile_from_image {
