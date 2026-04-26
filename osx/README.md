@@ -6,7 +6,7 @@ Synthetic left-click automation for macOS (see `macos_mouse_click.py` and repo r
 
 ## Operator loop (`macos_mouse_click_loop.sh`)
 
-Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** skips the buy ladder and runs only the **`-n 3000`** cookie burst each cycle. CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates are **machine-local**; edit the script body to match your layout.
+Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** skips the buy ladder and runs only the **`-n 3000`** cookie burst each cycle. CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates can come from a machine-specific profile JSON (recommended) or fallback defaults in the script.
 
 ```bash
 ./osx/macos_mouse_click_loop.sh -h           # usage
@@ -16,6 +16,49 @@ Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** s
 ./osx/macos_mouse_click_loop.sh -S -c 1      # cookie burst only (-n 3000), one cycle
 ./osx/macos_mouse_click_loop.sh -S           # cookie burst only, loop until Ctrl+C
 ```
+
+### CV profile detection + preview safety gate
+
+Detect coordinates from a screenshot, then render an annotated preview before clicks:
+
+```bash
+# 1) Detect profile JSON from screenshot (OpenCV-based heuristics)
+./osx/cookie_clicker_detect_coords.py \
+  --input "docs/osx/screenshots/cookie-clicker/Screenshot_2026-04-25_at_8.28.45_PM.png" \
+  --output /tmp/cookie-profile.json
+
+# 2) Render click preview only (annotated PNG + manifest JSON)
+./osx/macos_mouse_click_loop.sh -P /tmp/cookie-profile.json -N
+
+# 3) Run real clicks only after review (requires matching preview manifest)
+./osx/macos_mouse_click_loop.sh -P /tmp/cookie-profile.json -R -A -c 1
+```
+
+The helper scripts auto-reexec with `osx/.venv/bin/python3` when available, so direct `./osx/*.py` runs are the default workflow.
+
+If you prefer explicit interpreter usage:
+
+```bash
+./osx/.venv/bin/python3 ./osx/cookie_clicker_detect_coords.py --help
+./osx/.venv/bin/python3 ./osx/cookie_clicker_preview_plan.py --help
+```
+
+`make -C osx` targets (`setup`, `detect-cookie-clicker`, `preview-cookie-clicker`) already use the venv Python.
+
+Helper scripts:
+
+- **`osx/cookie_clicker_detect_coords.py`**: creates profile JSON with cookie + ladder coordinates and confidence metadata.
+- **`osx/cookie_clicker_preview_plan.py`**: renders click targets and per-target click counts into an annotated PNG and JSON manifest.
+
+Loop flags for profile workflow:
+
+- **`-P <profile_json>`** profile to use for dynamic coordinates.
+- **`-D <image.png>`** detect profile from screenshot before preview/run (requires `-P` output path).
+- **`-N`** preview only; do not send clicks.
+- **`-R`** require a matching preview manifest before click execution.
+- **`-A`** auto-approve preview prompt (for non-interactive runs).
+- **`-B <x1|x10|x100>`** optional bulk-mode metadata for operator checks.
+- **`-L <layout>`** optional layout-profile metadata (e.g., `desktop-max`).
 
 ## Learn-point collect (`--learn-points`)
 

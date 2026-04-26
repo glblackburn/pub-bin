@@ -1,0 +1,4 @@
+# Runtime dependencies for osx mouse-click tooling.
+pyobjc-framework-Quartz>=11.0
+rich>=13.7.0,<15
+opencv-python>=4.9.0

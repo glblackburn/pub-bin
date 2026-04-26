@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cookie Clicker Coordinate Profile",
+  "type": "object",
+  "required": [
+    "profile_name",
+    "source_image",
+    "detected_at",
+    "cookie",
+    "store",
+    "ladder_rows",
+    "preview_defaults",
+    "warnings"
+  ],
+  "properties": {
+    "profile_name": { "type": "string", "minLength": 1 },
+    "source_image": { "type": "string", "minLength": 1 },
+    "detected_at": { "type": "string", "minLength": 1 },
+    "cookie": {
+      "type": "object",
+      "required": ["x", "y", "confidence"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      },
+      "additionalProperties": false
+    },
+    "store": {
+      "type": "object",
+      "required": ["x", "panel_top", "panel_bottom", "row_spacing", "confidence"],
+      "properties": {
+        "x": { "type": "number" },
+        "panel_top": { "type": "number" },
+        "panel_bottom": { "type": "number" },
+        "row_spacing": { "type": "number" },
+        "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      },
+      "additionalProperties": false
+    },
+    "ladder_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "x", "y", "confidence"],
+        "properties": {
+          "name": { "type": "string" },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "preview_defaults": {
+      "type": "object",
+      "required": ["cookie_click_count", "ladder_click_count", "cycle_sleep_seconds"],
+      "properties": {
+        "cookie_click_count": { "type": "integer", "minimum": 1 },
+        "ladder_click_count": { "type": "integer", "minimum": 1 },
+        "cycle_sleep_seconds": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

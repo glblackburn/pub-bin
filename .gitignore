@@ -54,3 +54,8 @@ osx/coverage.xml
 
 # Local TUI debug log (MACOS_MOUSE_CLICK_DEBUG_TUI_LOG default / cwd artifact)
 /debug.json
+
+# Cookie clicker generated local profiles / previews
+osx/config/cookie_clicker_profiles/*.json
+!osx/config/cookie_clicker_profiles/.gitkeep
+docs/osx/screenshots/cookie-clicker/previews/

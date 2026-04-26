@@ -284,6 +284,80 @@ Replace hard-coded `-x/-y` values in `macos_mouse_click_loop.sh` with coordinate
   - move/resize window to confirm drift error path.
 - Keep `bash -n osx/macos_mouse_click_loop.sh` in CI/local checks.
 
+## CV config generation and previewer safety gate
+
+### Selected approach
+
+- **Hybrid** workflow:
+  1. Generate profile JSON from screenshot with OpenCV heuristics.
+  2. Render annotated preview artifact showing all planned click points and click counts.
+  3. Require explicit user approval before real clicks (or explicit auto-approve flag).
+- Manual fallback remains available by editing profile JSON when confidence is low.
+
+### Scripts updated and created
+
+Updated:
+
+- **`osx/macos_mouse_click_loop.sh`**
+  - Added profile/detection/preview flags.
+  - Loads cookie + ladder coordinates from profile JSON when `-P` is used.
+  - Supports preview-only mode and preview confirmation gate before clicks.
+- **`osx/README.md`**
+  - Added CV detect -> preview -> run workflow and new CLI options.
+- **`osx/requirements-test.txt`**
+  - Added `opencv-python` for detector + preview tests.
+
+Created:
+
+- **`osx/cookie_clicker_detect_coords.py`**
+  - Input: screenshot image.
+  - Output: coordinate profile JSON with confidence + warnings.
+- **`osx/cookie_clicker_preview_plan.py`**
+  - Input: profile JSON + loop options.
+  - Output: annotated preview PNG + manifest JSON with target counts.
+- **`osx/config/cookie_clicker_profile.schema.json`**
+  - Schema for expected profile fields.
+- **`osx/config/cookie_clicker_profile.sample.json`**
+  - Sample profile for documentation and tests.
+- **`osx/config/cookie_clicker_profiles/.gitkeep`**
+  - Keeps generated-profile directory in repo.
+- **`osx/tests/test_cookie_clicker_detect_coords.py`**
+  - Detector output + status coverage.
+- **`osx/tests/test_cookie_clicker_preview_plan.py`**
+  - Preview artifact generation + skip-ladder behavior checks.
+
+### Profile JSON and preview artifact summary
+
+Profile required fields:
+
+- `profile_name`
+- `source_image`
+- `detected_at`
+- `cookie` (`x`, `y`, `confidence`)
+- `store` (`x`, `panel_top`, `panel_bottom`, `row_spacing`, `confidence`)
+- `ladder_rows` (ordered list of named row coordinates + confidence)
+- `preview_defaults` (cookie count, ladder count, cycle sleep)
+- `warnings`
+
+Preview manifest fields:
+
+- `profile_hash` (SHA-256 of profile JSON)
+- `options_hash` (SHA-256 of preview option payload)
+- `targets[]` with `phase`, `name`, `x`, `y`, `click_count`
+- output preview image path + generation timestamp
+
+### Acceptance criteria (review checklist)
+
+- Detector script writes profile JSON for a Cookie Clicker screenshot without clicking.
+- Preview script writes:
+  - annotated PNG with labeled click targets,
+  - manifest JSON containing every target and click count.
+- Loop script behavior:
+  - `-N` exits after preview without clicking,
+  - `-R` fails if manifest/profile/options hashes do not match,
+  - real click run prompts for confirmation unless `-A` is supplied.
+- Existing finite-cycle and `-S` behavior remains intact when using profile coordinates.
+
 ## Suggested rollout order
 
 1. Externalize config and add CLI tuning knobs.

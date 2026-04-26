@@ -85,7 +85,8 @@ def import_quartz() -> Any:
     except ImportError:
         print(
             "Error: Quartz (PyObjC) is not installed.\n"
-            "  python3 -m pip install pyobjc-framework-Quartz",
+            "  Setup recommended: make -C osx setup\n"
+            "  Or install directly: python3 -m pip install pyobjc-framework-Quartz",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -1484,8 +1485,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if tty_can_use_rich_editor(cfg) and rich_mod is None:
         print(
-            "Tip: install rich for a colored TTY editor: "
-            "python3 -m pip install rich",
+            "Tip: install rich for a colored TTY editor.\n"
+            "  Setup recommended: make -C osx setup\n"
+            "  Or install directly: python3 -m pip install rich",
             file=sys.stderr,
         )
 

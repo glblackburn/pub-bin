@@ -1,0 +1,39 @@
+{
+  "profile_name": "sample-desktop",
+  "source_image": "docs/osx/screenshots/cookie-clicker/Screenshot_2026-04-25_at_8.28.45_PM.png",
+  "detected_at": "2026-04-25T21:00:00-04:00",
+  "cookie": {
+    "x": 1600.8,
+    "y": -410.9,
+    "confidence": 0.9
+  },
+  "store": {
+    "x": 2344.4,
+    "panel_top": -720.0,
+    "panel_bottom": 120.0,
+    "row_spacing": 63.5,
+    "confidence": 0.85
+  },
+  "ladder_rows": [
+    {"name": "time_machine", "x": 2344.4, "y": 14.6, "confidence": 0.85},
+    {"name": "portal", "x": 2344.4, "y": -48.8, "confidence": 0.85},
+    {"name": "alchemy_lab", "x": 2344.4, "y": -103.6, "confidence": 0.85},
+    {"name": "shipment", "x": 2344.4, "y": -177.5, "confidence": 0.85},
+    {"name": "wizard_tower", "x": 2344.4, "y": -237.3, "confidence": 0.85},
+    {"name": "temple", "x": 2344.4, "y": -304.6, "confidence": 0.85},
+    {"name": "bank", "x": 2344.4, "y": -368.1, "confidence": 0.85},
+    {"name": "factory", "x": 2344.4, "y": -430.9, "confidence": 0.85},
+    {"name": "mine", "x": 2344.4, "y": -495.6, "confidence": 0.85},
+    {"name": "farm", "x": 2344.4, "y": -558.5, "confidence": 0.85},
+    {"name": "grandma", "x": 2344.4, "y": -623.4, "confidence": 0.85},
+    {"name": "cursor", "x": 2344.4, "y": -689.3, "confidence": 0.85}
+  ],
+  "preview_defaults": {
+    "cookie_click_count": 3000,
+    "ladder_click_count": 5,
+    "cycle_sleep_seconds": 30
+  },
+  "warnings": [
+    "Sample profile only; run cookie_clicker_detect_coords.py for machine-specific coordinates."
+  ]
+}
