@@ -8,6 +8,8 @@ script_dir=$(dirname "$0")
 # CLI Parameters
 ################################################################################
 cycle_max=
+SKIP_BUY_LADDER=false
+
 ################################################################################
 # default values
 ################################################################################
@@ -22,7 +24,7 @@ function usage {
         echo "Message: ${message}"
     fi
     cat <<EOF
-Usage: ${script_name} [-h] [-c <count>]
+Usage: ${script_name} [-h] [-c <count>] [-S]
 
 Operator loop: repeatedly runs a fixed buy ladder then a long cookie burst
 via macos_mouse_click.py (see osx/README.md). Coordinates are machine-local.
@@ -30,13 +32,17 @@ Omit -c to run until stopped (sleep 30 seconds between cycles).
 
 Options
   -h            : Display this help message.
-  -c <count>    : Run exactly this many cycles (buy ladder + cookie burst each),
-                 then exit. Example: -c 1 is one cycle; -c 10 runs ten.
-                 Each cycle is real automation (clicks), not a dry run.
+  -c <count>    : Run exactly this many cycles, then exit. Example: -c 1 is
+                 one cycle; -c 10 runs ten. Each cycle is real automation
+                 (clicks), not a dry run.
+  -S            : Skip the buy ladder; only the long cookie burst (-n 3000)
+                 runs each cycle. Combine with -c (e.g. -S -c 5).
 
 Example:
   ${script_name} -c 1
   ${script_name} -c 10
+  ${script_name} -S -c 1
+  ${script_name} -S
   ${script_name}
 EOF
 }
@@ -44,7 +50,7 @@ EOF
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":hc:" opt; do
+while getopts ":hc:S" opt; do
     case ${opt} in
         h)
             usage
@@ -52,6 +58,9 @@ while getopts ":hc:" opt; do
             ;;
         c)
             cycle_max=${OPTARG}
+            ;;
+        S)
+            SKIP_BUY_LADDER=true
             ;;
         \?)
             usage "Invalid option: -${OPTARG}"
@@ -78,14 +87,9 @@ if [ ! -z "${cycle_max}" ]; then
 fi
 
 ################################################################################
-# main script logic
+# functions
 ################################################################################
-function run_once {
-    date
-    # uncomment export lines for debug output
-    export MACOS_MOUSE_CLICK_DEBUG_TUI=yes
-    export MACOS_MOUSE_CLICK_DEBUG_TUI_LOG=debug.json
-
+function run_buy_ladder {
     echo "buy time machine"
     "${mouse_click}" -d 0 -x 2344.4 -y 14.5888 -n 5 -Y
     echo "buy portal"
@@ -110,12 +114,26 @@ function run_once {
     "${mouse_click}" -d 0 -x 2344.4 -y -623.4 -n 5 -Y
     echo "buy cursor"
     "${mouse_click}" -d 0 -x 2344.4 -y -689.3 -n 5 -Y
+}
+
+function run_once {
+    date
+    # uncomment export lines for debug output
+    export MACOS_MOUSE_CLICK_DEBUG_TUI=yes
+    export MACOS_MOUSE_CLICK_DEBUG_TUI_LOG=debug.json
+
+    if [ "${SKIP_BUY_LADDER}" == false ]; then
+        run_buy_ladder
+    fi
 
     echo "click the cookie"
     "${mouse_click}" -d 0 -x 1600.8 -y -410.9 -n 3000 -Y
     date
 }
 
+################################################################################
+# main script logic
+################################################################################
 cycle_done=0
 while true; do
     run_once

@@ -6,13 +6,15 @@ Synthetic left-click automation for macOS (see `macos_mouse_click.py` and repo r
 
 ## Operator loop (`macos_mouse_click_loop.sh`)
 
-Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates are **machine-local**; edit the script body to match your layout.
+Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** skips the buy ladder and runs only the **`-n 3000`** cookie burst each cycle. CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates are **machine-local**; edit the script body to match your layout.
 
 ```bash
 ./osx/macos_mouse_click_loop.sh -h           # usage
 ./osx/macos_mouse_click_loop.sh -c 1         # one full cycle (real clicks), then exit
 ./osx/macos_mouse_click_loop.sh -c 10        # ten cycles, then exit
 ./osx/macos_mouse_click_loop.sh              # loop until Ctrl+C (30s between cycles)
+./osx/macos_mouse_click_loop.sh -S -c 1      # cookie burst only (-n 3000), one cycle
+./osx/macos_mouse_click_loop.sh -S           # cookie burst only, loop until Ctrl+C
 ```
 
 ## Learn-point collect (`--learn-points`)
