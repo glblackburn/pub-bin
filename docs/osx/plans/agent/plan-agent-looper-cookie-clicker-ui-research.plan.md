@@ -459,6 +459,133 @@ If mapping is missing, gate real clicks behind **manual confirmation** and show 
 - Perfect CV without calibration on arbitrary machines.
 - Supporting every browser zoom/DPI combo without metadata.
 
+## Full-desktop screenshots and Quartz-aligned profiles
+
+This section ties together **strategy** and **design** so `cookie_clicker_profile.json` (and any sidecar metadata the looper loads) can carry **real desktop coordinates** safe for `macos_mouse_click.py`, not only OpenCV pixel coordinates inside an arbitrary crop.
+
+### Observations on `docs/osx/screenshots/cookie-clicker` captures
+
+The folder mixes **three capture geometries** useful for different test cases:
+
+| Pattern (examples) | Typical size | Inferred mode | Implication for detection / mapping |
+| --- | --- | --- | --- |
+| `Screenshot_2026-04-25_at_8.2*.png`, `8.28.45`, `9.20.47` | ~1064×820–1074×823 (tall variant ~1064×1770) | **Browser window or tight crop** (game fills most of frame) | Heuristic detector matches current script: columns and cookie are **almost entire image**. Coordinates are **window-local or crop-local**; must add **window frame in Quartz** (and browser chrome offsets) to reach global click space. |
+| `Screenshot_2026-04-25_at_8.28.54`, `8.29.14` | 2352×2094 | **Large canvas** (likely Retina full desktop or very large window) | Game occupies a **sub-rectangle**; detector must **localize** the Cookie Clicker viewport inside the raster before row/cookie math. Same pixel-vs-Quartz gap unless mapping metadata exists. |
+| `Screenshot_2026-04-26_at_7.59.11_AM.png` (and `7.59.49`) | **2880×1800** | **Full virtual desktop** (multi-monitor “entire desktop” capture on macOS) | Origin `(0,0)` in the PNG is the **top-left of the combined virtual framebuffer** as macOS ordered displays for that capture, **not** the game window. Cookie/store pixels are **global image coordinates** once the game region is found; mapping to Quartz is a **bounded affine** if capture scale matches Quartz **points** space (see below). |
+| Same timestamp `__2_` / `__3_` siblings | **1920×1080** and **1080×1920** | **Per-display tiles** from multi-display capture | Each file is one physical display bitmap. Game may appear in **only one** tile. Quartz mapping is **`CGDisplayBounds(displayID)` origin + scaled offset** into that tile (display ID order must match capture order or be disambiguated by metadata). |
+
+**Takeaway:** the April 26 set is the right **regression corpus** for “find Cookie Clicker in clutter” and for “multi-monitor / mixed orientation.” The older narrow crops remain the right corpus for **pure UI geometry** (row spacing, panel bounds) once a **viewport rectangle** is known.
+
+### Coordinate flow (target architecture)
+
+```mermaid
+flowchart LR
+  subgraph capture [Capture]
+    capPng[desktop_or_window_png]
+    capMeta[display_and_window_metadata]
+  end
+  subgraph detect [Detector]
+    cls[classify_capture_geometry]
+    roi[find_game_viewport_bbox]
+    feat[cookie_and_store_in_roi_local_or_image]
+  end
+  subgraph profile [Profile_JSON]
+    imgPx[targets_image_px_or_roi_local]
+    quartz[targets_quartz_global]
+    mapxform[mapping_affine_or_per_display]
+  end
+  subgraph loop [Looper]
+    clicker[macos_mouse_click.py]
+  end
+  capPng --> cls
+  capMeta --> mapxform
+  cls --> roi
+  roi --> feat
+  feat --> imgPx
+  imgPx --> mapxform
+  mapxform --> quartz
+  quartz --> clicker
+```
+
+**Contract:** the looper should prefer **`targets_quartz_global`** (or an explicit `mapping` block the loop script resolves to Quartz before each run). **`targets_image_px`** remains for preview-on-PNG and for debugging CV.
+
+### Strategy 1 — Full stitched desktop (e.g. 2880×1800) + capture-time metadata (recommended spine)
+
+**Idea:** treat the PNG as a **bitmap of the virtual desktop** in **pixel** units. At capture time (same second as the screenshot), record from CoreGraphics:
+
+- Ordered list of **active displays**: `display_id`, `CGDisplayBounds` in **Quartz global points**, `pixelWidth` / `pixelHeight`, and **`displayBounds` vs backing store** relationship (Retina: points vs pixels).
+
+**Mapping:** for each display, build **pixel-rect of that display in the stitched image** (macOS documents how the framebuffer is laid out; order can be queried). Then:
+
+- Any detected point `(x_img, y_img)` in the stitched image → identify which display rectangle contains it →  
+  `x_quartz = display_bounds.origin.x + (x_img - disp_origin_in_image_px) / scale_x`  
+  (and similarly for `y`), where `scale_x` is **pixels per Quartz point** for that display (often 2 on Retina, 1 on 1x).
+
+**Profile contents:**
+
+- `capture_kind: full_desktop_stitched`
+- `image`: width/height, file path, timestamp
+- `displays[]`: `{ id, bounds_quartz_points, pixel_frame_in_image, pixels_per_point }`
+- `game_viewport`: `{ x, y, w, h }` in **full-image pixels** (detector output)
+- `cookie` / `store` / `ladder_rows`: either **in image pixels** with a single `mapping` to Quartz, or **precomputed Quartz** fields
+
+**Detector role:** extend classification so it **does not assume** the game fills the frame; run **window / game localization** (color regions, edge density, template from neutral background, or coarse text “cookies” / known UI colors) to get `game_viewport`, then run existing column heuristics **inside that ROI**.
+
+### Strategy 2 — Per-display tiles (`__2_`, `__3_`) + display table
+
+**Idea:** each PNG maps to **one** `CGDisplayBounds`. Metadata lists which file name or hash corresponds to `display_id` N.
+
+**Detector:** either (a) pick the tile that contains the game via the same localization pass, or (b) run detector on all tiles and keep the highest-confidence hit.
+
+**Mapping:** simpler than stitched: one origin and one scale per file.
+
+**Risk:** filename suffix order (`__2_`) **must not** be assumed stable across macOS versions; metadata should record **display UUID / serial / arrangement signature** or raw `CGDisplayBounds` side-by-side with image dimensions.
+
+### Strategy 3 — Small window crop + live window bounds from the OS (pragmatic default)
+
+**Idea:** keep using **window-only** screenshots for CV quality, but **never** ship Quartz clicks from pixels alone.
+
+**Companion input** (not necessarily inside the same JSON file, but loadable by the looper):
+
+- Output of a tiny **Quartz / Accessibility** helper: frontmost browser window **frame in global Quartz points**, plus optional **content area** if obtainable.
+- Detector outputs cookie/store positions **relative to game viewport** or **relative to window content top-left**.
+
+**Mapping:** one translation (+ scale if Retina mismatch between screenshot and points):  
+`P_quartz = window_content_origin_quartz + (P_img - content_origin_img) * (points_per_pixel)`.
+
+This path avoids solving **multi-monitor stitching** inside the detector and matches how operators already reason about “the game window.”
+
+### Other ways the detect script (or pipeline) can produce a correct `cookie_clicker_profile.json`
+
+These are **composable** with the strategies above; pick 1–2 for v1.
+
+1. **Two-phase profile generation**
+   - **Phase CV:** image-only → `game_viewport`, `ladder_rows` in ROI-local or image px + confidence.
+   - **Phase bridge:** separate command (Swift, `python` + `pyobjc`, or existing learn tooling) writes `window_bounds_quartz` / `displays[]` into the same profile or a `*.capture-meta.json` the looper merges. Detector refuses to emit `quartz_global` without bridge data unless `--allow-image-space-only`.
+
+2. **Classifier flag on input**
+   - Auto-detect: `window_crop` | `full_desktop` | `single_display_tile` using aspect ratio, known desktop resolutions, presence of menu bar strip, duplicate wallpaper edges, etc.
+   - Branch heuristics (ROI required for full desktop).
+
+3. **Anchored affine from menu bar + dock + window chrome**
+   - Measure **menu bar height** and **dock reserve** in pixels from the top/bottom edges of a full-desktop capture; combined with `NSScreen` / CG display safe insets from metadata, improves **content** placement when the game is edge-snapped.
+
+4. **Known fixed points inside the game**
+   - Detect **big cookie center** and **bulk-buy x1/x10/x100** as high-contrast anchors; use operator-provided **two Quartz clicks** (learn tool) on those same features to solve a 2-DOF or 4-DOF affine quickly (fewer manual points than full ladder).
+
+5. **Synthetic calibration overlay (future)**
+   - Optional “debug mode” page or userscript draws fiducials at known layout positions; detector finds fiducials → strong homography (guarded behind opt-in).
+
+6. **Reprojection validation**
+   - After mapping, run **preview** that draws **back into a fresh full-desktop capture** (Strategy 1) and require operator sign-off before `-R` allows clicks.
+
+### Plan doc deltas vs implementation order
+
+1. Add **capture metadata schema** and a **small CG metadata dumper** script (implementation plan, not this file’s code).
+2. Extend detector with **geometry classification + ROI localization**, using the **April 26** PNGs as fixtures.
+3. Define **`quartz_global` fields** (or `mapping`) in profile schema; update looper to prefer Quartz when present.
+4. Document operator workflow: “capture full desktop → run metadata dumper → run detector with `--capture-meta` → preview → run.”
+
 ## Suggested rollout order
 
 1. Externalize config and add CLI tuning knobs.
