@@ -4,6 +4,17 @@
 
 Synthetic left-click automation for macOS (see `macos_mouse_click.py` and repo root docs).
 
+## Operator loop (`macos_mouse_click_loop.sh`)
+
+Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates are **machine-local**; edit the script body to match your layout.
+
+```bash
+./osx/macos_mouse_click_loop.sh -h           # usage
+./osx/macos_mouse_click_loop.sh -c 1         # one full cycle (real clicks), then exit
+./osx/macos_mouse_click_loop.sh -c 10        # ten cycles, then exit
+./osx/macos_mouse_click_loop.sh              # loop until Ctrl+C (30s between cycles)
+```
+
 ## Learn-point collect (`--learn-points`)
 
 Record **multiple** real left-button positions in one session (Rich log under the table, or plain text with **`-Y`**). Mutually exclusive with **`--learn`**, **`-x/-y`**, and **`--at-cursor`**. Product spec: **[`docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md`](../docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md)**.
