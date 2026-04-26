@@ -36,6 +36,7 @@ def test_resolved_config_for_dry_run_json() -> None:
         "y": None,
         "abort_on_mouse_move": False,
         "mouse_move_threshold_px": 20.0,
+        "mouse_arm_radius_px": None,
     }
 
     cfg2 = ResolvedConfig(mode="fixed", count=2, delay=0.0, x=10.0, y=20.5)
@@ -43,6 +44,7 @@ def test_resolved_config_for_dry_run_json() -> None:
     assert d2["x"] == 10.0 and d2["y"] == 20.5
     assert d2["abort_on_mouse_move"] is False
     assert d2["mouse_move_threshold_px"] == 20.0
+    assert d2["mouse_arm_radius_px"] is None
 
     cfg3 = ResolvedConfig(
         mode="learn_collect", count=0, delay=1.0, learn_point_cap=None
@@ -58,6 +60,7 @@ def test_resolved_config_for_dry_run_json() -> None:
     d4 = mmc.resolved_config_for_dry_run_json(cfg4)
     assert d4["learn_point_cap"] == 2
     assert d4["mouse_move_threshold_px"] == 20.0
+    assert d4["mouse_arm_radius_px"] is None
 
 
 def test_dry_run_requested_flag_and_env() -> None:

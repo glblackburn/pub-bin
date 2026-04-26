@@ -89,7 +89,7 @@ No single constant works across hardware, browser, and game state; the plan favo
 
 **Goal:** While `macos_mouse_click.py` is posting synthetic clicks (especially with positive `-d`), the process also watches for **explicit user intent to stop** that does not depend on terminal focus.
 
-**Open defect (reference semantics):** **[DEF-010](../../defects/def-010-mouse-move-abort-wrong-reference.md)** — first ship compared cursor to **burst-start position** (often the terminal), not the **click target**; causes spurious abort when clicks are far from startup cursor. Fix direction: arm + distance to `(x, y)` or per-iteration delta (see defect body).
+**DEF-010 (fixed):** Mouse-move abort now uses **arm radius + distance from click target**; see **[DEF-010](../../defects/def-010-mouse-move-abort-wrong-reference.md)**.
 
 ### Is it possible on macOS?
 

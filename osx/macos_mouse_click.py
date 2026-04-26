@@ -12,9 +12,10 @@ Permissions: System Settings → Privacy & Security → Accessibility for the
 terminal (or app) running this script. Screen Recording is not required.
 
 Stop automated clicking: Ctrl+C (SIGINT) or kill -INT/-TERM <pid>.
-With ``--abort-on-mouse-move``, a burst also stops if the cursor moves
-beyond ``--mouse-move-threshold-px`` from its position at burst start
-(game-focused escape; see README).
+With ``--abort-on-mouse-move``, a burst stops if the cursor was first
+seen near the click target (``--mouse-arm-radius-px``, default
+``max(60, 2× threshold)``), then moves farther than
+``--mouse-move-threshold-px`` from that target (DEF-010; see README).
 
 Tests / CI: use --dry-run-after-start or env MACOS_MOUSE_CLICK_DRY_RUN=1 to print
 MACOS_MOUSE_CLICK_DRY_RUN_JSON on stderr and exit after Running without Quartz.
@@ -244,6 +245,8 @@ class ResolvedConfig:
     # Phase 1 (plan-agent-cookie-clicker-rate-control): in-band abort without terminal focus.
     abort_on_mouse_move: bool = False
     mouse_move_threshold_px: float = 20.0
+    # None => max(60, 2 * mouse_move_threshold_px) at runtime (DEF-010).
+    mouse_arm_radius_px: Optional[float] = None
 
     def set_field(self, name: str, value: Any, source: str) -> None:
         setattr(self, name, value)
@@ -260,6 +263,11 @@ def resolved_config_for_dry_run_json(cfg: ResolvedConfig) -> Dict[str, Any]:
         "y": None if cfg.y is None else float(cfg.y),
         "abort_on_mouse_move": bool(cfg.abort_on_mouse_move),
         "mouse_move_threshold_px": float(cfg.mouse_move_threshold_px),
+        "mouse_arm_radius_px": (
+            None
+            if cfg.mouse_arm_radius_px is None
+            else float(cfg.mouse_arm_radius_px)
+        ),
     }
     if cfg.mode == "learn_collect":
         d["learn_point_cap"] = cfg.learn_point_cap
@@ -981,7 +989,8 @@ Install dependencies:
   python3 -m pip install pyobjc-framework-Quartz rich
 
 Stop repeats: Ctrl+C   (Accessibility required for Terminal).
-Optional --abort-on-mouse-move stops bursts when the cursor moves (see README).
+Optional --abort-on-mouse-move: arm near click target, then stop if cursor
+leaves the target beyond threshold (see README).
 Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
 """.strip(),
     )
@@ -1052,8 +1061,9 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         action="store_true",
         default=False,
         help=(
-            "During synthetic repeat clicks, exit if the global cursor moves farther than "
-            "--mouse-move-threshold-px (Euclidean) from its position at burst start."
+            "During synthetic repeat clicks, exit after armed: cursor must first be "
+            "within --mouse-arm-radius-px of the click target, then may leave by more "
+            "than --mouse-move-threshold-px (Euclidean; DEF-010)."
         ),
     )
     p.add_argument(
@@ -1061,7 +1071,21 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         type=float,
         default=argparse.SUPPRESS,
         metavar="PX",
-        help="Pixel distance for --abort-on-mouse-move (default: 20)",
+        help=(
+            "After armed, abort if cursor is farther than this (px) from the "
+            "click target (default: 20)."
+        ),
+    )
+    p.add_argument(
+        "--mouse-arm-radius-px",
+        type=float,
+        default=argparse.SUPPRESS,
+        metavar="PX",
+        help=(
+            "With --abort-on-mouse-move: arm leave-target checks when the cursor is "
+            "within this radius of the click target. Default: max(60, 2× threshold). "
+            "Must be >= --mouse-move-threshold-px."
+        ),
     )
     p.add_argument(
         "--dry-run-after-start",
@@ -1090,6 +1114,7 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
         "y": 0,
         "learn_points": 0,
         "mouse_move_threshold_px": 0,
+        "mouse_arm_radius_px": 0,
     }
     for tok in argv:
         if tok == "--":
@@ -1148,6 +1173,8 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
             "--mouse-move-threshold-px="
         ):
             counts["mouse_move_threshold_px"] += 1
+        elif tok == "--mouse-arm-radius-px" or tok.startswith("--mouse-arm-radius-px="):
+            counts["mouse_arm_radius_px"] += 1
     if counts["count"] > 1:
         return "-n / --count may only appear once"
     if counts["delay"] > 1:
@@ -1160,6 +1187,8 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
         return "--learn-points may only appear once"
     if counts["mouse_move_threshold_px"] > 1:
         return "--mouse-move-threshold-px may only appear once"
+    if counts["mouse_arm_radius_px"] > 1:
+        return "--mouse-arm-radius-px may only appear once"
     return None
 
 
@@ -1225,6 +1254,8 @@ def namespace_to_cfg(ns: argparse.Namespace) -> ResolvedConfig:
         cfg.set_field(
             "mouse_move_threshold_px", float(vd["mouse_move_threshold_px"]), "cli"
         )
+    if "mouse_arm_radius_px" in vd:
+        cfg.set_field("mouse_arm_radius_px", float(vd["mouse_arm_radius_px"]), "cli")
     return cfg
 
 
@@ -1325,6 +1356,18 @@ def run_interactive_prompts(cfg: ResolvedConfig) -> None:
         )
 
 
+def _dist_sq(ax: float, ay: float, bx: float, by: float) -> float:
+    dx, dy = ax - bx, ay - by
+    return dx * dx + dy * dy
+
+
+def _effective_mouse_arm_radius_px(cfg: ResolvedConfig, threshold_px: float) -> float:
+    """Radius within click target to arm leave-target detection (DEF-010)."""
+    if cfg.mouse_arm_radius_px is not None:
+        return float(cfg.mouse_arm_radius_px)
+    return max(60.0, 2.0 * float(threshold_px))
+
+
 def apply_defaults(cfg: ResolvedConfig) -> None:
     if not cfg.mode:
         return
@@ -1381,6 +1424,14 @@ def print_confirmation_sheet(cfg: ResolvedConfig) -> None:
             f"({cfg.sources.get('mouse_move_threshold_px', 'default')})",
             file=sys.stderr,
         )
+        eff_arm = _effective_mouse_arm_radius_px(
+            cfg, float(cfg.mouse_move_threshold_px)
+        )
+        arm_src = cfg.sources.get("mouse_arm_radius_px", "computed")
+        print(
+            f"  mouse_arm_radius_px (effective) = {eff_arm}  ({arm_src})",
+            file=sys.stderr,
+        )
     print(file=sys.stderr)
 
 
@@ -1396,37 +1447,32 @@ def confirm_or_abort() -> bool:
     return ans in ("y", "yes")
 
 
-def _mouse_moved_beyond_threshold(
-    qz: Any,
-    ref: Tuple[float, float],
-    threshold_px: float,
-) -> bool:
-    if threshold_px <= 0:
-        return False
-    cx, cy = get_mouse_location(qz)
-    dx, dy = cx - ref[0], cy - ref[1]
-    return (dx * dx + dy * dy) >= threshold_px * threshold_px
-
-
 def run_synthetic_loop(qz: Any, x: float, y: float, count: int, delay: float, cfg: ResolvedConfig) -> int:
     infinite = count == 0
     n_done = 0
     abort_mouse = cfg.abort_on_mouse_move
     thr = float(cfg.mouse_move_threshold_px)
-    ref: Optional[Tuple[float, float]] = None
-    if abort_mouse:
-        ref = get_mouse_location(qz)
+    arm_r = _effective_mouse_arm_radius_px(cfg, thr) if abort_mouse else 0.0
+    thr_sq = thr * thr
+    arm_sq = arm_r * arm_r
+    armed = False
     while True:
         if shutdown_requested():
             print("Stopped.", file=sys.stderr)
             return 130
-        if abort_mouse and ref is not None and _mouse_moved_beyond_threshold(qz, ref, thr):
-            request_shutdown()
-            print(
-                "Stopped (cursor moved beyond --mouse-move-threshold-px).",
-                file=sys.stderr,
-            )
-            return 130
+        if abort_mouse:
+            cx, cy = get_mouse_location(qz)
+            d_sq = _dist_sq(cx, cy, float(x), float(y))
+            if not armed and d_sq <= arm_sq:
+                armed = True
+            if armed and d_sq > thr_sq:
+                request_shutdown()
+                print(
+                    "Stopped (cursor moved away from click target beyond "
+                    "--mouse-move-threshold-px).",
+                    file=sys.stderr,
+                )
+                return 130
         post_synthetic_click(qz, x, y)
         n_done += 1
         if not infinite and n_done >= count:
@@ -1618,6 +1664,21 @@ def main(argv: Optional[List[str]] = None) -> int:
             file=sys.stderr,
         )
         return 2
+    if cfg.abort_on_mouse_move:
+        arm_r = _effective_mouse_arm_radius_px(cfg, float(cfg.mouse_move_threshold_px))
+        if arm_r <= 0:
+            print(
+                "Error: effective --mouse-arm-radius-px must be > 0.",
+                file=sys.stderr,
+            )
+            return 2
+        if arm_r < float(cfg.mouse_move_threshold_px):
+            print(
+                "Error: --mouse-arm-radius-px must be >= --mouse-move-threshold-px "
+                "(arm region must contain the leave threshold).",
+                file=sys.stderr,
+            )
+            return 2
 
     if not cfg.assume_yes and not can_tui:
         print_confirmation_sheet(cfg)

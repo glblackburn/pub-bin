@@ -18,6 +18,6 @@ Detail files for **DEF-001**–**DEF-010**. The **Defect summary** table (status
 | DEF-007 | Duplicate **`-n`** / last wins | 2026-04-19 | 2026-04-19 | **Fixed** (script) | [def-007-duplicate-n-flag-last-wins.md](def-007-duplicate-n-flag-last-wins.md) |
 | DEF-008 | Residual double-press / log semantics | 2026-04-19 | — | **Fixed** (script) | [def-008-residual-arrow-double-press.md](def-008-residual-arrow-double-press.md) |
 | DEF-009 | Rich pre-run TUI table layout corruption | 2026-04-21 | 2026-04-21 | **Fixed** (script) | [def-009-rich-pre-run-tui-table-layout-corruption.md](def-009-rich-pre-run-tui-table-layout-corruption.md) |
-| DEF-010 | `--abort-on-mouse-move` uses wrong reference (burst-start cursor vs click target) | 2026-04-26 | — | **Open** | [def-010-mouse-move-abort-wrong-reference.md](def-010-mouse-move-abort-wrong-reference.md) |
+| DEF-010 | `--abort-on-mouse-move` used wrong reference (burst-start cursor vs click target) | 2026-04-26 | 2026-04-26 | **Fixed** (script) | [def-010-mouse-move-abort-wrong-reference.md](def-010-mouse-move-abort-wrong-reference.md) |
 
 **Plans index:** **[`../plans/README.md`](../plans/README.md)**.

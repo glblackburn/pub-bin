@@ -5,36 +5,35 @@ related_plans:
   - ../plans/agent/plan-agent-cookie-clicker-rate-control.plan.md
 ---
 
-### DEF-010: `--abort-on-mouse-move` uses cursor at burst start, not click target
-- **Status:** **Open** (no fix commit yet).
-- **Severity:** High — in-band abort stops immediately in the common case (looper started from a terminal; mouse over terminal; synthetic clicks at a distant cookie).
+### DEF-010: `--abort-on-mouse-move` used burst-start cursor, not click target (fixed)
 
-**Observed**
+**Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on transcripts (sometimes with stderr merged into the capture).
 
-1. Run `osx/macos_mouse_click_loop.sh` (or `macos_mouse_click.py` with `-Y`) from a terminal with the **physical cursor over the terminal** (typical).
-2. Cookie / ladder clicks use Quartz coordinates far from that cursor (e.g. browser cookie).
-3. Process exits quickly with stderr:
+- **Status:** **Fixed** (script).
+- **Severity:** High (was) — spurious abort when the looper was started from a terminal with the cursor over the terminal while synthetic clicks targeted a distant cookie.
+- **Opened:** 2026-04-26
+- **Completed:** 2026-04-26
+- **Affects:** `osx/macos_mouse_click.py` (`run_synthetic_loop`, `--abort-on-mouse-move`); `osx/macos_mouse_click_loop.sh` (pass-through flags); [`osx/README.md`](../../../osx/README.md).
 
-   `Stopped (cursor moved beyond --mouse-move-threshold-px).`
+**Observed (before fix)**
 
-**Root cause**
+1. Run [`osx/macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) or [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) with `-Y` from a terminal with the **physical cursor over the terminal**.
+2. Synthetic clicks at Quartz `(x, y)` far from that cursor.
+3. Process exited quickly with: `Stopped (cursor moved beyond --mouse-move-threshold-px).`
 
-In [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) `run_synthetic_loop`, when `abort_on_mouse_move` is enabled, **`ref` is initialized to `get_mouse_location(qz)` once at burst start** (cursor over terminal). Each iteration compares the **current** cursor to **`ref`**.
+**Root cause (before fix)**
 
-Intended product behavior (see **Phase 1** in [`plan-agent-cookie-clicker-rate-control.plan.md`](../plans/agent/plan-agent-cookie-clicker-rate-control.plan.md)) is “**operator nudges the mouse to escape**” while the game has focus — i.e. drift relative to **game interaction**, not relative to **where the cursor happened to be when the subprocess started**.
-
-Additional failure mode: if **`CGEventPost`** (or the OS) **moves the logical cursor** toward the synthetic click point `(x, y)`, the cursor can jump from **terminal** to **near cookie** between samples. The distance from **T0 ref** then exceeds the threshold even with **no human movement**, producing the same spurious stop.
-
-**Desired behavior**
-
-- Drift / “panic” semantics should be tied to the **synthetic anchor** `(x, y)` and/or **human intent**, not raw “distance from cursor at subprocess start.”
-- Typical fix direction (design only until implemented): **arm** when the cursor is near the click target (or after a documented grace period), then **abort** when the cursor moves **away** from the target by more than the threshold; or use **per-iteration delta** with masking for synthetic cursor teleport. See discussion in **Cursor plan:** *Fix mouse-abort reference* (`~/.cursor/plans/`).
+`run_synthetic_loop` stored **`ref = get_mouse_location()` at burst start** and compared subsequent cursor positions to **`ref`**, not to the **click anchor** `(x, y)`. If the OS moved the logical cursor toward the synthetic click, distance from **T0 ref** could exceed the threshold **without deliberate user motion**.
 
 **Resolution**
 
-- — (pending implementation + tests + README).
+- **Arming:** Leave-target detection **arms** only after the cursor lies within **`--mouse-arm-radius-px`** of the click target `(x, y)`. Default radius: **`max(60, 2 × --mouse-move-threshold-px)`** when the flag is omitted.
+- **Abort (after armed):** Exit **130** if the cursor is **farther than** `--mouse-move-threshold-px` from `(x, y)`.
+- **CLI:** `--mouse-arm-radius-px` (optional; must be **≥** threshold).
+- **Git:** `8fadeb833ae760bf8c6a75fe69ed787270b22a9b`
+- **Tests:** [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py), [`osx/tests/test_dry_run.py`](../../../osx/tests/test_dry_run.py).
 
-**Regression check (after fix)**
+**Regression check**
 
-- Start burst from terminal with mouse over terminal; automation at distant `(x, y)` should **not** stop until the operator performs the documented escape gesture.
-- Existing [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py) must be updated to match the new semantics.
+- Cursor stays far from `(x, y)` for the whole burst (terminal-first): burst completes; no spurious mouse abort.
+- Cursor near `(x, y)` then moved away beyond threshold: abort **130** with updated stderr text.

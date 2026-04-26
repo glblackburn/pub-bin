@@ -62,14 +62,19 @@ Loop flags for profile workflow:
 
 ### In-band stop (mouse move)
 
-`macos_mouse_click_loop.sh` passes **`--abort-on-mouse-move --mouse-move-threshold-px 20`** to every `macos_mouse_click.py` invocation so a long **`-Y`** burst can be stopped **without terminal focus**: move the physical mouse farther than the threshold (pixels, Euclidean) from where it was when the burst started. The script exits with code **130** and prints a short message on stderr.
+`macos_mouse_click_loop.sh` passes **`--abort-on-mouse-move --mouse-move-threshold-px 20`** to every `macos_mouse_click.py` invocation so a long **`-Y`** burst can be stopped **without terminal focus** (DEF-010):
+
+1. **Arm:** the global cursor must come **within** an **arm radius** of the **click target** (`-x`/`-y`). Default radius is **`max(60, 2 × threshold)`** pixels (Euclidean). If the cursor never enters that disk (e.g. it stays over the terminal while clicks hit the browser), mouse-move abort **does not arm** and the burst is **not** stopped by this mechanism—use **Ctrl+C** / **`kill -INT`**, or move the pointer **near the cookie** once so arming can happen.
+2. **Stop:** after armed, if the cursor moves **farther than** `--mouse-move-threshold-px` from the **same click target**, the script exits **130** with a short stderr message.
+
+Optional **`--mouse-arm-radius-px`** overrides the default arm radius (must be **≥** `--mouse-move-threshold-px`).
 
 Direct runs:
 
 ```bash
 ./osx/macos_mouse_click.py -x 100 -y 100 -n 500 -d 0 -Y --abort-on-mouse-move
 ./osx/macos_mouse_click.py -x 100 -y 100 -n 500 -d 0 -Y \
-  --abort-on-mouse-move --mouse-move-threshold-px 30
+  --abort-on-mouse-move --mouse-move-threshold-px 30 --mouse-arm-radius-px 80
 ```
 
 **Permissions:** Accessibility is already required for synthetic clicks. Some macOS versions may also prompt under **Privacy & Security → Input Monitoring** for reading global cursor position; grant access for the terminal (or IDE) running the script if prompted.
