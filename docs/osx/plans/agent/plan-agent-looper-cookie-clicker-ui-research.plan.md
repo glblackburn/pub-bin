@@ -131,6 +131,159 @@ Observed differences across the expanded screenshot set:
 - **Automated coordinate learner**
   - Use a guided setup mode to capture and save the live cookie/store/upgrade anchor points from operator clicks.
 
+## Detailed plan: dynamic coordinate determination
+
+This section answers: how dynamic coordinate detection can work, what to update, and what to create.
+
+### Goal
+
+Replace hard-coded `-x/-y` values in `macos_mouse_click_loop.sh` with coordinates resolved at runtime from a saved calibration profile plus light safety checks.
+
+### Approach options
+
+1. **Manual calibration only (lowest complexity)**
+   - Operator captures anchors once, saves JSON, loop derives all click points from those anchors.
+   - Pro: simplest and reliable on one machine/layout.
+   - Con: not resilient to window moves/resizes unless recalibrated.
+
+2. **Computer-vision-only runtime detection (highest complexity)**
+   - Detect cookie center and store rows from screenshot every cycle.
+   - Pro: most automatic.
+   - Con: image-template fragility, heavier dependencies, slower loop startup.
+
+3. **Recommended: hybrid calibration + runtime guardrails**
+   - Primary coordinates come from calibration profile.
+   - Optional runtime checks detect major drift (window moved, bulk mode mismatch, row spacing anomaly) and fail fast with actionable message.
+   - This gives predictable behavior now and leaves room for future CV enhancements.
+
+### Recommended architecture (hybrid)
+
+1. **Capture anchors once**
+   - Guided setup captures:
+     - big cookie center,
+     - first visible buy-row center (`cursor` row),
+     - store row spacing in pixels,
+     - store panel bounds (x-left/x-right/y-top/y-bottom),
+     - optional upgrade-strip and bulk-selector anchors.
+
+2. **Persist profile**
+   - Save per-machine profile JSON with metadata:
+     - display resolution,
+     - window mode (`fullscreen`/`windowed`),
+     - game zoom/devicePixelRatio hints,
+     - timestamp and profile name.
+
+3. **Resolve per-run coordinates**
+   - At loop start, load profile and compute:
+     - cookie burst click point,
+     - buy-ladder row click points from `start_y + n * row_spacing`,
+     - optional scroll anchor / upgrade strip region.
+
+4. **Run safety checks before click loop**
+   - Validate profile exists and required keys are present.
+   - Validate expected bulk mode contract (`x1`, `x10`, `x100`) by operator assertion (v1), then optional visual check (v2).
+   - Abort early if profile-window mismatch exceeds threshold.
+
+5. **Execute loop using resolved coordinates**
+   - `run_buy_ladder` and cookie burst consume resolved values instead of constants.
+
+### Scripts to update
+
+1. **`osx/macos_mouse_click_loop.sh`** (primary)
+   - Add flags:
+     - `-P <profile>`: calibration profile name/path,
+     - `-B <bulk_mode>`: expected bulk mode (`x1|x10|x100`),
+     - `-L <layout>`: optional named preset fallback,
+     - `--recalibrate` (or short flag variant): launch calibration helper then exit.
+   - Replace hard-coded coordinate literals with variables populated from resolver output.
+   - Add `load_profile` + `resolve_coordinates` functions and strict validation.
+   - Keep `-S` and `-c` behavior unchanged.
+
+2. **`osx/README.md`**
+   - Add setup instructions:
+     - run calibration,
+     - choose profile,
+     - run loop with profile.
+   - Document new flags and troubleshooting for drift/mismatch errors.
+
+3. **`osx/Makefile`** (optional but recommended)
+   - Add convenience targets:
+     - `make -C osx calibrate-cookie-clicker`,
+     - `make -C osx validate-cookie-profile`.
+
+4. **`osx/tests/...`**
+   - Add/update tests for:
+     - profile parsing/validation,
+     - ladder coordinate derivation math,
+     - argument parsing and error paths in loop wrapper.
+
+### New scripts/files to create
+
+1. **`osx/cookie_clicker_calibrate.py`** (new)
+   - Interactive calibration wizard.
+   - Uses existing click tooling and prompt flow to record anchors.
+   - Writes profile JSON to `osx/config/cookie_clicker_profiles/<name>.json`.
+
+2. **`osx/cookie_clicker_resolve_coords.py`** (new)
+   - Deterministic resolver:
+     - input: profile JSON + runtime options,
+     - output: resolved coordinate set (JSON or env-ready key/value).
+   - Contains row-map logic for buy ladder names -> y offsets.
+
+3. **`osx/config/cookie_clicker_profiles/`** (new directory)
+   - Stores user profiles (machine-local, likely ignored by git except sample).
+
+4. **`osx/config/cookie_clicker_profile.sample.json`** (new tracked sample)
+   - Documents required schema and defaults.
+
+5. **`osx/tests/test_cookie_clicker_resolve_coords.py`** (new)
+   - Unit tests for resolver math and schema validation.
+
+6. **`osx/tests/test_cookie_clicker_calibrate_schema.py`** (new)
+   - Ensures calibration output conforms to expected profile schema.
+
+### Proposed profile schema (v1)
+
+- `profile_name`
+- `display`: `{ width, height, scale }`
+- `window`: `{ mode, left, top, width, height }` (if known)
+- `cookie`: `{ x, y }`
+- `store`: `{ x, first_row_y, row_spacing, panel_top, panel_bottom }`
+- `anchors`:
+  - `bulk_selector_x1`
+  - `bulk_selector_x10`
+  - `bulk_selector_x100`
+  - `upgrade_strip_center` (optional)
+- `ladder_order`: array of building keys (`time_machine ... cursor`)
+
+### Implementation phases
+
+1. **Phase A: profile + resolver foundation**
+   - Create schema, resolver script, tests.
+   - Wire loop to consume resolver output.
+
+2. **Phase B: calibration wizard**
+   - Create interactive calibrator and profile writer.
+   - Add `README` setup docs.
+
+3. **Phase C: safety checks**
+   - Add profile-window compatibility checks and bulk-mode assertions.
+   - Improve loop failure messages with clear operator actions.
+
+4. **Phase D: optional runtime drift detection**
+   - Add non-blocking drift warnings (v1) then optional hard-fail mode (v2).
+   - Explore CV/accessibility only after baseline is stable.
+
+### Validation plan
+
+- Unit tests for resolver and schema.
+- Manual dry run:
+  - calibrate profile,
+  - run `-S -c 1` (cookie only),
+  - run full ladder `-c 1`,
+  - move/resize window to confirm drift error path.
+- Keep `bash -n osx/macos_mouse_click_loop.sh` in CI/local checks.
+
 ## Suggested rollout order
 
 1. Externalize config and add CLI tuning knobs.
