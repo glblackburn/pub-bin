@@ -55,7 +55,7 @@ Default **`arm_r`**: **`max(60, 2 × threshold)`** → **60 px** at threshold **
 - **Tests:** [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py) (`test_def011_annulus_no_abort_before_first_click`).
 - **Docs:** [`osx/README.md`](../../../osx/README.md) in-band stop bullet **2**; module docstring and **`argparse`** help in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py).
 
-**Git:** —
+**Git:** `8e2843c45cc5074c4dc7dc4159f6be01f906f361`
 
 **Regression check**
 
