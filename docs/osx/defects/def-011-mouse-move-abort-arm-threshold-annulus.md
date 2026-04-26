@@ -51,11 +51,12 @@ Default **`arm_r`**: **`max(60, 2 × threshold)`** → **60 px** at threshold **
 
 **Resolution**
 
-- **Leave detection** runs only when **`n_done > 0`** (at least one synthetic click has been posted) in addition to **`armed`** and **`d > threshold`**.
-- **Tests:** [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py) (`test_def011_annulus_no_abort_before_first_click`).
+1. **First land (`8e2843c45cc5074c4dc7dc4159f6be01f906f361`):** leave detection runs only when **`n_done > 0`** (at least one synthetic click) so the arm/threshold **annulus** cannot fire on the **first** iteration.
+2. **Follow-up (buy ladder still stopping):** **`ever_within_thr`** — while **`armed`**, track whether the read cursor has ever been **`d ≤ threshold`** of the target; **abort only if** **`armed and n_done > 0 and ever_within_thr and d > threshold`**. That avoids aborting on **iteration 2** when **`get_mouse_location`** still reports the **prior row** (~55 px away) even though a synthetic click already fired (physical pointer / sampling mismatch).
+- **Tests:** [`osx/tests/test_mouse_move_abort.py`](../../../osx/tests/test_mouse_move_abort.py) — `test_def011_annulus_no_abort_before_first_click`, `test_def011_stale_cursor_after_first_click_no_abort`, plus existing leave-target abort test.
 - **Docs:** [`osx/README.md`](../../../osx/README.md) in-band stop bullet **2**; module docstring and **`argparse`** help in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py).
 
-**Git:** `8e2843c45cc5074c4dc7dc4159f6be01f906f361`
+**Git:** `8e2843c45cc5074c4dc7dc4159f6be01f906f361` (first land); record follow-up commit SHA here and in **plan-002** when committed.
 
 **Regression check**
 

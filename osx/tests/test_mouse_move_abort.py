@@ -41,6 +41,29 @@ def test_abort_when_armed_then_cursor_leaves_target(monkeypatch) -> None:
     assert len(posted) == 1
 
 
+def test_def011_stale_cursor_after_first_click_no_abort(monkeypatch) -> None:
+    """DEF-011: read cursor may stay between rows after click; no abort until within thr once."""
+    monkeypatch.setattr(mmc, "get_mouse_location", lambda _qz: (100.0, 45.0))
+
+    def fake_post(_qz: object, _x: float, _y: float) -> None:
+        return
+
+    monkeypatch.setattr(mmc, "post_synthetic_click", fake_post)
+    mmc.reset_shutdown()
+    cfg = ResolvedConfig(
+        mode="fixed",
+        x=100.0,
+        y=100.0,
+        count=5,
+        delay=0.0,
+        abort_on_mouse_move=True,
+        mouse_move_threshold_px=20.0,
+    )
+    qz = MagicMock()
+    rc = mmc.run_synthetic_loop(qz, 100.0, 100.0, 5, 0.0, cfg)
+    assert rc == 0
+
+
 def test_def011_annulus_no_abort_before_first_click(monkeypatch) -> None:
     """DEF-011: distance in (thr, arm_r] before first click must not abort (buy ladder)."""
     state = {"loc": (100.0, 45.0)}

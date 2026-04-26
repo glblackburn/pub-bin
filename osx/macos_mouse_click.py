@@ -14,9 +14,10 @@ terminal (or app) running this script. Screen Recording is not required.
 Stop automated clicking: Ctrl+C (SIGINT) or kill -INT/-TERM <pid>.
 With ``--abort-on-mouse-move``, a burst stops if the cursor was first
 seen near the click target (``--mouse-arm-radius-px``, default
-``max(60, 2× threshold)``), then after at least one synthetic click moves
-farther than ``--mouse-move-threshold-px`` from that target (DEF-010,
-DEF-011; see README).
+``max(60, 2× threshold)``), then after at least one synthetic click and
+after the read cursor has been within ``--mouse-move-threshold-px`` of
+that target at least once, a later read farther than the threshold from
+that target stops the burst (DEF-010, DEF-011; see README).
 
 Tests / CI: use --dry-run-after-start or env MACOS_MOUSE_CLICK_DRY_RUN=1 to print
 MACOS_MOUSE_CLICK_DRY_RUN_JSON on stderr and exit after Running without Quartz.
@@ -991,7 +992,8 @@ Install dependencies:
 
 Stop repeats: Ctrl+C   (Accessibility required for Terminal).
 Optional --abort-on-mouse-move: arm near click target, then after at least one
-synthetic click stop if cursor leaves the target beyond threshold (see README).
+synthetic click and a read within threshold of the target, stop if the cursor
+later leaves beyond threshold (see README).
 Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
 """.strip(),
     )
@@ -1064,8 +1066,9 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         help=(
             "During synthetic repeat clicks, exit after armed: cursor must first be "
             "within --mouse-arm-radius-px of the click target, then after at least one "
-            "synthetic click may leave by more than --mouse-move-threshold-px "
-            "(Euclidean; DEF-010, DEF-011)."
+            "synthetic click the read cursor must have been within "
+            "--mouse-move-threshold-px of the target before a later read beyond that "
+            "distance aborts (Euclidean; DEF-010, DEF-011)."
         ),
     )
     p.add_argument(
@@ -1074,8 +1077,9 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
         default=argparse.SUPPRESS,
         metavar="PX",
         help=(
-            "After armed and at least one synthetic click, abort if cursor is farther "
-            "than this (px) from the click target (default: 20)."
+            "After armed, at least one synthetic click, and at least one read within "
+            "this distance (px) of the click target, abort if a later read is farther "
+            "(default: 20)."
         ),
     )
     p.add_argument(
@@ -1458,6 +1462,7 @@ def run_synthetic_loop(qz: Any, x: float, y: float, count: int, delay: float, cf
     thr_sq = thr * thr
     arm_sq = arm_r * arm_r
     armed = False
+    ever_within_thr = False
     while True:
         if shutdown_requested():
             print("Stopped.", file=sys.stderr)
@@ -1467,10 +1472,14 @@ def run_synthetic_loop(qz: Any, x: float, y: float, count: int, delay: float, cf
             d_sq = _dist_sq(cx, cy, float(x), float(y))
             if not armed and d_sq <= arm_sq:
                 armed = True
-            # DEF-011: do not evaluate "leave" until at least one click has been
-            # posted; otherwise arm radius > threshold creates an annulus where the
-            # same sample both arms and aborts (e.g. buy ladder row spacing).
-            if armed and n_done > 0 and d_sq > thr_sq:
+            if armed and d_sq <= thr_sq:
+                ever_within_thr = True
+            # DEF-011: (1) do not evaluate "leave" until at least one click has been
+            # posted (annulus arm_r > thr on same sample before first click).
+            # (2) do not treat as "leave" until the read cursor has been within
+            # threshold of the target at least once; otherwise the next iteration
+            # still sees the prior row / stale position while n_done > 0 (buy ladder).
+            if armed and n_done > 0 and ever_within_thr and d_sq > thr_sq:
                 request_shutdown()
                 print(
                     "Stopped (cursor moved away from click target beyond "
