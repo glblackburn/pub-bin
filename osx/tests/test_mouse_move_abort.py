@@ -1,4 +1,4 @@
-"""DEF-010: --abort-on-mouse-move uses click target + arming (mocked Quartz)."""
+"""DEF-010 / DEF-011: --abort-on-mouse-move uses click target + arming (mocked)."""
 
 from __future__ import annotations
 
@@ -39,6 +39,34 @@ def test_abort_when_armed_then_cursor_leaves_target(monkeypatch) -> None:
     rc = mmc.run_synthetic_loop(qz, 100.0, 100.0, 5, 0.0, cfg)
     assert rc == 130
     assert len(posted) == 1
+
+
+def test_def011_annulus_no_abort_before_first_click(monkeypatch) -> None:
+    """DEF-011: distance in (thr, arm_r] before first click must not abort (buy ladder)."""
+    state = {"loc": (100.0, 45.0)}
+
+    def fake_location(_qz: object) -> tuple:
+        return state["loc"]
+
+    def fake_post(_qz: object, x: float, y: float) -> None:
+        state["loc"] = (x, y)
+
+    monkeypatch.setattr(mmc, "get_mouse_location", fake_location)
+    monkeypatch.setattr(mmc, "post_synthetic_click", fake_post)
+    mmc.reset_shutdown()
+    cfg = ResolvedConfig(
+        mode="fixed",
+        x=100.0,
+        y=100.0,
+        count=3,
+        delay=0.0,
+        abort_on_mouse_move=True,
+        mouse_move_threshold_px=20.0,
+    )
+    qz = MagicMock()
+    rc = mmc.run_synthetic_loop(qz, 100.0, 100.0, 3, 0.0, cfg)
+    assert rc == 0
+    assert state["loc"] == (100.0, 100.0)
 
 
 def test_no_mouse_abort_when_cursor_never_near_target(monkeypatch) -> None:
