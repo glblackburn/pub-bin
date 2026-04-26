@@ -358,6 +358,107 @@ Preview manifest fields:
   - real click run prompts for confirmation unless `-A` is supplied.
 - Existing finite-cycle and `-S` behavior remains intact when using profile coordinates.
 
+## Coordinate space integrity (screenshot pixels vs Quartz click space)
+
+### Problem statement (what went wrong in preview review)
+
+The preview PNG is drawn on the **same raster** as the detector input image. If detector coordinates are computed in **image pixel space** (OpenCV `imread` coordinates) but `macos_mouse_click.py` posts clicks in **Quartz global display coordinates** (logical points in the global desktop coordinate system), then:
+
+- The preview can look internally consistent on the PNG while still being **wrong for real clicks**.
+- Misalignment gets worse with **Retina / HiDPI** (backing scale factor), **browser chrome vs content area**, **window position on multi-monitor layouts**, and **captured image scaling** (downscaled screenshots, different capture tool defaults).
+
+This is a **coordinate-space contract** bug, not just a “bad heuristic” bug.
+
+### Invariants we need (contract)
+
+Pick one primary representation in the profile JSON and make every consumer convert explicitly:
+
+1. **`image_px`** — `(0,0)` top-left of the detector input image; units = pixels of that file.
+2. **`quartz_global`** — macOS Quartz global desktop coordinates used by `CGEvent` (what `macos_mouse_click.py` expects today).
+3. (Optional future) **`window_local`** — relative to browser window content rect; useful for repositioning.
+
+**Rule:** preview overlays on a PNG must be labeled as **`image_px`** unless the profile also contains a verified mapping to **`quartz_global`**.
+
+### Root causes to address (checklist)
+
+- **DPR / backing scale:** PNG may be 2x physical pixels vs 1x “point” space used by Quartz for some setups; mapping must incorporate `backingScaleFactor` for the display/window.
+- **Capture origin:** Screenshot includes menubar/dock vs cropped browser-only; mapping must record **full display vs window crop** and offsets.
+- **Browser UI:** address bar, bookmarks, tab strip change the content origin; detection should target **page content** box, not the outer window frame, or include measured chrome heights.
+- **Multi-monitor:** global Quartz coords depend on display arrangement; profile must record **which display** and ideally **display ID / frame** at capture time.
+- **Stale captures:** moving/resizing the window after capture invalidates mapping; detection metadata must include **window frame hash** or require fresh capture.
+
+### Plan to fix (phased, no code in this doc)
+
+#### Phase 0 — documentation and safety labeling (fast)
+
+- Update operator docs to state clearly:
+  - detector output is **`image_px` unless marked otherwise**;
+  - preview PNG verifies **image-space targets only**;
+  - do not treat preview alone as proof for Quartz clicks.
+- Extend preview manifest plan to include `coordinate_space` field and warnings when unmapped.
+
+#### Phase 1 — capture metadata + explicit transform fields in profile JSON
+
+Add structured metadata (planned schema extension):
+
+- `image`: `{ width_px, height_px, path, capture_tool }`
+- `display`: `{ primary, display_id?, display_bounds_quartz? }` (best-effort)
+- `browser_window`: `{ app, title_substring, frame_quartz?, content_frame_quartz? }` (best-effort)
+- `mapping`: `{ from: "image_px", to: "quartz_global", method, params }`
+
+Where `method` is one of:
+
+- `affine_3pt` (scale + translate; minimal)
+- `homography` (perspective correction; only if needed)
+- `manual_anchor` (operator-provided mapping points)
+
+#### Phase 2 — mapping derivation strategies (choose per environment)
+
+**Preferred (reliable):** paired calibration points
+
+- Operator records 3–4 known points in both spaces:
+  - click point in Quartz (via existing learn tooling) **and**
+  - same feature location in the screenshot (or automated corner detection).
+- Solve transform offline; store in profile; validate error residuals.
+
+**Semi-automated:** window frame + content insets
+
+- Use Accessibility / Apple APIs to read browser window rect and compute content origin.
+- Combine with screenshot crop box to map pixels → Quartz.
+
+**Fallback:** require capture settings
+
+- Standardize capture to **full screen** or **window** with known tool flags.
+- Reject captures that don’t include required metadata.
+
+#### Phase 3 — dual previews (recommended UX)
+
+Generate two artifacts when mapping exists:
+
+1. **`preview_image_space.png`** — current behavior; validates detector on the raster.
+2. **`preview_quartz_overlay.png`** (or a second pass) — render targets after mapping, overlaid on a **fresh capture** taken at preview time **or** a blank canvas with numeric Quartz coordinates listed.
+
+If mapping is missing, gate real clicks behind **manual confirmation** and show a big warning in manifest.
+
+#### Phase 4 — loop integration hardening
+
+- `macos_mouse_click_loop.sh` should refuse `-P` profiles that are `image_px` without a `quartz_global` mapping (unless operator passes an explicit `--i-know-its-image-space` style escape hatch).
+- `cookie_clicker_preview_plan.py` should stamp `coordinate_space` + mapping hash into manifest for `-R` checks.
+
+### Acceptance criteria (coordinate-space)
+
+- For a known test capture on a single machine, mapped targets land within **N pixels/points** of ground truth on:
+  - cookie center,
+  - first store row,
+  - last visible store row.
+- Preview manifest clearly states coordinate space; no ambiguous “x/y” without units.
+- Warnings trigger when mapping confidence/residuals exceed threshold.
+
+### Non-goals (for this track)
+
+- Perfect CV without calibration on arbitrary machines.
+- Supporting every browser zoom/DPI combo without metadata.
+
 ## Suggested rollout order
 
 1. Externalize config and add CLI tuning knobs.
@@ -397,6 +498,7 @@ flowchart TD
 ## Risks and constraints
 
 - All coordinate automation is machine-local and fragile across monitor/layout changes.
+- **Screenshot pixel coordinates are not Quartz click coordinates** unless an explicit, validated mapping is recorded; see **Coordinate space integrity** above.
 - Screenshot set is now tracked and growing; filename normalization (`NN-kebab-case`) would improve chronological readability in docs tables.
 - OCR/vision features raise complexity quickly and should be optional, not a blocker for simple operator loops.
 

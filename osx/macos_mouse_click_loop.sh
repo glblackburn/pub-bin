@@ -23,37 +23,7 @@ layout_profile=
 mouse_click=${script_dir}/macos_mouse_click.py
 detect_script=${script_dir}/cookie_clicker_detect_coords.py
 preview_script=${script_dir}/cookie_clicker_preview_plan.py
-
-COOKIE_X=1600.8
-COOKIE_Y=-410.9
-COOKIE_CLICK_COUNT=3000
-LADDER_CLICK_COUNT=5
-CYCLE_SLEEP_SECONDS=30
-
-TIME_MACHINE_X=2344.4
-TIME_MACHINE_Y=14.5888
-PORTAL_X=2344.4
-PORTAL_Y=-48.8354
-ALCHEMY_LAB_X=2344.4
-ALCHEMY_LAB_Y=-103.6
-SHIPMENT_X=2344.4
-SHIPMENT_Y=-177.5
-WIZARD_TOWER_X=2344.4
-WIZARD_TOWER_Y=-237.3
-TEMPLE_X=2344.4
-TEMPLE_Y=-304.6
-BANK_X=2344.4
-BANK_Y=-368.1
-FACTORY_X=2344.4
-FACTORY_Y=-430.9
-MINE_X=2344.4
-MINE_Y=-495.6
-FARM_X=2344.4
-FARM_Y=-558.5
-GRANDMA_X=2344.4
-GRANDMA_Y=-623.4
-CURSOR_X=2344.4
-CURSOR_Y=-689.3
+default_profile_json=${script_dir}/config/cookie_clicker_profile.defaults.json
 
 ################################################################################
 # show command usage
@@ -207,21 +177,24 @@ function detect_profile_from_image {
 }
 
 function load_profile_coordinates {
-    if [ -z "${profile_json}" ]; then
-        return
+    coord_profile=${profile_json}
+    if [ -z "${coord_profile}" ]; then
+        coord_profile="${default_profile_json}"
     fi
-    if [ ! -f "${profile_json}" ]; then
-        usage "Profile JSON not found: ${profile_json}"
+    if [ ! -f "${coord_profile}" ]; then
+        usage "Profile JSON not found: ${coord_profile}"
         exit 1
     fi
 
     eval "$(
-        python3 - "${profile_json}" <<'PY'
+        python3 - "${coord_profile}" <<'PY'
 import json
 import sys
+
 path = sys.argv[1]
 with open(path, "r", encoding="utf-8") as f:
     data = json.load(f)
+
 rows = {row["name"]: row for row in data.get("ladder_rows", [])}
 order = [
     "time_machine",
@@ -237,18 +210,27 @@ order = [
     "grandma",
     "cursor",
 ]
-cookie = data.get("cookie", {})
-defaults = data.get("preview_defaults", {})
-print(f'COOKIE_X={float(cookie.get("x", 1600.8))}')
-print(f'COOKIE_Y={float(cookie.get("y", -410.9))}')
+
+cookie = data.get("cookie") or {}
+if "x" not in cookie or "y" not in cookie:
+    print("profile JSON missing cookie.x or cookie.y", file=sys.stderr)
+    sys.exit(1)
+
+defaults = data.get("preview_defaults") or {}
+print(f'COOKIE_X={float(cookie["x"])}')
+print(f'COOKIE_Y={float(cookie["y"])}')
 print(f'COOKIE_CLICK_COUNT={int(defaults.get("cookie_click_count", 3000))}')
 print(f'LADDER_CLICK_COUNT={int(defaults.get("ladder_click_count", 5))}')
 print(f'CYCLE_SLEEP_SECONDS={float(defaults.get("cycle_sleep_seconds", 30))}')
+
 for key in order:
-    row = rows.get(key, {})
+    row = rows.get(key)
+    if not row:
+        print(f"profile JSON missing ladder_rows entry: {key!r}", file=sys.stderr)
+        sys.exit(1)
     ux = key.upper()
-    print(f'{ux}_X={float(row.get("x", 2344.4))}')
-    print(f'{ux}_Y={float(row.get("y", 0.0))}')
+    print(f'{ux}_X={float(row["x"])}')
+    print(f'{ux}_Y={float(row["y"])}')
 PY
     )"
 }
