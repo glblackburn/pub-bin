@@ -370,5 +370,6 @@ while true; do
     if [ ! -z "${cycle_max}" ] && [ "${cycle_done}" -ge "${cycle_max}" ]; then
         break
     fi
+    echo "sleep: ${CYCLE_SLEEP_SECONDS}"
     sleep "${CYCLE_SLEEP_SECONDS}"
 done
