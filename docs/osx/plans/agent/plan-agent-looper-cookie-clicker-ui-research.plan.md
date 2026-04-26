@@ -14,14 +14,13 @@ isProject: false
 ---
 # Research plan: Looper features from Cookie Clicker UI evidence
 
-**Terminology:** **CSI** (*Control Sequence Introducer*) - terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common arrow-key encodings. **SS3** (historically *Single Shift 3*; arrow sequences in this doc) - bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) - a paired kernel TTY (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
-
 ## Scope
 
 - Script under analysis: **[`osx/macos_mouse_click_loop.sh`](../../../../osx/macos_mouse_click_loop.sh)**.
 - Supporting docs: **[`osx/README.md`](../../../../osx/README.md)** and **[`docs/osx/plans/agent/README.md`](README.md)**.
-- Screenshot evidence: **`docs/osx/screenshots/cookie-clicker/`** (4 captures from 2026-04-25).
+- Screenshot evidence: **`docs/osx/screenshots/cookie-clicker/`** (8 captures from 2026-04-25).
 - This is research only: no behavior changes in this plan document.
+- Terms used here are defined at first use; full glossary lives in **[`docs/osx/TERMINOLOGY.md`](../../TERMINOLOGY.md)**.
 
 ## High-level behavior of the looper today
 
@@ -55,27 +54,36 @@ Source folder currently contains:
 - `Screenshot_2026-04-25_at_8.21.09_PM.png`
 - `Screenshot_2026-04-25_at_8.21.38_PM.png`
 - `Screenshot_2026-04-25_at_8.23.38_PM.png`
+- `Screenshot_2026-04-25_at_8.28.45_PM.png`
+- `Screenshot_2026-04-25_at_8.28.54_PM.png`
+- `Screenshot_2026-04-25_at_8.29.14_PM.png`
+- `Screenshot_2026-04-25_at_9.20.47_PM.png`
 
-Observed differences across the four captures:
+Observed differences across the expanded screenshot set:
 
 1. **Bulk mode flips between affordable and unaffordable store states**
-   - At 8:20:52 and 8:23:38, displayed prices are in roughly 60T-163T range and many rows are purchasable.
-   - At 8:21:09 and 8:21:38, store is on `x100`; shown costs jump to quintillions/sextillions and rows are greyed.
+   - At 8:20:52, 8:23:38, and 8:28:45, displayed prices are in roughly 60T-163T range and many rows are purchasable.
+   - At 8:21:09, 8:21:38, 8:28:54, and 8:29:14, store is on `x100`; shown costs jump to quintillions/sextillions and rows are greyed.
    - Result: current blind 5x ladder can spend clicks on disabled rows when bulk mode is high.
 
 2. **CpS changes sharply between screenshots**
-   - Around 8.1B CpS in two shots vs around 56.8B CpS in two others.
+   - **CpS** means *cookies per second* (the game's production rate shown under the cookie total).
+   - Around 8.1B CpS in the single-buy-state shots, around 56.8B CpS in x100-state shots, and around 76.5B in the later 9:20 capture.
    - This implies dynamic game state (buffs/events/modifiers) that the loop does not model.
 
 3. **Store list is scrollable and layout-dependent**
    - Scrollbar indicates additional tiers outside the visible region.
-   - Fixed Y offsets become fragile as progress, window size, or display setup changes.
+   - In the 9:20 capture, deeper tiers (for example antimatter condenser / prism / unknown rows) are visible; fixed Y offsets become fragile as progress, window size, or display setup changes.
 
 4. **Economy ordering is not always intuitive by row**
    - Some higher-tier rows can appear cheaper than nearby rows in specific states.
    - A static top-to-bottom purchase order is not equivalent to best-next spend.
 
-5. **Additional high-value interaction targets are visible in UI**
+5. **Store header and action zones shift over time**
+   - In the 9:20 capture, the right column includes a visible upgrades strip and buy-amount selector block above the building list, pushing purchasable rows further down the screen.
+   - The current ladder assumes a stable top row y-position and does not compensate for header/upgrade-area height changes.
+
+6. **Additional high-value interaction targets are visible in UI**
    - Upgrades strip area, golden cookie opportunities, and mini-game controls can materially change returns.
    - Current loop only clicks one cookie target plus fixed store rows.
 
@@ -91,6 +99,8 @@ Observed differences across the four captures:
   - Add a flag like `--expect-bulk x1|x10|x100` and fail fast (or warn) when operator preconditions are not met.
 - **Cycle logging**
   - Emit structured per-cycle logs: cycle number, mode (`-S` or full), elapsed time, and click intents.
+- **Window-profile presets**
+  - Add named profiles (`desktop-max`, `windowed-small`, `ultrawide`) so coordinate sets can be switched without editing script code.
 
 ### Tier 2: medium complexity / state-aware purchasing
 
@@ -100,6 +110,8 @@ Observed differences across the four captures:
   - Add optional pre-scroll and anchor strategy for deeper tiers.
 - **Ladder profiles**
   - Support selectable strategies (`balanced`, `high-tier`, `cookie-only`) via config.
+- **Header-offset calibration step**
+  - Before ladder clicks, run a short calibration click/move sequence to align the first visible store row.
 
 ### Tier 3: advanced automation
 
@@ -116,14 +128,16 @@ Observed differences across the four captures:
   - Detect enabled/disabled buy buttons and active bulk mode from UI state.
 - **Value-based purchase optimizer**
   - Move from fixed row order to ROI-based spend strategy.
+- **Automated coordinate learner**
+  - Use a guided setup mode to capture and save the live cookie/store/upgrade anchor points from operator clicks.
 
 ## Suggested rollout order
 
 1. Externalize config and add CLI tuning knobs.
-2. Add logging and explicit bulk-mode safety checks.
-3. Add ladder profiles and optional scroll handling.
+2. Add logging, explicit bulk-mode safety checks, and window-profile presets.
+3. Add ladder profiles with optional scroll handling plus header-offset calibration.
 4. Prototype golden-cookie/upgrade passes behind opt-in flags.
-5. Explore state detection only after baseline ergonomics are stable.
+5. Explore state detection and coordinate-learning only after baseline ergonomics are stable.
 
 ## Control-flow concept for a future state-aware looper
 
@@ -156,7 +170,7 @@ flowchart TD
 ## Risks and constraints
 
 - All coordinate automation is machine-local and fragile across monitor/layout changes.
-- Screenshot folder is currently untracked (`?? docs/osx/screenshots/cookie-clicker/`), so references may drift unless files are later normalized and committed.
+- Screenshot set is now tracked and growing; filename normalization (`NN-kebab-case`) would improve chronological readability in docs tables.
 - OCR/vision features raise complexity quickly and should be optional, not a blocker for simple operator loops.
 
 ## Verification
