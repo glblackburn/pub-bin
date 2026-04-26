@@ -316,14 +316,14 @@ function run_buy_ladder {
     click_target "buy portal" "${PORTAL_X}" "${PORTAL_Y}" "${LADDER_CLICK_COUNT}"
     click_target "buy alchemy lab" "${ALCHEMY_LAB_X}" "${ALCHEMY_LAB_Y}" "${LADDER_CLICK_COUNT}"
     click_target "buy shipment" "${SHIPMENT_X}" "${SHIPMENT_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy wizard tower" "${WIZARD_TOWER_X}" "${WIZARD_TOWER_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy temple" "${TEMPLE_X}" "${TEMPLE_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy bank" "${BANK_X}" "${BANK_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy factory" "${FACTORY_X}" "${FACTORY_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy mine" "${MINE_X}" "${MINE_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy farm" "${FARM_X}" "${FARM_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy grandma" "${GRANDMA_X}" "${GRANDMA_Y}" "${LADDER_CLICK_COUNT}"
-    click_target "buy cursor" "${CURSOR_X}" "${CURSOR_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy wizard tower" "${WIZARD_TOWER_X}" "${WIZARD_TOWER_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy temple" "${TEMPLE_X}" "${TEMPLE_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy bank" "${BANK_X}" "${BANK_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy factory" "${FACTORY_X}" "${FACTORY_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy mine" "${MINE_X}" "${MINE_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy farm" "${FARM_X}" "${FARM_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy grandma" "${GRANDMA_X}" "${GRANDMA_Y}" "${LADDER_CLICK_COUNT}"
+#    click_target "buy cursor" "${CURSOR_X}" "${CURSOR_Y}" "${LADDER_CLICK_COUNT}"
 }
 
 function run_once {
