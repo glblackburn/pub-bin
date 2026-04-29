@@ -52,7 +52,7 @@ Helper scripts:
 
 Loop flags for profile workflow:
 
-- **`-P <profile_json>`** profile to use for dynamic coordinates.
+- **`-P <profile_json>`** profile to use for dynamic coordinates. If the path resolves to the same file as the built-in default (`osx/config/cookie_clicker_profile.defaults.json`), the script treats it like **omitting `-P`** (no preview side effects).
 - **`-D <image.png>`** detect profile from screenshot before preview/run (requires `-P` output path).
 - **`-N`** preview only; do not send clicks.
 - **`-R`** require a matching preview manifest before click execution.

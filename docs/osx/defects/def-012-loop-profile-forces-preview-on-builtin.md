@@ -1,6 +1,7 @@
-<!-- DEF-012: defect narrative + implementation todos (single canonical doc). -->
 ---
 id: DEF-012
+related_plans:
+  - ../plans/plan-002-macos-mouse-click-terminal-ux.md
 isProject: false
 todos:
   - id: shell-detect
@@ -22,7 +23,7 @@ todos:
 
 ### DEF-012: `-P` profile path forces preview; `source_image: "builtin"` breaks OpenCV load
 
-**Terminology:** **Profile JSON** — Cookie Clicker coordinate file consumed by [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (`-P`) and [`cookie_clicker_preview_plan.py`](../../../osx/cookie_clicker_preview_plan.py). **`builtin`** — sentinel string in `source_image` meaning “baked-in / defaults coordinates; no detector screenshot path” (see [`cookie_clicker_profile.defaults.json`](../../../osx/config/cookie_clicker_profile.defaults.json)).
+**Terminology:** **Profile JSON** — Cookie Clicker coordinate file consumed by [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (`-P`) and [`cookie_clicker_preview_plan.py`](../../../osx/cookie_clicker_preview_plan.py). **`builtin`** — sentinel string in `source_image` meaning “baked-in / defaults coordinates; no detector screenshot path” (see [`cookie_clicker_profile.defaults.json`](../../../osx/config/cookie_clicker_profile.defaults.json)). Shared **CSI** / **PTY** vocabulary (where relevant to other defects) is defined in **[`README.md`](README.md)** and **[DEF-011](def-011-mouse-move-abort-arm-threshold-annulus.md)**.
 
 - **Status:** **Open** — implementation tracked via **`todos`** in YAML frontmatter above.
 - **Severity:** Medium — operator cannot use `-P` with coords-only profiles (including the repo defaults file) without supplying a fake image path or hitting a hard error before clicks.
@@ -71,7 +72,7 @@ function load_profile_coordinates {
 
 ### Root cause
 
-1. **`macos_mouse_click_loop.sh`** calls **`render_preview_artifacts`** whenever **`profile_json`** is non-empty, **unconditionally**, before clicks ([`render_preview_artifacts`](../../../osx/macos_mouse_click_loop.sh) → `cookie_clicker_preview_plan.py`).
+1. **`macos_mouse_click_loop.sh`** calls **`render_preview_artifacts`** whenever **`profile_json`** is non-empty, **unconditionally**, before clicks (see **`render_preview_artifacts`** in [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) → [`cookie_clicker_preview_plan.py`](../../../osx/cookie_clicker_preview_plan.py)).
 2. Omitting **`-P`** leaves **`profile_json`** empty → **`render_preview_artifacts`** returns immediately → no OpenCV path. Passing **`-P`** to the **same** defaults JSON therefore changes behavior beyond “which file supplies coordinates.”
 3. **`cookie_clicker_preview_plan.py`** resolves `source_image` from the profile and always **`cv2.imread`** it; it does not treat **`builtin`** as a sentinel.
 
@@ -95,7 +96,7 @@ Help text presents **`-P`** as the coordinate profile path; operators reasonably
 |-------|-------------------------------------|-------------------------|
 | `load_profile_coordinates` | Unchanged | Unchanged |
 | `render_preview_artifacts` | **Skip** | Run (today) |
-| `verify_preview_manifest` | Skip unless **`-R`** (see below) | Honor **`-R`** |
+| `verify_preview_manifest` | **Skip**; if **`-R`**, **fail fast** before clicks (no manifest to verify — see bullets below) | Honor **`-R`** |
 | `confirm_preview_before_clicks` | **Skip** (no artifacts) | Today’s behavior unless **`-A`** |
 
 **`-R` + coords-only:** **Fail fast** with a clear message (cannot require a matching manifest if preview was never generated / no backing image). Do not silently skip **`-R`**.
