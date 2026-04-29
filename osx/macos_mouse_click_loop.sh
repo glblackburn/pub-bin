@@ -327,6 +327,15 @@ function confirm_preview_before_clicks {
     esac
 }
 
+# These click targets are relative to the scroll of the buy column of
+# the window.  in this case it will buy everything within the size of
+# the window if cursor is at the top and time machine is at the
+# bottom.  If the column is scrolled down, the ladder will start a any
+# item on the bottom and go to the top f the screen.  Currently the
+# window must be a specific size, on the correct monitor.  The goal
+# would be to create a detection process that could determine the
+# location of the window and relative position of the buy elements.
+# Ideally the script would also be able to scroll to other areas to buy.
 function run_buy_ladder {
     click_target "buy time machine" "${TIME_MACHINE_X}" "${TIME_MACHINE_Y}" "${LADDER_CLICK_COUNT}"
     click_target "buy portal" "${PORTAL_X}" "${PORTAL_Y}" "${LADDER_CLICK_COUNT}"
@@ -373,7 +382,7 @@ load_profile_coordinates
 # so behavior matches omitting -P (DEF-012).
 if [ ! -z "${profile_json}" ]; then
     if python3 -c "import os,sys; sys.exit(0 if os.path.samefile(sys.argv[1], sys.argv[2]) else 1)" \
-        "${profile_json}" "${default_profile_json}" 2>/dev/null; then
+        "${profile_json}" "${default_profile_json}"; then
         profile_json=
     fi
 fi

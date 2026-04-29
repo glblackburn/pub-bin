@@ -151,9 +151,21 @@ def main() -> int:
         profile = json.load(f)
 
     source_image = args.source_image or profile.get("source_image", "")
-    if not source_image:
+    raw_si = "" if source_image is None else str(source_image).strip()
+    if not raw_si:
         raise SystemExit("Error: profile is missing source_image and --source-image not provided.")
-    source_image = os.path.abspath(source_image)
+    if raw_si == "builtin":
+        raise SystemExit(
+            "Error: source_image is 'builtin' (coords-only profile). "
+            "Preview needs a path to an image file on disk. "
+            "Use cookie_clicker_detect_coords.py / a detector profile, or pass --source-image PATH."
+        )
+    source_image = os.path.abspath(raw_si)
+    if not os.path.isfile(source_image):
+        raise SystemExit(
+            "Error: source_image path is not a readable file: "
+            f"{source_image!r} (coords-only profile cannot be previewed until the file exists)."
+        )
 
     img = cv2.imread(source_image, cv2.IMREAD_COLOR)
     if img is None:

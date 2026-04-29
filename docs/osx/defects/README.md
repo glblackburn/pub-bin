@@ -20,6 +20,6 @@ Detail files for **DEF-001**–**DEF-012**. The **Defect summary** table (status
 | DEF-009 | Rich pre-run TUI table layout corruption | 2026-04-21 | 2026-04-21 | **Fixed** (script) | [def-009-rich-pre-run-tui-table-layout-corruption.md](def-009-rich-pre-run-tui-table-layout-corruption.md) |
 | DEF-010 | `--abort-on-mouse-move` used wrong reference (burst-start cursor vs click target) | 2026-04-26 | 2026-04-26 | **Fixed** (script) | [def-010-mouse-move-abort-wrong-reference.md](def-010-mouse-move-abort-wrong-reference.md) |
 | DEF-011 | Mouse-move abort annulus: default arm radius > threshold → false stop on buy ladder | 2026-04-26 | 2026-04-26 | **Fixed** (script) | [def-011-mouse-move-abort-arm-threshold-annulus.md](def-011-mouse-move-abort-arm-threshold-annulus.md) |
-| DEF-012 | `-P` forces preview; `source_image: "builtin"` → OpenCV imread failure (coords-only profiles) | 2026-04-28 | — | **Open** | [def-012-loop-profile-forces-preview-on-builtin.md](def-012-loop-profile-forces-preview-on-builtin.md) |
+| DEF-012 | `-P` forces preview; `source_image: "builtin"` → OpenCV imread failure (coords-only profiles) | 2026-04-28 | 2026-04-28 | **Fixed** (script + docs) | [def-012-loop-profile-forces-preview-on-builtin.md](def-012-loop-profile-forces-preview-on-builtin.md) |
 
 **Plans index:** **[`../plans/README.md`](../plans/README.md)**.
