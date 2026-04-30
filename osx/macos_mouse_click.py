@@ -73,7 +73,7 @@ def _kbd_tty_fd_get() -> int:
     return _kbd_tty_fd
 
 # Gated Rich editor diagnostics (``MACOS_MOUSE_CLICK_DEBUG_TUI``); see plan
-# ``docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md`` Phase 2.
+# ``docs/osx/plans/plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md`` appendix (Down PTY / logging).
 _DEBUG_TUI_STATE_PREFIX = "MACOS_MOUSE_CLICK_TUI_STATE "
 _debug_tui_log_file: Optional[Any] = None
 _debug_tui_log_failed: bool = False
@@ -244,7 +244,7 @@ class ResolvedConfig:
     sources: Dict[str, str] = field(default_factory=dict)
     assume_yes: bool = False
     used_interactive: bool = False
-    # Phase 1 (plan-agent-cookie-clicker-rate-control): in-band abort without terminal focus.
+    # Phase 1 in-band abort (see docs/osx/plans/plan-002 § Cookie burst rate control).
     abort_on_mouse_move: bool = False
     mouse_move_threshold_px: float = 20.0
     # None => max(60, 2 * mouse_move_threshold_px) at runtime (DEF-010).

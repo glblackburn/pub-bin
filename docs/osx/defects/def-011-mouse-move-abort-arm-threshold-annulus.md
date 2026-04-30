@@ -2,7 +2,6 @@
 id: DEF-011
 related_plans:
   - ../plans/plan-002-macos-mouse-click-terminal-ux.md
-  - ../plans/agent/plan-agent-cookie-clicker-rate-control.plan.md
 ---
 
 ### DEF-011: Mouse-move abort false positive — arm radius larger than leave threshold (fixed)

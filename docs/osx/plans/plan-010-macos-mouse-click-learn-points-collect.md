@@ -1,10 +1,12 @@
 # Plan 010 — Learn-point collect (`--learn-points`)
 
-**Status:** Shipped (v1). **Agent engineering notes:** [`agent/plan-agent-12-learn-points-collect.plan.md`](agent/plan-agent-12-learn-points-collect.plan.md).
+**Status:** Shipped (v1).
 
 ## Summary
 
 Operators can record **many** anchor positions in one session without rerunning learn or scraping logs. Mode **`--learn-points`** is mutually exclusive with **`--learn`**, **`-x/-y`**, and **`--at-cursor`**.
+
+**Implementation notes (merged):** Rich path uses a log region under the settings table with rotating line styles; **`-Y`** emits **`index x y`** lines; **`--learn-points N`** caps captures; dry-run with **`-Y`** prints deterministic fake samples for CI. Former split **`plan-agent-12-*`** content is folded into this file and **[plan-003](plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge)** where it concerned tests only.
 
 ## Behavior
 

@@ -429,3 +429,38 @@ This section records what was **implemented and verified** for v1. Follow-on hum
 ### Remaining manual QA (operator)
 
 Checklist **MT-01**–**MT-09** is **complete** as of **2026-04-18**; add new **MT-xx** rows if new scenarios are introduced. **Plan 03** tracks which cases move to **CI** (see **[Mapping to plan 02 manual tests](plan-003-macos-mouse-click-tui-automation.md#mapping-to-plan-02-manual-tests-mt-xx)**).
+
+## Operator loop, Cookie Clicker, and preview pipeline (merged context)
+
+*Former split session plans under **`docs/osx/plans/agent/`** are folded into this section and into **[plan-003 — Additional automation backlog](plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge)** / **[plan-009 — Appendix](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md#appendix-merged-engineering-notes-formerly-split-agent-plans)** so each feature area has a **single** canonical plan file.*
+
+### `macos_mouse_click_loop.sh` (operator automation)
+
+- **Cycle:** each iteration runs **`run_once`**; **`-c`** limits total cycles; **`CYCLE_SLEEP_SECONDS`** (default **30**) sleeps between completed cycles.
+- **Buy ladder:** **`run_buy_ladder`** walks a **fixed** building order with **`run_click_row`** (**`-n 5 -Y`** per row at profile coordinates).
+- **Cookie burst:** after the ladder, or immediately with **`-S`** (skip ladder), a single **`click_target`** burst at the big-cookie coordinate (**`COOKIE_N`** from profile, often **3000**).
+- **Assumptions today:** stable window geometry and column alignment; no affordability detection, golden-cookie sweep, or dynamic store scroll in the shell script.
+
+### Cookie Clicker UI research (condensed)
+
+Screenshot set under **`docs/osx/screenshots/cookie-clicker/`** motivated a **prioritized backlog** (candidates only):
+
+| Tier | Examples |
+|------|-----------|
+| **1 — low complexity** | External config for ladder coords / counts / sleep; CLI flags for burst length and cycle sleep; explicit bulk-buy contract; structured per-cycle logs; named window profiles. |
+| **2 — state-aware** | Skip likely-disabled rows; optional scroll / ladder profiles; header-offset calibration before first row click. |
+| **3 — advanced** | Golden-cookie region sweep; upgrades-strip pass; richer template automation than static Y offsets. |
+
+Cross-cutting risks: **bulk mode** toggles which rows are purchasable; **CpS** swings with buffs; **scrollable** store breaks fixed **Y**; **upgrades strip** shifts header and first visible building row.
+
+### Buy-ladder timing vs cycle sleep
+
+Per-cycle sleep runs **after** a full **`run_once`** (ladder + burst). Inner bursts use **`-d 0`**, so **`CYCLE_SLEEP_SECONDS`** does **not** pace individual clicks inside a long cookie burst — see **Cookie burst rate control** and **[DEF-011](../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**.
+
+### Cookie burst rate control (in-band abort + pacing backlog)
+
+**Shipped (Phase 1):** **`macos_mouse_click.py`** supports **in-band abort** (mouse-move threshold vs **click target**; **[DEF-010](../defects/def-010-mouse-move-abort-wrong-reference.md)**) so operators can stop long **`-Y`** bursts without refocusing the terminal. **Backlog (Phase 2):** profile keys for inter-click delay / settle time, optional chunking and **`SIGINT`** wiring in **`macos_mouse_click_loop.sh`**, README tuning notes. Prefer conservative **`-d`** defaults until Phase 2 pacing is explicit — see **[DEF-011](../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)** for ladder false-stop history.
+
+### DEF-012 (`-P` / `builtin` / preview pipeline)
+
+**Fixed:** coords-only profiles (**`builtin`**, missing, or empty **`source_image`**) no longer force OpenCV preview; **`cookie_clicker_preview_plan.py`** exits clearly on coords-only; **`samefile`** normalization does not hide stderr. Normative detail: **[DEF-012](../defects/def-012-loop-profile-forces-preview-on-builtin.md)**; tests: **`osx/tests/test_def012_loop_preview_coords_only.py`**.

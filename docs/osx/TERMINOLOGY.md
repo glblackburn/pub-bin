@@ -22,7 +22,7 @@ Central glossary for **`docs/osx/`** (plans, defects, hand-offs, hub). Other mar
 | [MT-*nn*](#term-mt) | Manual test matrix row (**MT-01** … **MT-09** in plan **02**) |
 | [NDJSON](#term-ndjson) | Newline-delimited JSON (one JSON object per line) |
 | [plan-*nnn*](#term-plan) | Numbered product plan file prefix |
-| [plan-agent-*](#term-plan-agent) | Agent/session engineering plan prefix |
+| [plan-agent-* (historical)](#term-plan-agent) | Old clicker session-note prefix — **merged into plan-###** |
 | [pty / PTY](#term-pty) | Pseudo-terminal |
 | [PyObjC](#term-pyobjc) | Python bridge to Objective-C / Apple frameworks |
 | [pytest](#term-pytest) | Python test runner used under **`osx/tests/`** |
@@ -104,7 +104,7 @@ A **PTY** (**pseudo-terminal**) is a **kernel-provided pair** of character devic
 <a id="term-plan-agent"></a>
 ## plan-agent-*
 
-**`plan-agent-….plan.md`** files live under **[`plans/agent/`](plans/agent/README.md)** — **Cursor / agent** session engineering notes (tests, deep dives), not the same as shipped **product** **plan-###** specs.
+**Historical:** **`plan-agent-….plan.md`** was the filename prefix for **mouse-clicker** Cursor session notes **formerly** under **`docs/osx/plans/agent/`**. That directory was **removed**; material now lives in merge sections under **[`plan-002`](plans/plan-002-macos-mouse-click-terminal-ux.md#operator-loop-cookie-clicker-and-preview-pipeline-merged-context)**, **[`plan-003`](plans/plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge)**, and **[`plan-009`](plans/plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md#appendix-merged-engineering-notes-formerly-split-agent-plans)**. **Non–mouse-clicker** session plans still use **`docs/plans/agent/`** (see **[`../../plans/agent/README.md`](../../plans/agent/README.md)**).
 
 <a id="term-cli"></a>
 ## CLI
@@ -144,7 +144,7 @@ A **PTY** (**pseudo-terminal**) is a **kernel-provided pair** of character devic
 <a id="term-cgeventtap"></a>
 ## CGEventTap
 
-**CGEventTap** — low-level **event tap** API; mentioned in advanced **test** plans (e.g. **plan-agent-13**) for observing clicks, **gated** so CI does not require it.
+**CGEventTap** — low-level **event tap** API; mentioned in advanced **test** backlog (**[plan-003](plans/plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge)** — post-start observer idea) for observing clicks, **gated** so CI does not require it.
 
 <a id="term-pyobjc"></a>
 ## PyObjC

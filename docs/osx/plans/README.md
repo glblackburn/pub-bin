@@ -8,7 +8,7 @@ This file is the **only** full plan index for the clicker (content formerly in *
 
 Machine-generated or working-session plans for **non–mouse-clicker** work stay under **[`docs/plans/agent/`](../../plans/agent/README.md)** with **kebab-case, no spaces** filenames.
 
-**Mouse-clicker** session plans live under **[`agent/`](agent/README.md)** in this directory (see **`.cursorrules`**). Do **not** treat `~/.cursor/plans/` as the canonical location for pub-bin work — copy or author plans into the appropriate **`…/plans/agent/`** tree.
+**Mouse-clicker:** extend the relevant **`plan-###-….md`** in this directory (for example **[plan-002](plan-002-macos-mouse-click-terminal-ux.md)**, **[plan-003](plan-003-macos-mouse-click-tui-automation.md)**, **[plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)**). Do **not** treat `~/.cursor/plans/` as canonical — copy material into the numbered plan that owns the feature.
 
 ## Shortcut: legacy plan numbers **01**–**10**
 
@@ -66,4 +66,3 @@ Both statuses align with **code you can run today**, but they answer **different
 
 So: **both** tie to shipped reality for their **scopes**; **Shipped** labels the **semantic reference**, **Closed (v1)** labels the **closed UX program** for that release line.
 
-**Agent session plans** (per-file status + dates): **[`agent/README.md`](agent/README.md)**.

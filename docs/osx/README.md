@@ -4,7 +4,7 @@ Hub for everything that documents **[`osx/macos_mouse_click.py`](../../osx/macos
 
 | Area | Description |
 |------|-------------|
-| **[`plans/`](plans/README.md)** | Product specs **plan-001**–**plan-010**, session handoffs, and **`plan-agent-*`** design notes. |
+| **[`plans/`](plans/README.md)** | Product specs **plan-001**–**plan-010**, session handoffs; engineering deep-dives live in **plan-###** merge sections (no separate clicker **`plans/agent/`** tree). |
 | **[`plans/DEVELOPMENT_NARRATIVE.md`](plans/DEVELOPMENT_NARRATIVE.md)** | Chronological project story (non-normative); specs remain in **`plan-###`**. |
 | **[`defects/`](defects/README.md)** | **DEF-001**–**DEF-009** detail files (audit trail + reproduction); summary table remains in **plan-002**. |
 | **[`osx/README.md`](../../osx/README.md)** | Operator setup: env vars, **`jq`** on debug logs, quick test targets. |

@@ -13,7 +13,6 @@ _EXPECTED_FILES = (
     "docs/osx/plans/DEVELOPMENT_NARRATIVE.md",
     "docs/osx/TERMINOLOGY.md",
     "docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md",
-    "docs/osx/plans/agent/README.md",
     "docs/osx/defects/README.md",
     "docs/osx/OSX-DOCS-REORGANIZATION-PLAN.md",
     "docs/osx/macos-mouse-click-coverage-gap.md",
@@ -27,3 +26,9 @@ def test_docs_osx_hub_paths_exist() -> None:
     for rel in _EXPECTED_FILES:
         path = REPO_ROOT / rel
         assert path.is_file(), f"missing hub path: {rel}"
+
+
+def test_docs_osx_plans_agent_tree_removed() -> None:
+    """Mouse-clicker session plans were merged into plan-### under docs/osx/plans/."""
+    agent_dir = REPO_ROOT / "docs" / "osx" / "plans" / "agent"
+    assert not agent_dir.exists(), f"expected removed directory: {agent_dir}"

@@ -2,7 +2,6 @@
 id: DEF-012
 related_plans:
   - ../plans/plan-002-macos-mouse-click-terminal-ux.md
-  - ../plans/agent/plan-agent-def-012-follow-up-closeout.plan.md
 isProject: false
 todos:
   - id: shell-detect
@@ -94,7 +93,7 @@ Help text presents **`-P`** as the coordinate profile path; operators reasonably
 4. **`os.path.samefile(profile_json, default_profile_json)`** clears **`profile_json`** so an explicit path to the built-in default matches **omitting `-P`** (including **`-N`** preview-only exit **0** parity).
 5. **`cookie_clicker_preview_plan.py`**: **`SystemExit`** with an explanatory message when **`source_image`** is coords-only (direct invocation).
 6. **`samefile` normalization:** stderr from Python is no longer discarded (**`2>/dev/null`** removed) so **`samefile`** failures are visible.
-7. **Docs:** [`osx/README.md`](../../../osx/README.md); follow-up plan **[`plan-agent-def-012-follow-up-closeout.plan.md`](../plans/agent/plan-agent-def-012-follow-up-closeout.plan.md)**.
+7. **Docs:** [`osx/README.md`](../../../osx/README.md); close-out narrative under **[plan-002 — Operator loop / preview pipeline](../plans/plan-002-macos-mouse-click-terminal-ux.md#operator-loop-cookie-clicker-and-preview-pipeline-merged-context)** (**DEF-012** subsection).
 
 **Tests:** [`osx/tests/test_def012_loop_preview_coords_only.py`](../../../osx/tests/test_def012_loop_preview_coords_only.py).
 

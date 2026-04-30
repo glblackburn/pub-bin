@@ -159,7 +159,7 @@ This section records **what we worked on together in this session**, how decisio
 
 1. **`git pull`** / **`git push`** when appropriate (confirm **ahead 3** is still accurate).
 2. **Publish** the LinkedIn post from the **`.txt`**; add the LinkedIn activity URL to the draft **`.md`** and to [`LinkedIn-posts/LinkedIn-posts.md`](../../../LinkedIn-posts/LinkedIn-posts.md) if that is how published posts are indexed.
-3. Any **new plan work** continues as **`plan-###-….md`** (and agent **`plan-agent-…`**) per [`README.md`](README.md) conventions under **`docs/osx/plans/`**.
+3. Any **new plan work** continues as **`plan-###-….md`** per [`README.md`](README.md) conventions under **`docs/osx/plans/`** (extend the owning numbered plan; no parallel **`plan-agent-*`** tree under **`docs/osx/plans/`**).
 
 ## AI / git conventions (this repo)
 

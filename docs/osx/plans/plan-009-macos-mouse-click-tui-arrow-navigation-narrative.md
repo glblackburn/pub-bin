@@ -24,7 +24,7 @@ This document is the **working plan** to drive **Up** / **Down** arrow behavior 
 
 **Normative UX and checklist:** **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)**  
 **Per-defect detail:** **[`../defects/README.md`](../defects/README.md)**  
-**Engineering notes:** **[`agent/plan-agent-def-006-tui-arrow-keys.plan.md`](agent/plan-agent-def-006-tui-arrow-keys.plan.md)**, **[`agent/plan-agent-arrow-key-double-press-analysis.plan.md`](agent/plan-agent-arrow-key-double-press-analysis.plan.md)**, **[`agent/plan-agent-new-test-up-down-navigation.plan.md`](agent/plan-agent-new-test-up-down-navigation.plan.md)**
+**Deep design (CSI, PTY, logging):** **[Appendix: merged engineering notes](#appendix-merged-engineering-notes-formerly-split-agent-plans)** (replaces former **`plan-agent-*`** files under **`docs/osx/plans/agent/`**).
 
 ---
 
@@ -52,6 +52,7 @@ Everything in this plan—logging, tests, analysis, and later fixes—exists to 
 - [Phase 3 and beyond](#phase-3-and-beyond)
 - [Background: consolidated narrative](#background-consolidated-narrative) — defect summary, operator narrative, acceptance cross-reference, evidence bundle, agent validation, stderr “unchanged lines” note (subsections under that heading)
 - [Optional next instrumentation](#optional-next-instrumentation-if-bundles-stay-inconclusive)
+- [Appendix: merged engineering notes (formerly split agent plans)](#appendix-merged-engineering-notes-formerly-split-agent-plans)
 - [Repo pointers](#repo-pointers-tests-and-docs)
 
 ---
@@ -102,7 +103,7 @@ The **background** section keeps the original **consolidated narrative**, defect
 2. **Stderr prefix** — prepend the same **`ts_wall`** string (or a compact `HH:MM:SS.mmm` slice derived from it) **before** the existing `MACOS_MOUSE_CLICK_TUI_STATE ` prefix **or** embed it in the prefix pattern so scrolling operators see a **new** line at a glance even when the JSON body matches the previous row.  
    - *Example stderr line:* `2026-04-20T15:23:41.527-07:00 MACOS_MOUSE_CLICK_TUI_STATE {"ts_wall":"2026-04-20T15:23:41.527-07:00","ts_mono_ns":9123456789012345,...}`  
    - (Exact prefix formatting is an implementation detail; the requirement is **visible wall time** + **unchanged** ability to strip a fixed prefix and parse JSON.)
-3. **Docs** — update [`osx/README.md`](../../../osx/README.md) (jq examples, field dictionary) and **[`plan-agent-new-test-up-down-navigation.plan.md`](agent/plan-agent-new-test-up-down-navigation.plan.md)** / **[`plan-002`](plan-002-macos-mouse-click-terminal-ux.md)** cross-links if the public contract changes.
+3. **Docs** — update [`osx/README.md`](../../../osx/README.md) (jq examples, field dictionary) and this plan’s **[appendix](#appendix-merged-engineering-notes-formerly-split-agent-plans)** / **[`plan-002`](plan-002-macos-mouse-click-terminal-ux.md)** cross-links if the public contract changes.
 4. **Automated tests (required)** — extend [`osx/tests/test_debug_tui_logging_meta.py`](../../../osx/tests/test_debug_tui_logging_meta.py) (and any other tests that parse TUI debug lines) so **CI proves** the feature works end-to-end, not only by manual eyeballing stderr:
    - **Presence:** every parsed **`draw`** / **`after_key`** / **`run`** / **`anchor`** payload from the log sink and from **stderr** (after stripping the `MACOS_MOUSE_CLICK_TUI_STATE ` prefix) includes **`ts_wall`** and **`ts_mono_ns`** when **`MACOS_MOUSE_CLICK_DEBUG_TUI`** is on.
    - **`ts_wall` format:** assert string matches a documented pattern (e.g. ISO-8601 with offset and fractional seconds as in examples above); reject empty or naive `Z`-only forms unless implementation explicitly standardizes on UTC and tests document that.
@@ -123,7 +124,7 @@ The **background** section keeps the original **consolidated narrative**, defect
 **Activities:**
 
 1. **Automated tests** — run the full relevant **`pytest`** surface (TUI debug meta, arrow / `read_raw_key` behavior, PTY navigation tests where applicable). Treat failures and **`xfail`**/`skip` patterns as inputs to the analysis (flaky PTY vs real product bug).
-2. **AI agent manual tests** — an agent (or scripted checklist from **[`plan-agent-new-test-up-down-navigation.plan.md`](agent/plan-agent-new-test-up-down-navigation.plan.md)** and **[`plan-002`](plan-002-macos-mouse-click-terminal-ux.md)**) runs **terminal scenarios**: single Up, single Down, edit-then-arrow, wheel near editor, etc., capturing **NDJSON**, **stderr**, and short **action transcripts** per [Evidence bundle](#evidence-bundle-from-a-running-osxmacos_mouse_clickpy-attach-to-a-bug-report-or-agent-session).
+2. **AI agent manual tests** — an agent (or scripted checklist from this document’s **[appendix](#appendix-merged-engineering-notes-formerly-split-agent-plans)** and **[`plan-002`](plan-002-macos-mouse-click-terminal-ux.md)**) runs **terminal scenarios**: single Up, single Down, edit-then-arrow, wheel near editor, etc., capturing **NDJSON**, **stderr**, and short **action transcripts** per [Evidence bundle](#evidence-bundle-from-a-running-osxmacos_mouse_clickpy-attach-to-a-bug-report-or-agent-session).
 3. **User manual tests** — the human operator repeats representative scenarios in their **real environment** (Terminal.app / iTerm, SSH, tmux, hardware). They attach the **same bundle** described under [Background: consolidated narrative](#background-consolidated-narrative) (**Evidence bundle**): env vars, **`MACOS_MOUSE_CLICK_DEBUG_TUI_LOG`** file, **stderr** capture, **operator transcript** (ordered keypresses + wall times), optional **screenshot or recording**, and optional **terminal transcript** — and provide **all log output** back to the **AI agent** (or issue thread) for **analysis**.
 4. **Analysis** — classify outcomes against **DEF-002/003/006/008** themes, logging gaps, and UI-vs-telemetry mismatches; note **environment-specific** vs **code** issues; record **repro steps** and **jq**/`grep` anchors on specific lines.
 
@@ -300,9 +301,35 @@ Today, **per-key raw stdin** (hex dump of each `read` boundary) is **not** a fir
 
 ---
 
+## Appendix: merged engineering notes (formerly split agent plans)
+
+Condensed from removed **`docs/osx/plans/agent/plan-agent-*.plan.md`** files. **Normative** defect narratives stay in **`docs/osx/defects/`**; **contracts** live in **`osx/tests/`** and **`osx/macos_mouse_click.py`**.
+
+### DEF-006 — CSI / SS3 timing (implemented)
+
+`read_raw_key` previously used a **short per-byte** timeout and **broke on the first empty read** after **`ESC` `[`**, so slow-delivered arrow tails returned **`other`** and left orphan bytes for the next read (**[DEF-006](../defects/def-006-tui-arrow-multi-press.md)**). **Fix:** one **~1 s** monotonic deadline for the whole CSI/SS3 tail; **`wait_char`** until terminator or deadline. **Regression:** **`osx/tests/test_read_raw_key_csi.py`** driving **`osx/tests/csi_pty_child_runner.py`** in a **subprocess** (staggered writes so the PTY does not coalesce the artificial inter-byte gap).
+
+### DEF-008 — “Double press” vs telemetry (implemented)
+
+Per-iteration order is **`draw` → `read_raw_key` → `after_key` → branch**. **`after_key`** must reflect **post-navigation** **`selected`** for **Up**/**Down** so NDJSON matches the visible highlight (**[DEF-008](../defects/def-008-residual-arrow-double-press.md)**). When triaging legacy logs, distinguish **Case A** (arrow recognized; highlight moves on next **`draw`**) from **Case B** (**`last_key`** is **`other`** — real stdin / CSI loss).
+
+### Rich table Down — PTY harness notes
+
+Use a **child process** on a PTY (subprocess, not **`pty.fork`** inside pytest) to inject **CSI**/**SS3** with controlled gaps; assert **Setting** column motion in the transcript. Primary tests: **`osx/tests/test_rich_table_nav_down_pty.py`**, **`osx/tests/test_debug_tui_logging_meta.py`**, runner **`osx/tests/csi_pty_child_runner.py`**. Share helpers across **`osx/tests/`** only after harnesses stabilize (**[plan-003 § Additional automation backlog](plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge)**).
+
+### Plan-009 Phase 3+ — agent checklist proxy (when useful)
+
+An agent pass can: run **`make -C osx test`** (focus PTY / meta suites), assemble **synthetic evidence bundles** (NDJSON + stderr timelines from tests), record **`macos-mouse-click.yml`** CI for the same SHA, map each operator checklist **theme** to **covered / partial / human-only gap**, then replace generic “TBD” in **[Phase 3 and beyond](#phase-3-and-beyond)** with tasks tied to **test names** or **log patterns**. Humans remain for driver-specific stdin chunking or subjective glass truth when automation is inconclusive.
+
+### Rich pre-run layout / resize (DEF-009 class)
+
+**`setwinsize`** redraw and column heuristics: **`osx/tests/test_def009_rich_table_layout_pty.py`**, session note **`hand-off-2026-04-21-rich-pre-run-tui-layout.md`**, product follow-up **[plan-006 — Rich TUI resize](plan-006-macos-mouse-click-rich-tui-terminal-resize.md)**.
+
+---
+
 ## Repo pointers (tests and docs)
 
 - **Operator jq recipes and env semantics:** [`osx/README.md`](../../../osx/README.md) (TUI debug section).
 - **JSON contract / stderr vs file:** [`osx/tests/test_debug_tui_logging_meta.py`](../../../osx/tests/test_debug_tui_logging_meta.py).
 - **PTY + highlight parsing (best-effort UI check):** [`osx/tests/test_rich_table_nav_down_pty.py`](../../../osx/tests/test_rich_table_nav_down_pty.py).
-- **Agent design for table nav + logging phases:** [`agent/plan-agent-new-test-up-down-navigation.plan.md`](agent/plan-agent-new-test-up-down-navigation.plan.md).
+- **Table nav + logging phases (design):** [Appendix § Rich table Down — PTY harness notes](#rich-table-down--pty-harness-notes).

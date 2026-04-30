@@ -2,14 +2,14 @@
 id: DEF-006
 related_plans:
   - ../plans/plan-002-macos-mouse-click-terminal-ux.md
-  - ../plans/agent/plan-agent-def-006-tui-arrow-keys.plan.md
+  - ../plans/plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md
 ---
 
 ### DEF-006: Multiple Up/Down presses per row (CSI timeout)
 
 **Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
 
-- **Agent plan (design notes):** [`plan-agent-def-006-tui-arrow-keys.plan.md`](../plans/agent/plan-agent-def-006-tui-arrow-keys.plan.md)
+- **Design notes:** [plan-009 appendix](../plans/plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md#appendix-merged-engineering-notes-formerly-split-agent-plans) (**DEF-006** subsection).
 - **Frontmatter todo:** `defect-def-006-tui-arrow-multi-press` (completed when fix landed).
 - **Status:** Fixed in [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) (`read_raw_key`).
 - **Manual verification:** **Pending** — run **MT-01** / **MT-02** table navigation on a real TTY when convenient; automated guard: [`osx/tests/test_read_raw_key_csi.py`](../../../osx/tests/test_read_raw_key_csi.py) (`test_read_raw_key_csi_down_slow_inter_byte_gap`).

@@ -52,7 +52,7 @@ The engineering story is unusually **documentation-heavy for the line count**: n
 | 3 | Roadmap plans **03–08** + plans README | 2026-04-18 | 2026-04-18 | Deferred work captured as numbered follow-ons (later moved under **`docs/osx/`**). |
 | 4 | Pytest + dry-run + Makefile + CI | 2026-04-18 | 2026-04-18 | **`9e96fc8`**: `MACOS_MOUSE_CLICK_DRY_RUN_JSON`, **`osx/Makefile`**, **`osx/tests/`**, macOS CI path. |
 | 5 | **DEF-006** arrow CSI / SS3 + PTY runner | 2026-04-18 | 2026-04-18 | Subprocess **PTY** tests; monotonic deadline for escape tails. |
-| 6 | Table nav agent plans + TUI NDJSON sink | 2026-04-19 | 2026-04-19 | **`plan-agent-*`** for Up/Down navigation; append debug log file. |
+| 6 | Table nav session notes + TUI NDJSON sink | 2026-04-19 | 2026-04-19 | Phased Up/Down / logging work (later **merged into [plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md#appendix-merged-engineering-notes-formerly-split-agent-plans)**); append debug log file. |
 | 7 | **DEF-007** / **DEF-008** | 2026-04-19 | 2026-04-19 | Duplicate **`-n`** rejection; **`after_key`** log alignment. |
 | 8 | Move clicker docs to **`docs/osx/`** + **`def-###`** | 2026-04-19 | 2026-04-19 | **`fc8af03`**: split long defect prose out of plan **02**. |
 | 9 | Plan **09** phased Up/Down remediation | 2026-04-20 | 2026-04-20 | Narrative + **`ts_wall` / `ts_mono_ns`** in debug streams. |
@@ -157,7 +157,7 @@ This phase cemented **“PTY tests are part of the product story”** for the Ri
 
 ### Agent plans
 
-Kebab-cased **`plan-agent-*`** files (under **`docs/plans/agent/`** at the time, later under **[agent/](agent/README.md)**) captured **phased** work for Rich table **Up/Down** navigation tests and logging (**Phase 2** file sink, meta-tests).
+Kebab-cased session plan files (under **`docs/plans/agent/`** at the time, later under **`docs/osx/plans/agent/`** until **2026-04-29**) captured **phased** work for Rich table **Up/Down** navigation tests and logging (**Phase 2** file sink, meta-tests). That material now lives in **[plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md#appendix-merged-engineering-notes-formerly-split-agent-plans)**.
 
 ### Logging
 
@@ -185,12 +185,12 @@ Defect rows in plan **02** and **`../defects/`** detail files were closed in tan
 
 ### What changed
 
-- Numbered plans, handoffs, and clicker **`plan-agent-*`** files moved under **`docs/osx/plans/`** (and **`docs/osx/plans/agent/`**).
+- Numbered plans and handoffs moved under **`docs/osx/plans/`**; clicker session notes later lived under **`docs/osx/plans/agent/`** until they were **merged back** into **`plan-###`** (no separate agent tree).
 - Long-form **DEF-001–009** narratives extracted to **`docs/osx/defects/def-###-….md`**, with plan **02** keeping the **summary table** + workflow.
 
 ### Meta plan
 
-**`OSX-DOCS-REORGANIZATION-PLAN.md`** (under **`docs/osx/`**) records the migration checklist and naming rules (**`plan-###`**, **`plan-agent-*`**, **`plan-handoff-*`**).
+**`OSX-DOCS-REORGANIZATION-PLAN.md`** (under **`docs/osx/`**) records the migration checklist and naming rules (**`plan-###`**, **`plan-handoff-*`**; historical **`plan-agent-*`** prefix retired for the clicker).
 
 ## Phase 9: Plan 09 — TUI Up / Down phased remediation narrative
 
@@ -229,7 +229,7 @@ Operators record **many** anchor samples in one session: **Rich** path shows a l
 
 ### Documentation
 
-**`fd4496d`** added **[agent/plan-agent-12-learn-points-collect.plan.md](agent/plan-agent-12-learn-points-collect.plan.md)** and index/hub hygiene. Plan **010** is marked **Shipped** in **[README.md](README.md)**.
+**`fd4496d`** added learn-points session notes (now folded into **[plan-010](plan-010-macos-mouse-click-learn-points-collect.md)**) and index/hub hygiene. Plan **010** is marked **Shipped** in **[README.md](README.md)**.
 
 ## Phase 12: Coverage tooling and Plan 11 documentation
 
@@ -241,15 +241,15 @@ Operators record **many** anchor samples in one session: **Rich** path shows a l
 - **`make -C osx test-coverage`** (and related targets) align with repo patterns used elsewhere in **`pub-bin`**.
 - **[../macos-mouse-click-coverage-gap.md](../macos-mouse-click-coverage-gap.md)** captures baseline / gap narrative (**Plan 11**).
 
-## Phase 13: Hub polish — agent plan index, Plan 13, unified plan index
+## Phase 13: Hub polish — plan index, Plan 13 notes, unified plan index
 
 **Timeline:** 2026-04-23  
 **Focus:** discoverability and dead-link avoidance
 
 Representative commits:
 
-- **`32e8c84`** — status + dates on **[agent/README.md](agent/README.md)** index.
-- **`cfec29f`** — **[agent/plan-agent-13-post-start-click-tests.plan.md](agent/plan-agent-13-post-start-click-tests.plan.md)** (Plan **13**: post-start synthetic click tests — agent plan).
+- **`32e8c84`** — status + dates on the former **`docs/osx/plans/agent/README.md`** index (tree later removed).
+- **`cfec29f`** — post-start synthetic click test design (now **[plan-003 § Additional automation backlog](plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge)**).
 - **`29c9246`** — merged the long **`docs/plans/README.md`** plan index into **`docs/osx/plans/README.md`**; removed legacy **stub** redirects under **`docs/plans/`**; **`docs/plans/README.md`** is now a **short pointer** only.
 
 ## Phase 14: Operator loop wrapper (macos_mouse_click_loop.sh)
@@ -376,7 +376,7 @@ Chronological **high-signal** anchors (read with **`git show <hash>`**):
 
 - **Implementation:** **[osx/macos_mouse_click.py](../../../osx/macos_mouse_click.py)** — module docstring points to **[../README.md](../README.md)** for navigation.
 - **Operator loop:** **[osx/macos_mouse_click_loop.sh](../../../osx/macos_mouse_click_loop.sh)** — Bash **`while`** harness invoking the Python clicker with **`-Y`**; **hardcoded coordinates**; smoke-tested by the maintainer, not **`pytest`**.
-- **Plans:** **plan-001** **Shipped**; **plan-002** **Closed (v1)**; **plan-010** **Shipped**; **plan-003**–**009** **Roadmap** rows on **[README.md](README.md)**; **Plan 13** tracked as **[agent/plan-agent-13-post-start-click-tests.plan.md](agent/plan-agent-13-post-start-click-tests.plan.md)** (post-start click tests).
+- **Plans:** **plan-001** **Shipped**; **plan-002** **Closed (v1)**; **plan-010** **Shipped**; **plan-003**–**009** **Roadmap** rows on **[README.md](README.md)**; **Plan 13** (post-start click tests) tracked in **[plan-003 § Additional automation backlog](plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge)**.
 - **Defects:** **DEF-001**–**DEF-009** detail files under **`../defects/`**; summary table in **plan-002**.
 - **Tests:** **55** tests collected under **`osx/tests/`** (see **`make -C osx test-quick`**).
 - **Marketing handoff:** LinkedIn draft session captured in **[plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md)** (revision **5** aligned to **`docs/osx/`** links).

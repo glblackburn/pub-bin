@@ -215,7 +215,7 @@ def test_def009_editor_layout_after_pty_resize_pexpect(
     repo_root: Path,
     tmp_path: Path,
 ) -> None:
-    """PTY ``setwinsize`` then redraw (Down): layout heuristics stay clean (plan-agent-rich-pre-run)."""
+    """PTY ``setwinsize`` then redraw (Down): layout heuristics stay clean (plan-009 appendix / plan-006)."""
     pytest.importorskip("pexpect", reason="pty tests need pexpect")
 
     from pty_harness import base_child_env, spawn_clicker_pexpect

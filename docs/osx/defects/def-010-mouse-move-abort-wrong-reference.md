@@ -2,7 +2,6 @@
 id: DEF-010
 related_plans:
   - ../plans/plan-002-macos-mouse-click-terminal-ux.md
-  - ../plans/agent/plan-agent-cookie-clicker-rate-control.plan.md
 ---
 
 ### DEF-010: `--abort-on-mouse-move` used burst-start cursor, not click target (fixed)

@@ -216,4 +216,4 @@ Gap analysis template / notes: **`docs/osx/macos-mouse-click-coverage-gap.md`**.
 - `osx/tests/test_rich_table_nav_down_pty.py` — Rich table navigation (uses debug log under `tmp_path` for correlation when enabled).
 - `osx/tests/test_def009_rich_table_layout_pty.py` — **DEF-009** layout corruption heuristics on PTY transcripts (see `docs/osx/defects/def-009-rich-pre-run-tui-table-layout-corruption.md`).
 
-See `docs/osx/plans/agent/plan-agent-new-test-up-down-navigation.plan.md` for the full Phase 2 design.
+See **`docs/osx/plans/plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md`** (appendix: merged engineering notes) for table-nav PTY design context.

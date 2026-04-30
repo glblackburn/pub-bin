@@ -5,7 +5,7 @@
 
 Cursor (and similar) **session plans** for work that is **not** scoped to the macOS clicker belong **in this repository** under `docs/plans/agent/`, not under `~/.cursor/plans/`.
 
-**Mouse-clicker** session plans (DEF-006 / PTY / Rich table navigation, etc.) live under **[`docs/osx/plans/agent/`](../../osx/plans/agent/README.md)** with the **`plan-agent-`** filename prefix.
+**Mouse-clicker** engineering notes are merged into **`docs/osx/plans/plan-###-….md`** (for example **plan-002**, **plan-003**, **plan-009** appendices)—there is **no** separate **`docs/osx/plans/agent/`** directory in this repo.
 
 ## Naming
 

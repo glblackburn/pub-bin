@@ -49,6 +49,7 @@ This document is the **test automation / CI** roadmap for the Rich **pre-run edi
 - [MT-09 automation plan: legacy interactive without Rich](#mt-09-automation-plan-legacy-interactive-without-rich)
 - [Mapping to plan 02 manual tests (MT-xx)](#mapping-to-plan-02-manual-tests-mt-xx)
 - [Out of scope (v1)](#out-of-scope-v1)
+- [Additional automation backlog (session notes merge)](#additional-automation-backlog-session-notes-merge)
 
 ## Scope
 
@@ -192,4 +193,14 @@ Automate regression coverage for **`run_interactive_prompts`** + **`print_confir
 
 - Running the full **learn** event tap in unattended CI without a stub.
 - Cross-platform Linux CI for macOS-only Quartz behavior (pre-Quartz tests can still run on macOS only).
+
+## Additional automation backlog (session notes merge)
+
+*Design-only items that lived under **`docs/osx/plans/agent/`** are consolidated here so **`plan-003`** remains the single test/CI roadmap.*
+
+- **Dry-run naming (draft “plan 10” idea):** unify **`--dry-run`** semantics with today’s **`--dry-run-after-start`** / **`MACOS_MOUSE_CLICK_DRY_RUN`** only when a product decision renames flags; until then keep one documented pair of hooks.
+- **Test helper DRY:** factor shared PTY/spawn helpers across **`osx/tests/`** after child runners stabilize (avoid premature abstraction).
+- **Coverage reporting:** optional **`pytest-cov`**, Makefile/CI surfacing, targets in **`docs/osx/macos-mouse-click-coverage-gap.md`**.
+- **Post-start synthetic tests (“plan 13” idea):** Tier 1 — mock **`post_synthetic_click`**, **`sleep_interruptible`**, **`wait_for_anchor_click`**; Tier 2 — optional **CGEventTap** observer + subprocess SUT, **env-gated** so default CI stays lightweight.
+- **Docs hub paths:** **`osx/tests/test_docs_osx_hub_paths.py`** guards canonical **`docs/osx/**`** entry points (**DEF-009** class hygiene).
 
