@@ -4,9 +4,9 @@
 
 This file is the **only** full plan index for the clicker (content formerly in **`docs/plans/README.md`** is merged here); **[`../../plans/README.md`](../../plans/README.md)** is a short pointer for **`docs/plans/`** visitors.
 
-## Cursor / agent session plans
+## Cursor / non-clicker reference plans
 
-Machine-generated or working-session plans for **non–mouse-clicker** work stay under **[`docs/plans/agent/`](../../plans/agent/README.md)** with **kebab-case, no spaces** filenames.
+Reference material that is **not** a **`plan-###`** clicker spec but is kept with this doc tree: **[react2shell-server — Make and test framework (reference)](react2shell-server-test-framework-reference.plan.md)** (GitHub: [glblackburn/react2shell-server](https://github.com/glblackburn/react2shell-server)). Use **kebab-case ASCII** filenames for any similar additions.
 
 **Mouse-clicker:** extend the relevant **`plan-###-….md`** in this directory (for example **[plan-002](plan-002-macos-mouse-click-terminal-ux.md)**, **[plan-003](plan-003-macos-mouse-click-tui-automation.md)**, **[plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)**). Do **not** treat `~/.cursor/plans/` as canonical — copy material into the numbered plan that owns the feature.
 

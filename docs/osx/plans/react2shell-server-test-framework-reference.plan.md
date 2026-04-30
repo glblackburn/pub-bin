@@ -1,4 +1,4 @@
-<!-- Cursor agent plan: external repo reference (links point at https://github.com/glblackburn/react2shell-server on branch main). -->
+<!-- Reference plan under docs/osx/plans: external react2shell-server repo (links: GitHub glblackburn/react2shell-server, branch main). -->
 # [react2shell-server](https://github.com/glblackburn/react2shell-server): Make and test framework (reference)
 
 ## Makefile as the primary UX

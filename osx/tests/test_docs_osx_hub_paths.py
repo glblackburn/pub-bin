@@ -13,6 +13,7 @@ _EXPECTED_FILES = (
     "docs/osx/plans/DEVELOPMENT_NARRATIVE.md",
     "docs/osx/TERMINOLOGY.md",
     "docs/osx/plans/plan-010-macos-mouse-click-learn-points-collect.md",
+    "docs/osx/plans/react2shell-server-test-framework-reference.plan.md",
     "docs/osx/defects/README.md",
     "docs/osx/OSX-DOCS-REORGANIZATION-PLAN.md",
     "docs/osx/macos-mouse-click-coverage-gap.md",
@@ -32,3 +33,9 @@ def test_docs_osx_plans_agent_tree_removed() -> None:
     """Mouse-clicker session plans were merged into plan-### under docs/osx/plans/."""
     agent_dir = REPO_ROOT / "docs" / "osx" / "plans" / "agent"
     assert not agent_dir.exists(), f"expected removed directory: {agent_dir}"
+
+
+def test_docs_plans_agent_tree_removed() -> None:
+    """docs/plans/agent/ removed; cross-repo reference plans live under docs/osx/plans/."""
+    legacy_agent = REPO_ROOT / "docs" / "plans" / "agent"
+    assert not legacy_agent.exists(), f"expected removed directory: {legacy_agent}"

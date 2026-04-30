@@ -19,7 +19,7 @@ This document specifies a **directory and content split** for everything that do
 
 ## Goals
 
-1. **Single osx doc hub** under **`docs/osx/`** so operators and agents do not hunt across **`docs/plans/`**, **`docs/plans/agent/`**, and embedded defect prose.
+1. **Single osx doc hub** under **`docs/osx/`** so operators and agents do not hunt across **`docs/plans/`** and embedded defect prose.
 2. **`docs/osx/plans/`** — all plan-style documents for the clicker (numbered product **`plan-001`…`plan-010`**, handoffs). Session engineering for the clicker is folded into those **`plan-###`** files (no parallel **`plan-agent-*`** directory under **`docs/osx/plans/`**).
 3. **`docs/osx/defects/`** — one **detail file per DEF-xxx** (see **DEF-001**–**DEF-009** in [`defects/README.md`](defects/README.md)), extracted from the long-form audit in **plan 02** today.
 4. **Cross-links** — each plan that references a defect links to **`../defects/def-###-….md`**; each defect file links back to **owning plan(s)** (e.g. `plan-002`, `plan-003`, `plan-009`).
@@ -28,7 +28,7 @@ This document specifies a **directory and content split** for everything that do
 
 ## Non-goals (this pass)
 
-- Moving **non–mouse-clicker** agent plans (e.g. unrelated server test frameworks) into **`docs/osx/`** — they stay under **`docs/plans/agent/`** or move under a different product folder later.
+- Moving **non–mouse-clicker** reference plans into **`docs/osx/`** — optional; small references (e.g. **react2shell-server** test framework) may live as **`*.plan.md`** under **`docs/osx/plans/`** alongside **`plan-###`** files.
 - Rewriting plan **content** beyond moving paths, adding cross-links, and stripping duplicated defect bodies from plan 02 after extraction.
 
 ## Canonical inventory (after move; `osx/macos_mouse_click.py`)
@@ -42,7 +42,8 @@ This document specifies a **directory and content split** for everything that do
 | [plan-009 appendix](plans/plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md#appendix-merged-engineering-notes-formerly-split-agent-plans) | Merged navigation / DEF-006 / DEF-008 / PTY harness / Phase 3 resume notes |
 | [plan-003 § Additional automation backlog](plans/plan-003-macos-mouse-click-tui-automation.md#additional-automation-backlog-session-notes-merge) | Merged automation deep dive, DRY refactor notes, coverage / post-start test ideas |
 | [plan-002 § Operator loop / preview](plans/plan-002-macos-mouse-click-terminal-ux.md#operator-loop-cookie-clicker-and-preview-pipeline-merged-context) | Merged looper / Cookie Clicker research / rate control / DEF-012 context |
-| [`../plans/README.md`](../plans/README.md) / [`../plans/agent/README.md`](../plans/agent/README.md) | Thin **`docs/plans/`** pointer to **`docs/osx/plans/`** + non-clicker agent plans |
+| [`plans/react2shell-server-test-framework-reference.plan.md`](plans/react2shell-server-test-framework-reference.plan.md) | External **react2shell-server** test / Make layout reference (GitHub) |
+| [`../plans/README.md`](../plans/README.md) | Thin **`docs/plans/`** pointer to **`docs/osx/plans/`** (clicker **`plan-###`** + optional reference **`*.plan.md`**) |
 
 **Legacy `docs/plans/` paths:** former **`01`–`08`**.md / **`HANDOFF-…`** / old **`docs/plans/agent/*.plan.md`** names for the clicker were removed after the move; use **[`docs/osx/plans/README.md`](plans/README.md)** as the single plan index; **[`docs/plans/README.md`](../plans/README.md)** is a short pointer for **`docs/plans/`** visitors only.
 
@@ -134,15 +135,14 @@ Populate from the existing summary table in plan 02.
 2. **`git mv`** + **rename** — move numbered **01–08** (later extended to **plan-009** / **plan-010**), **HANDOFF**, and **osx-related** session notes into **`docs/osx/plans/`**, applying the **`plan-###`** / **`plan-handoff-`** rules above. Legacy **`docs/plans/`** stub redirects were **removed**; the plan index and shortcuts live only under **`docs/osx/plans/README.md`** (thin **`docs/plans/README.md`** pointer).
 3. **Author** **`docs/osx/plans/README.md`** and **`docs/osx/defects/README.md`** with lookup tables.
 4. **Extract defects** — create **`def-001`…`def-009`** (and later ids) detail files; then **replace** long subsections in **`plan-002`** with links (keep workflow text that is not defect-specific).
-5. **Update references** — ripgrep for `docs/plans/0[1-8]-macos`, `docs/plans/agent/` (osx files), `DEF-00x` anchors; patch **`.cursorrules`** so mouse-clicker session notes merge into **`docs/osx/plans/plan-###-….md`** (no **`docs/osx/plans/agent/`** tree).
-6. **`docs/plans/README.md`** — thin pointer to **`docs/osx/plans/README.md`**; non-clicker session plans remain under **`docs/plans/agent/`**.
+5. **Update references** — ripgrep for `docs/plans/0[1-8]-macos`, `DEF-00x` anchors; patch **`.cursorrules`** so mouse-clicker session notes merge into **`docs/osx/plans/plan-###-….md`** (no **`docs/osx/plans/agent/`** tree).
+6. **`docs/plans/README.md`** — thin pointer to **`docs/osx/plans/README.md`**; non-clicker reference plans live under **`docs/osx/plans/`** when kept in-repo (no **`docs/plans/agent/`** tree).
 7. **`docs/osx/README.md`** — hub page linking **Plans**, **Defects**, and [`osx/README.md`](../../osx/README.md) (operator env / jq).
 8. **Verify** — e.g. `rg 'plan-002-macos-mouse-click-terminal-ux'` finds **`docs/osx/plans/plan-002-…`**; run link check mentally on relative paths from new files.
 
 ## Policy updates
 
-- **`.cursorrules`**: mouse-clicker planning extends **`docs/osx/plans/plan-###-….md`**; non-clicker session plans may stay under **`docs/plans/agent/`**.
-- **`docs/plans/agent/README.md`**: note that **clicker-specific** plans have moved; leave non-clicker plans indexed there **or** split README.
+- **`.cursorrules`**: mouse-clicker planning extends **`docs/osx/plans/plan-###-….md`**; non-clicker reference **`*.plan.md`** files may live under **`docs/osx/plans/`** (or a product-specific **`docs/`** tree).
 
 ## Risks and mitigations
 
