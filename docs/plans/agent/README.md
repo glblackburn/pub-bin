@@ -16,6 +16,6 @@ Cursor (and similar) **session plans** for work that is **not** scoped to the ma
 
 | File | Summary |
 |------|---------|
-| [react2shell-server-test-framework-reference.plan.md](react2shell-server-test-framework-reference.plan.md) | External **react2shell-server** test/Make layout reference (`file://` paths). |
+| [react2shell-server-test-framework-reference.plan.md](react2shell-server-test-framework-reference.plan.md) | External **react2shell-server** test/Make layout reference ([GitHub](https://github.com/glblackburn/react2shell-server) `blob`/`tree` links on **main**). |
 
 Numbered product plans **01–10** (`plan-001`…`plan-010`) and clicker agent plans: **[`docs/osx/plans/`](../../osx/plans/README.md)**.
