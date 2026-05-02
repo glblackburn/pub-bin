@@ -8,25 +8,25 @@
     "confidence": 1.0
   },
   "store": {
-    "x": 876.9,
-    "panel_top": 205.2,
-    "panel_bottom": 1045.2,
+    "x": 699.4,
+    "panel_top": 269.1112,
+    "panel_bottom": 1109.1112,
     "row_spacing": 63.5,
     "confidence": 1.0
   },
   "ladder_rows": [
-    {"name": "time_machine", "x": 876.9, "y": 939.7888, "confidence": 1.0},
-    {"name": "portal", "x": 876.9, "y": 876.3646, "confidence": 1.0},
-    {"name": "alchemy_lab", "x": 876.9, "y": 821.6, "confidence": 1.0},
-    {"name": "shipment", "x": 876.9, "y": 747.7, "confidence": 1.0},
-    {"name": "wizard_tower", "x": 876.9, "y": 687.9, "confidence": 1.0},
-    {"name": "temple", "x": 876.9, "y": 620.6, "confidence": 1.0},
-    {"name": "bank", "x": 876.9, "y": 557.1, "confidence": 1.0},
-    {"name": "factory", "x": 876.9, "y": 494.3, "confidence": 1.0},
-    {"name": "mine", "x": 876.9, "y": 429.6, "confidence": 1.0},
-    {"name": "farm", "x": 876.9, "y": 366.7, "confidence": 1.0},
-    {"name": "grandma", "x": 876.9, "y": 301.8, "confidence": 1.0},
-    {"name": "cursor", "x": 876.9, "y": 235.9, "confidence": 1.0}
+    {"name": "time_machine", "x": 699.4, "y": 1003.7, "confidence": 1.0},
+    {"name": "portal", "x": 699.4, "y": 940.2758, "confidence": 1.0},
+    {"name": "alchemy_lab", "x": 699.4, "y": 885.5112, "confidence": 1.0},
+    {"name": "shipment", "x": 699.4, "y": 811.6112, "confidence": 1.0},
+    {"name": "wizard_tower", "x": 699.4, "y": 751.8112, "confidence": 1.0},
+    {"name": "temple", "x": 699.4, "y": 684.5112, "confidence": 1.0},
+    {"name": "bank", "x": 699.4, "y": 621.0112, "confidence": 1.0},
+    {"name": "factory", "x": 699.4, "y": 558.2112, "confidence": 1.0},
+    {"name": "mine", "x": 699.4, "y": 493.5112, "confidence": 1.0},
+    {"name": "farm", "x": 699.4, "y": 430.6112, "confidence": 1.0},
+    {"name": "grandma", "x": 699.4, "y": 365.7112, "confidence": 1.0},
+    {"name": "cursor", "x": 699.4, "y": 299.8112, "confidence": 1.0}
   ],
   "preview_defaults": {
     "cookie_click_count": 3000,
@@ -34,6 +34,6 @@
     "cycle_sleep_seconds": 25
   },
   "warnings": [
-    "Laptop single-screen profile: cookie measured on-device; buy ladder and store translated from defaults by the same (dx,dy) as the cookie (heuristic—verify clicks and adjust)."
+    "Laptop single-screen profile: cookie on-device; buy ladder rows = corrected time_machine anchor + each row's offset from defaults time_machine; store panel edges use same anchor offsets as defaults (verify in game)."
   ]
 }
