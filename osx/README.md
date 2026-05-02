@@ -6,7 +6,7 @@ Synthetic left-click automation for macOS (see `macos_mouse_click.py` and repo r
 
 ## Operator loop (`macos_mouse_click_loop.sh`)
 
-Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** skips the buy ladder and runs only the **`-n 3000`** cookie burst each cycle. CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates can come from a machine-specific profile JSON (recommended) or fallback defaults in the script.
+Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** skips the buy ladder and runs only the cookie burst each cycle. **`-k N`** (integer **≥ 1**, default **1**) runs **N** separate cookie **`click_target`** calls per cycle, **each** with the profile’s **`cookie_click_count`** (not one multiplied **`-n`**). **`CYCLE_SLEEP_SECONDS`** from the profile is used as **sleep between** those cookie phases (not after the last). CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates can come from a machine-specific profile JSON (recommended) or fallback defaults in the script.
 
 ```bash
 ./osx/macos_mouse_click_loop.sh -h           # usage
@@ -15,6 +15,8 @@ Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** s
 ./osx/macos_mouse_click_loop.sh              # loop until Ctrl+C (30s between cycles)
 ./osx/macos_mouse_click_loop.sh -S -c 1      # cookie burst only (-n 3000), one cycle
 ./osx/macos_mouse_click_loop.sh -S           # cookie burst only, loop until Ctrl+C
+./osx/macos_mouse_click_loop.sh -k 2 -c 1    # two profile-sized cookie bursts + sleep between
+./osx/macos_mouse_click_loop.sh -S -k 2 -c 1 # cookie-only: two bursts + sleep between
 ```
 
 ### CV profile detection + preview safety gate
@@ -50,12 +52,15 @@ Helper scripts:
 - **`osx/cookie_clicker_detect_coords.py`**: creates profile JSON with cookie + ladder coordinates and confidence metadata.
 - **`osx/cookie_clicker_preview_plan.py`**: renders click targets and per-target click counts into an annotated PNG and JSON manifest.
 
+**Roadmap (not shipped yet):** golden / “magic” cookie **sweeper** — live window capture + OpenCV to find transient golden cookies — is specified in **[plan-015](../docs/osx/plans/plan-015-cookie-clicker-golden-cookie-sweeper.md)**. There is no `cookie_clicker_*` sweeper script in the repo until that plan is implemented.
+
 Loop flags for profile workflow:
 
+- **`-k <n>`** post-ladder cookie burst **count** (**n ≥ 1**, default **1**). **n** separate cookie **`click_target`** invocations per cycle (profile **`cookie_click_count`** each); **`CYCLE_SLEEP_SECONDS`** sleep between phases. See plan-014 / DEF-013. Works with **`-S`**.
 - **`-P <profile_json>`** profile to use for dynamic coordinates. If the path resolves to the same file as the built-in default (`osx/config/cookie_clicker_profile.defaults.json`), the script treats it like **omitting `-P`** (no preview side effects).
 - **`-D <image.png>`** detect profile from screenshot before preview/run (requires `-P` output path).
 - **`-N`** preview only; do not send clicks.
-- **`-R`** require a matching preview manifest before click execution.
+- **`-R`** require a matching preview manifest before click execution. Regenerate previews with **`-N`** after upgrading if **`options_hash`** changed (manifest now includes **`post_ladder_cookie_burst_factor`**).
 - **`-A`** auto-approve preview prompt (for non-interactive runs).
 - **`-B <x1|x10|x100>`** optional bulk-mode metadata for operator checks.
 - **`-L <layout>`** optional layout-profile metadata (e.g., `desktop-max`).

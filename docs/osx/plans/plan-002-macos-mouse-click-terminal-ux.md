@@ -342,13 +342,14 @@ Traceability: each code fix should have its own **git commit**, then this docume
 | DEF-010 | 2026-04-26 | **Fixed** (script) | **`--abort-on-mouse-move`**: first ship compared cursor to **burst-start**; fixed to **arm within radius of click target** `(x,y)` then abort when cursor **leaves** target beyond threshold (optional `--mouse-arm-radius-px`) | Cookie Clicker / `-Y` looper; `run_synthetic_loop` | `a4361c307e046c3fb2d56ac4932b12d3345cdf01` | **Passed** (automated: `test_mouse_move_abort.py`) |
 | DEF-011 | 2026-04-26 | **Fixed** (script) | **DEF-010 follow-on:** arm radius **>** threshold → same-tick arm+abort before first click (**`n_done`** gate, `8e2843c`); then false stop when read cursor still off-target on next tick (**`ever_within_thr`**, `703ceeb`) | Cookie Clicker / `macos_mouse_click_loop.sh`; `run_synthetic_loop` | `703ceeb583e835742b3ad8ffea7c6169924ced40` | **Passed** (automated: `test_mouse_move_abort.py`; `make -C osx test`) |
 | DEF-012 | 2026-04-28 | **Fixed** (script + docs) | **`-P`** forced OpenCV preview; **`source_image: "builtin"`** → **`imread`** fail. Fixed: **`COORDS_ONLY_PROFILE`**, gates, **`samefile`** default normalize, tests; follow-up: defect/plan status, preview helper sentinel, **`samefile`** stderr | Cookie Clicker / `macos_mouse_click_loop.sh`; `cookie_clicker_preview_plan.py` | `deb0389107dce98b0f7927e080523ecf069914c9` | **Passed** (automated: `test_def012_loop_preview_coords_only.py`, `test_preview_plan_builtin_source_image_exits_before_imread`; operator §6 optional) |
+| DEF-013 | 2026-05-02 | **Fixed** (script + preview + docs) | **`-k`** runs **K** separate cookie **`click_target`** calls (**`-n` = `COOKIE_CLICK_COUNT`** each) with **`CYCLE_SLEEP_SECONDS`** between phases inside **`run_once`**; preview emits **K** **`cookie_burst`** rows. See **[DEF-013](../defects/def-013-loop-k-factor-cookie-single-burst-vs-phased.md)** | Cookie Clicker / `macos_mouse_click_loop.sh`; `cookie_clicker_preview_plan.py`; plan-014 | — | **Passed** (automated: `test_plan014_loop_cookie_burst_factor.py`) |
 
-**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **[DEF-003 detail](../defects/def-003-wheel-esc-cancel.md)** for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient. **DEF-007** — **Passed** via [`osx/tests/test_open_defects.py`](../../../osx/tests/test_open_defects.py). **DEF-008** — **Pending** on real TTY for full **MT-01** / **MT-02** feel; **`after_key`** row alignment covered in tests. **DEF-009** — **Passed** via automated PTY + transcript heuristics; optional operator spot-check on a real narrow terminal — **[DEF-009 detail](../defects/def-009-rich-pre-run-tui-table-layout-corruption.md)**. **DEF-010** — **Fixed**; see **[DEF-010 detail](../defects/def-010-mouse-move-abort-wrong-reference.md)**. **DEF-011** — **Fixed**; see **[DEF-011 detail](../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**. **DEF-012** — **Fixed**; see **[DEF-012 detail](../defects/def-012-loop-profile-forces-preview-on-builtin.md)** — automated **`test_def012_loop_preview_coords_only.py`**; operator §6 optional.
+**Manual verification:** **DEF-001**, **DEF-002**, and **DEF-003** are **Passed** (see **[DEF-003 detail](../defects/def-003-wheel-esc-cancel.md)** for v1 plan close-out note). **DEF-004** / **DEF-005** are **closed (deferred)** — no **Fix commit**; **Manual verification** **N/A** (documentation-only deferrals). **DEF-006** — automated regression in [`osx/tests/test_read_raw_key_csi.py`](../../../osx/tests/test_read_raw_key_csi.py); operator **MT-01** / **MT-02** spot-check when convenient. **DEF-007** — **Passed** via [`osx/tests/test_open_defects.py`](../../../osx/tests/test_open_defects.py). **DEF-008** — **Pending** on real TTY for full **MT-01** / **MT-02** feel; **`after_key`** row alignment covered in tests. **DEF-009** — **Passed** via automated PTY + transcript heuristics; optional operator spot-check on a real narrow terminal — **[DEF-009 detail](../defects/def-009-rich-pre-run-tui-table-layout-corruption.md)**. **DEF-010** — **Fixed**; see **[DEF-010 detail](../defects/def-010-mouse-move-abort-wrong-reference.md)**. **DEF-011** — **Fixed**; see **[DEF-011 detail](../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**. **DEF-012** — **Fixed**; see **[DEF-012 detail](../defects/def-012-loop-profile-forces-preview-on-builtin.md)** — automated **`test_def012_loop_preview_coords_only.py`**; operator §6 optional. **DEF-013** — **Fixed**; see **[DEF-013 detail](../defects/def-013-loop-k-factor-cookie-single-burst-vs-phased.md)** — automated **`test_plan014_loop_cookie_burst_factor.py`**.
 
 
 ### Defect detail documents
 
-Full narrative for each **DEF-001**–**DEF-012** lives under [`docs/osx/defects/`](../defects/README.md). Summary table above is canonical for status and fix SHAs; update the **detail file** when closing a defect, then mirror the **Defect summary** row here.
+Full narrative for each **DEF-001**–**DEF-013** lives under [`docs/osx/defects/`](../defects/README.md). Summary table above is canonical for status and fix SHAs; update the **detail file** when closing a defect, then mirror the **Defect summary** row here.
 
 | DEF | Detail |
 |-----|--------|
@@ -364,8 +365,9 @@ Full narrative for each **DEF-001**–**DEF-012** lives under [`docs/osx/defects
 | DEF-010 | [def-010-mouse-move-abort-wrong-reference.md](../defects/def-010-mouse-move-abort-wrong-reference.md) |
 | DEF-011 | [def-011-mouse-move-abort-arm-threshold-annulus.md](../defects/def-011-mouse-move-abort-arm-threshold-annulus.md) |
 | DEF-012 | [def-012-loop-profile-forces-preview-on-builtin.md](../defects/def-012-loop-profile-forces-preview-on-builtin.md) |
+| DEF-013 | [def-013-loop-k-factor-cookie-single-burst-vs-phased.md](../defects/def-013-loop-k-factor-cookie-single-burst-vs-phased.md) |
 
-**Doc reorg (DEF bodies):** Long-form reproduction and resolution text for each **DEF-001**–**DEF-012** lives only under **[`../defects/`](../defects/README.md)** (`def-###-….md`). This plan keeps the **Defect summary** table, **Manual verification** blurb, workflow, and the link matrix above—no duplicate full narratives here (see **[`../OSX-DOCS-REORGANIZATION-PLAN.md`](../OSX-DOCS-REORGANIZATION-PLAN.md)**).
+**Doc reorg (DEF bodies):** Long-form reproduction and resolution text for each **DEF-001**–**DEF-013** lives only under **[`../defects/`](../defects/README.md)** (`def-###-….md`). This plan keeps the **Defect summary** table, **Manual verification** blurb, workflow, and the link matrix above—no duplicate full narratives here (see **[`../OSX-DOCS-REORGANIZATION-PLAN.md`](../OSX-DOCS-REORGANIZATION-PLAN.md)**).
 
 ## Manual QA checklist (after implementation)
 
@@ -438,7 +440,7 @@ Checklist **MT-01**–**MT-09** is **complete** as of **2026-04-18**; add new **
 
 - **Cycle:** each iteration runs **`run_once`**; **`-c`** limits total cycles; **`CYCLE_SLEEP_SECONDS`** (default **30**) sleeps between completed cycles.
 - **Buy ladder:** **`run_buy_ladder`** walks a **fixed** building order with **`run_click_row`** (**`-n 5 -Y`** per row at profile coordinates).
-- **Cookie burst:** after the ladder, or immediately with **`-S`** (skip ladder), a single **`click_target`** burst at the big-cookie coordinate (**`COOKIE_N`** from profile, often **3000**).
+- **Cookie burst:** after the ladder, or immediately with **`-S`** (skip ladder), **`click_target`** burst(s) at the big-cookie coordinate (**`COOKIE_CLICK_COUNT`** from profile, often **3000** per phase). **`-k N`** runs **N** separate profile-sized bursts with **`CYCLE_SLEEP_SECONDS`** between phases inside each **`run_once`** (default **N = 1**).
 - **Assumptions today:** stable window geometry and column alignment; no affordability detection, golden-cookie sweep, or dynamic store scroll in the shell script.
 
 ### Cookie Clicker UI research (condensed)
@@ -455,7 +457,7 @@ Cross-cutting risks: **bulk mode** toggles which rows are purchasable; **CpS** s
 
 ### Buy-ladder timing vs cycle sleep
 
-Per-cycle sleep runs **after** a full **`run_once`** (ladder + burst). Inner bursts use **`-d 0`**, so **`CYCLE_SLEEP_SECONDS`** does **not** pace individual clicks inside a long cookie burst — see **Cookie burst rate control** and **[DEF-011](../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**.
+Per-cycle sleep runs **after** a full **`run_once`** (ladder + cookie phase(s)). With **`-k` > 1**, **`CYCLE_SLEEP_SECONDS`** also runs **between** cookie **`click_target`** subprocesses (not between each synthetic click inside one **`macos_mouse_click.py -n`**). Inner bursts still use **`-d 0`** — see **Cookie burst rate control** and **[DEF-011](../defects/def-011-mouse-move-abort-arm-threshold-annulus.md)**.
 
 ### Cookie burst rate control (in-band abort + pacing backlog)
 
@@ -464,3 +466,7 @@ Per-cycle sleep runs **after** a full **`run_once`** (ladder + burst). Inner bur
 ### DEF-012 (`-P` / `builtin` / preview pipeline)
 
 **Fixed:** coords-only profiles (**`builtin`**, missing, or empty **`source_image`**) no longer force OpenCV preview; **`cookie_clicker_preview_plan.py`** exits clearly on coords-only; **`samefile`** normalization does not hide stderr. Normative detail: **[DEF-012](../defects/def-012-loop-profile-forces-preview-on-builtin.md)**; tests: **`osx/tests/test_def012_loop_preview_coords_only.py`**.
+
+### DEF-013 (**`-k`** cookie phases vs single burst)
+
+**Fixed:** **`run_phased_cookie_bursts`** + preview **N** **`cookie_burst`** rows; inter-phase sleep uses **`CYCLE_SLEEP_SECONDS`**. Normative detail: **[DEF-013](../defects/def-013-loop-k-factor-cookie-single-burst-vs-phased.md)**; **[plan-014 v2](../plans/plan-014-macos-mouse-click-loop-cookie-before-ladder.md)**.

@@ -16,6 +16,8 @@ profile_json=
 detect_from_image=
 expected_bulk_mode=
 layout_profile=
+# Post-ladder cookie: one click_target with -n = factor * COOKIE_CLICK_COUNT (plan-014; default 1).
+post_ladder_cookie_burst_factor=
 
 ################################################################################
 # default values
@@ -34,7 +36,7 @@ function usage {
         echo "Message: ${message}"
     fi
     cat <<EOF
-Usage: ${script_name} [-h] [-c <count>] [-S] [-P <profile_json>] [-D <image.png>] [-N] [-R] [-A] [-B <x1|x10|x100>] [-L <layout>]
+Usage: ${script_name} [-h] [-c <count>] [-k <n>] [-S] [-P <profile_json>] [-D <image.png>] [-N] [-R] [-A] [-B <x1|x10|x100>] [-L <layout>]
 
 Operator loop: repeatedly runs a fixed buy ladder then a long cookie burst
 via macos_mouse_click.py (see osx/README.md). When -P is provided, coordinates
@@ -45,6 +47,10 @@ Options
   -c <count>    : Run exactly this many cycles, then exit. Example: -c 1 is
                  one cycle; -c 10 runs ten. Each cycle is real automation
                  (clicks), not a dry run.
+  -k <n>        : Post-ladder cookie burst count (integer >= 1, default 1).
+                 Run n separate cookie click_targets, each with profile cookie_click_count
+                 clicks; sleep CYCLE_SLEEP_SECONDS between phases (after buy ladder when
+                 ladder runs, or alone with -S). See osx/README.md.
   -S            : Skip the buy ladder; only the long cookie burst (-n 3000)
                  runs each cycle. Combine with -c (e.g. -S -c 5).
   -P <file>     : Coordinate profile JSON (from cookie_clicker_detect_coords.py or a
@@ -65,6 +71,8 @@ Example:
   ${script_name} -P osx/config/cookie_clicker_profile.sample.json -N
   ${script_name} -P /tmp/cookie-profile.json -D docs/osx/screenshots/cookie-clicker/Screenshot_2026-04-25_at_8.28.45_PM.png -N
   ${script_name} -P /tmp/cookie-profile.json -R -A -c 1
+  ${script_name} -k 2 -c 1
+  ${script_name} -S -k 2 -c 1
   ${script_name} -S
   ${script_name}
 EOF
@@ -73,7 +81,7 @@ EOF
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":hc:SP:D:RA:B:L:N" opt; do
+while getopts ":hc:k:SP:D:RA:B:L:N" opt; do
     case ${opt} in
         h)
             usage
@@ -81,6 +89,9 @@ while getopts ":hc:SP:D:RA:B:L:N" opt; do
             ;;
         c)
             cycle_max=${OPTARG}
+            ;;
+        k)
+            post_ladder_cookie_burst_factor=${OPTARG}
             ;;
         S)
             SKIP_BUY_LADDER=true
@@ -117,6 +128,13 @@ while getopts ":hc:SP:D:RA:B:L:N" opt; do
     esac
 done
 shift $((OPTIND - 1))
+
+if [ -z "${post_ladder_cookie_burst_factor}" ]; then
+    post_ladder_cookie_burst_factor=1
+elif ! [[ "${post_ladder_cookie_burst_factor}" =~ ^[1-9][0-9]*$ ]]; then
+    usage "Invalid -k value: must be a positive integer (>= 1)."
+    exit 1
+fi
 
 if [ ! -f "${mouse_click}" ]; then
     usage "Clicker not found: ${mouse_click}"
@@ -268,6 +286,7 @@ function render_preview_artifacts {
         --manifest-out "${preview_manifest}" \
         --cookie-clicks "${COOKIE_CLICK_COUNT}" \
         --ladder-clicks "${LADDER_CLICK_COUNT}" \
+        --post-ladder-cookie-burst-factor "${post_ladder_cookie_burst_factor}" \
         "${preview_args[@]}" >/dev/null
 }
 
@@ -280,11 +299,13 @@ function verify_preview_manifest {
         usage "Required preview manifest missing: ${preview_manifest}"
         exit 1
     fi
-    python3 - "${profile_json}" "${preview_manifest}" "${SKIP_BUY_LADDER}" "${COOKIE_CLICK_COUNT}" "${LADDER_CLICK_COUNT}" <<'PY'
+    python3 - "${profile_json}" "${preview_manifest}" "${SKIP_BUY_LADDER}" "${COOKIE_CLICK_COUNT}" "${LADDER_CLICK_COUNT}" "${post_ladder_cookie_burst_factor}" <<'PY'
 import hashlib
 import json
 import sys
-profile_path, manifest_path, skip_ladder, cookie_clicks, ladder_clicks = sys.argv[1:]
+profile_path, manifest_path, skip_ladder, cookie_clicks, ladder_clicks, burst_factor = (
+    sys.argv[1:]
+)
 with open(profile_path, "rb") as f:
     profile_hash = hashlib.sha256(f.read()).hexdigest()
 with open(manifest_path, "r", encoding="utf-8") as f:
@@ -293,6 +314,7 @@ options = {
     "skip_ladder": skip_ladder.lower() == "true",
     "cookie_clicks": int(cookie_clicks),
     "ladder_clicks": int(ladder_clicks),
+    "post_ladder_cookie_burst_factor": int(burst_factor),
 }
 options_hash = hashlib.sha256(
     json.dumps(options, sort_keys=True).encode("utf-8")
@@ -336,6 +358,19 @@ function confirm_preview_before_clicks {
 # would be to create a detection process that could determine the
 # location of the window and relative position of the buy elements.
 # Ideally the script would also be able to scroll to other areas to buy.
+function run_phased_cookie_bursts {
+    k=${post_ladder_cookie_burst_factor}
+    i=1
+    while [ "${i}" -le "${k}" ]; do
+        click_target "click the cookie (${i}/${k})" "${COOKIE_X}" "${COOKIE_Y}" "${COOKIE_CLICK_COUNT}"
+        if [ "${i}" -lt "${k}" ]; then
+            echo "sleep between cookie phases: ${CYCLE_SLEEP_SECONDS}s" >&2
+            sleep "${CYCLE_SLEEP_SECONDS}"
+        fi
+        i=$((i + 1))
+    done
+}
+
 function run_buy_ladder {
     click_target "buy time machine" "${TIME_MACHINE_X}" "${TIME_MACHINE_Y}" "${LADDER_CLICK_COUNT}"
     click_target "buy portal" "${PORTAL_X}" "${PORTAL_Y}" "${LADDER_CLICK_COUNT}"
@@ -361,7 +396,7 @@ function run_once {
         run_buy_ladder
     fi
 
-    click_target "click the cookie" "${COOKIE_X}" "${COOKIE_Y}" "${COOKIE_CLICK_COUNT}"
+    run_phased_cookie_bursts
     date
 }
 

@@ -4,7 +4,7 @@
 
 **Scope:** Compare existing profile JSONs under [`osx/config/`](../../../osx/config/), explain why adjustment is painful today, and propose **easier ways** to adapt coordinates when the **browser window** moves or resizes. **No code changes** are specified here—only product/design direction for future work.
 
-**Related:** [`cookie_clicker_profile.schema.json`](../../../osx/config/cookie_clicker_profile.schema.json), [`cookie_clicker_detect_coords.py`](../../../osx/cookie_clicker_detect_coords.py), [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh), [plan-001](plan-001-macos-clicker.md), [plan-010](plan-010-macos-mouse-click-learn-points-collect.md), DEF-012.
+**Related:** [`cookie_clicker_profile.schema.json`](../../../osx/config/cookie_clicker_profile.schema.json), [`cookie_clicker_detect_coords.py`](../../../osx/cookie_clicker_detect_coords.py), [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh), [plan-001](plan-001-macos-clicker.md), [plan-010](plan-010-macos-mouse-click-learn-points-collect.md), [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md) (window-relative coords may matter for capture ROI), DEF-012.
 
 ---
 

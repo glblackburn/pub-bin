@@ -3,7 +3,7 @@
 
 **Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
 
-Detail files for **DEF-001**–**DEF-012**. The **Defect summary** table (status, fix SHAs, manual verification) remains canonical in **[`../plans/plan-002-macos-mouse-click-terminal-ux.md`](../plans/plan-002-macos-mouse-click-terminal-ux.md)**; update the table and the matching **`def-###`** file together when closing a defect.
+Detail files for **DEF-001**–**DEF-013**. The **Defect summary** table (status, fix SHAs, manual verification) remains canonical in **[`../plans/plan-002-macos-mouse-click-terminal-ux.md`](../plans/plan-002-macos-mouse-click-terminal-ux.md)**; update the table and the matching **`def-###`** file together when closing a defect.
 
 **Completed** = date the defect was **resolved in process** (fix landed, deferred, or automated verification recorded). **—** means still open for **manual verification** or no single completion date (align with plan-002 **Manual verification** column).
 
@@ -21,5 +21,6 @@ Detail files for **DEF-001**–**DEF-012**. The **Defect summary** table (status
 | DEF-010 | `--abort-on-mouse-move` used wrong reference (burst-start cursor vs click target) | 2026-04-26 | 2026-04-26 | **Fixed** (script) | [def-010-mouse-move-abort-wrong-reference.md](def-010-mouse-move-abort-wrong-reference.md) |
 | DEF-011 | Mouse-move abort annulus: default arm radius > threshold → false stop on buy ladder | 2026-04-26 | 2026-04-26 | **Fixed** (script) | [def-011-mouse-move-abort-arm-threshold-annulus.md](def-011-mouse-move-abort-arm-threshold-annulus.md) |
 | DEF-012 | `-P` forces preview; `source_image: "builtin"` → OpenCV imread failure (coords-only profiles) | 2026-04-28 | 2026-04-28 | **Fixed** (script + docs) | [def-012-loop-profile-forces-preview-on-builtin.md](def-012-loop-profile-forces-preview-on-builtin.md) |
+| DEF-013 | **`-k`** scales **`-n`** in one cookie burst instead of K phased bursts with sleep between | 2026-05-02 | 2026-05-02 | **Fixed** | [def-013-loop-k-factor-cookie-single-burst-vs-phased.md](def-013-loop-k-factor-cookie-single-burst-vs-phased.md) |
 
 **Plans index:** **[`../plans/README.md`](../plans/README.md)**.

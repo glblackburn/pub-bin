@@ -70,6 +70,16 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--cookie-clicks", type=int, default=3000)
     p.add_argument("--ladder-clicks", type=int, default=5)
     p.add_argument("--skip-ladder", action="store_true")
+    p.add_argument(
+        "--post-ladder-cookie-burst-factor",
+        type=int,
+        default=1,
+        metavar="N",
+        help=(
+            "Post-ladder: run N separate cookie_burst targets (each click_count=cookie-clicks; "
+            "default 1). Matches macos_mouse_click_loop.sh -k phased cookie runs."
+        ),
+    )
     p.add_argument("--source-image", default="", help="Override source image path.")
     return p.parse_args()
 
@@ -82,7 +92,13 @@ def _sha256(path: str) -> str:
     return h.hexdigest()
 
 
-def _build_targets(profile: Dict, skip_ladder: bool, ladder_clicks: int, cookie_clicks: int):
+def _build_targets(
+    profile: Dict,
+    skip_ladder: bool,
+    ladder_clicks: int,
+    cookie_clicks: int,
+    post_ladder_cookie_burst_factor: int,
+):
     rows = {row["name"]: row for row in profile.get("ladder_rows", [])}
     targets: List[Dict] = []
     if not skip_ladder:
@@ -101,16 +117,21 @@ def _build_targets(profile: Dict, skip_ladder: bool, ladder_clicks: int, cookie_
                 }
             )
 
-    targets.append(
-        {
-            "id": len(targets) + 1,
-            "phase": "cookie_burst",
-            "name": "cookie_center",
-            "x": float(profile["cookie"]["x"]),
-            "y": float(profile["cookie"]["y"]),
-            "click_count": int(cookie_clicks),
-        }
-    )
+    burst = int(post_ladder_cookie_burst_factor)
+    cx = float(profile["cookie"]["x"])
+    cy = float(profile["cookie"]["y"])
+    cc = int(cookie_clicks)
+    for phase in range(burst):
+        targets.append(
+            {
+                "id": len(targets) + 1,
+                "phase": "cookie_burst",
+                "name": f"cookie_phase_{phase + 1}",
+                "x": cx,
+                "y": cy,
+                "click_count": cc,
+            }
+        )
     return targets
 
 
@@ -119,16 +140,21 @@ def _label(target: Dict) -> str:
 
 
 def _draw_preview(img, targets: List[Dict]):
+    cookie_stack = 0
     for target in targets:
         x = int(round(target["x"]))
         y = int(round(target["y"]))
         color = (50, 220, 255) if target["phase"] == "cookie_burst" else (50, 160, 50)
         cv2.circle(img, (x, y), 12, color, 2)
         cv2.drawMarker(img, (x, y), color, markerType=cv2.MARKER_CROSS, markerSize=18, thickness=2)
+        ty = max(20, y - 10)
+        if target["phase"] == "cookie_burst":
+            ty -= cookie_stack * 16
+            cookie_stack += 1
         cv2.putText(
             img,
             _label(target),
-            (x + 10, max(20, y - 10)),
+            (x + 10, ty),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.45,
             color,
@@ -147,6 +173,11 @@ def _default_output_dir(profile_path: str) -> str:
 
 def main() -> int:
     args = parse_args()
+    burst_factor = int(args.post_ladder_cookie_burst_factor)
+    if burst_factor < 1:
+        raise SystemExit(
+            "Error: --post-ladder-cookie-burst-factor must be an integer >= 1."
+        )
     with open(args.profile, "r", encoding="utf-8") as f:
         profile = json.load(f)
 
@@ -171,7 +202,13 @@ def main() -> int:
     if img is None:
         raise SystemExit(f"Error: unable to load source image: {source_image}")
 
-    targets = _build_targets(profile, args.skip_ladder, args.ladder_clicks, args.cookie_clicks)
+    targets = _build_targets(
+        profile,
+        args.skip_ladder,
+        args.ladder_clicks,
+        args.cookie_clicks,
+        burst_factor,
+    )
     annotated = _draw_preview(img.copy(), targets)
 
     out_dir = args.output_dir or _default_output_dir(args.profile)
@@ -184,6 +221,7 @@ def main() -> int:
         "skip_ladder": bool(args.skip_ladder),
         "cookie_clicks": int(args.cookie_clicks),
         "ladder_clicks": int(args.ladder_clicks),
+        "post_ladder_cookie_burst_factor": burst_factor,
     }
     options_hash = hashlib.sha256(
         json.dumps(options_payload, sort_keys=True).encode("utf-8")
