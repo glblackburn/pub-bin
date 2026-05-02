@@ -1,32 +1,32 @@
 {
-  "profile_name": "loop-builtin-defaults",
+  "profile_name": "laptop-single-screen-guess",
   "source_image": "builtin",
-    "detected_at": "1970-01-01T00:00:00Z",
-    "cookie": {
-      "x": 133.3,
-      "y": 514.3,
+  "detected_at": "1970-01-01T00:00:00Z",
+  "cookie": {
+    "x": 133.3,
+    "y": 514.3,
     "confidence": 1.0
   },
   "store": {
-    "x": 2344.4,
-    "panel_top": -720.0,
-    "panel_bottom": 120.0,
+    "x": 876.9,
+    "panel_top": 205.2,
+    "panel_bottom": 1045.2,
     "row_spacing": 63.5,
     "confidence": 1.0
   },
   "ladder_rows": [
-    {"name": "time_machine", "x": 2344.4, "y": 14.5888, "confidence": 1.0},
-    {"name": "portal", "x": 2344.4, "y": -48.8354, "confidence": 1.0},
-    {"name": "alchemy_lab", "x": 2344.4, "y": -103.6, "confidence": 1.0},
-    {"name": "shipment", "x": 2344.4, "y": -177.5, "confidence": 1.0},
-    {"name": "wizard_tower", "x": 2344.4, "y": -237.3, "confidence": 1.0},
-    {"name": "temple", "x": 2344.4, "y": -304.6, "confidence": 1.0},
-    {"name": "bank", "x": 2344.4, "y": -368.1, "confidence": 1.0},
-    {"name": "factory", "x": 2344.4, "y": -430.9, "confidence": 1.0},
-    {"name": "mine", "x": 2344.4, "y": -495.6, "confidence": 1.0},
-    {"name": "farm", "x": 2344.4, "y": -558.5, "confidence": 1.0},
-    {"name": "grandma", "x": 2344.4, "y": -623.4, "confidence": 1.0},
-    {"name": "cursor", "x": 2344.4, "y": -689.3, "confidence": 1.0}
+    {"name": "time_machine", "x": 876.9, "y": 939.7888, "confidence": 1.0},
+    {"name": "portal", "x": 876.9, "y": 876.3646, "confidence": 1.0},
+    {"name": "alchemy_lab", "x": 876.9, "y": 821.6, "confidence": 1.0},
+    {"name": "shipment", "x": 876.9, "y": 747.7, "confidence": 1.0},
+    {"name": "wizard_tower", "x": 876.9, "y": 687.9, "confidence": 1.0},
+    {"name": "temple", "x": 876.9, "y": 620.6, "confidence": 1.0},
+    {"name": "bank", "x": 876.9, "y": 557.1, "confidence": 1.0},
+    {"name": "factory", "x": 876.9, "y": 494.3, "confidence": 1.0},
+    {"name": "mine", "x": 876.9, "y": 429.6, "confidence": 1.0},
+    {"name": "farm", "x": 876.9, "y": 366.7, "confidence": 1.0},
+    {"name": "grandma", "x": 876.9, "y": 301.8, "confidence": 1.0},
+    {"name": "cursor", "x": 876.9, "y": 235.9, "confidence": 1.0}
   ],
   "preview_defaults": {
     "cookie_click_count": 3000,
@@ -34,6 +34,6 @@
     "cycle_sleep_seconds": 25
   },
   "warnings": [
-    "Built-in defaults used when macos_mouse_click_loop.sh runs without -P. Edit osx/config/cookie_clicker_profile.defaults.json or pass -P <profile.json>."
+    "Laptop single-screen profile: cookie measured on-device; buy ladder and store translated from defaults by the same (dx,dy) as the cookie (heuristic—verify clicks and adjust)."
   ]
 }

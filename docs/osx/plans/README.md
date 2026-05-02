@@ -8,11 +8,11 @@ This file is the **only** full plan index for the clicker (content formerly in *
 
 Reference material that is **not** a **`plan-###`** clicker spec but is kept with this doc tree: **[react2shell-server — Make and test framework (reference)](react2shell-server-test-framework-reference.plan.md)** (GitHub: [glblackburn/react2shell-server](https://github.com/glblackburn/react2shell-server)). Use **kebab-case ASCII** filenames for any similar additions.
 
-**Mouse-clicker:** extend the relevant **`plan-###-….md`** in this directory (for example **[plan-002](plan-002-macos-mouse-click-terminal-ux.md)**, **[plan-003](plan-003-macos-mouse-click-tui-automation.md)**, **[plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)**). Do **not** treat `~/.cursor/plans/` as canonical — copy material into the numbered plan that owns the feature.
+**Mouse-clicker:** extend the relevant **`plan-###-….md`** in this directory (for example **[plan-002](plan-002-macos-mouse-click-terminal-ux.md)**, **[plan-003](plan-003-macos-mouse-click-tui-automation.md)**, **[plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)**). Do **not** treat `~/.cursor/plans/` as canonical — copy material into the numbered plan that owns the feature. **When the user asks to save a plan document into the repo,** write it under this directory (new **`plan-###-….md`** or update an existing plan); the repo path is the canonical copy.
 
-## Shortcut: legacy plan numbers **01**–**10**
+## Shortcut: plan numbers **01**–**12**
 
-The lookup table below is authoritative; this table maps the old **01**–**10** labels to the same files.
+The lookup table below maps **01**–**10** (legacy product plan labels) plus **11**–**12** (session review archives) to files in this directory.
 
 | Plan | Document |
 |------|----------|
@@ -26,6 +26,8 @@ The lookup table below is authoritative; this table maps the old **01**–**10**
 | **08** | [plan-008 — stop during run](plan-008-macos-mouse-click-stop-during-run.md) |
 | **09** | [plan-009 — TUI Up/Down phased remediation](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
 | **10** | [plan-010 — learn-point collect](plan-010-macos-mouse-click-learn-points-collect.md) |
+| **11** | [plan-011 — code review archive (`macos_mouse_click.py`)](plan-011-macos-mouse-click-code-review.md) |
+| **12** | [plan-012 — code review archive (`macos_mouse_click_loop.sh`)](plan-012-macos-mouse-click-loop-code-review.md) |
 
 ## Plan index (dates and status)
 
@@ -45,6 +47,8 @@ The lookup table below is authoritative; this table maps the old **01**–**10**
 | plan-008 | Stop during run | 2026-04-18 | — | **Roadmap** | [plan-008-macos-mouse-click-stop-during-run.md](plan-008-macos-mouse-click-stop-during-run.md) |
 | plan-009 | TUI Up/Down arrows — phased remediation | 2026-04-20 | — | **Roadmap** | [plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
 | plan-010 | Learn-point collect (`--learn-points`) | 2026-04-23 | 2026-04-23 | **Shipped** | [plan-010-macos-mouse-click-learn-points-collect.md](plan-010-macos-mouse-click-learn-points-collect.md) |
+| plan-011 | Code review archive (`macos_mouse_click.py`) | 2026-05-02 | — | Session note | [plan-011-macos-mouse-click-code-review.md](plan-011-macos-mouse-click-code-review.md) |
+| plan-012 | Code review archive (`macos_mouse_click_loop.sh`) | 2026-05-02 | — | Session note | [plan-012-macos-mouse-click-loop-code-review.md](plan-012-macos-mouse-click-loop-code-review.md) |
 | plan-handoff | LinkedIn draft session (2026-04-18) | 2026-04-18 | — | Session note | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
 | hand-off | Rich pre-run TUI layout (session to next agent) | 2026-04-21 | — | Session note | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
 

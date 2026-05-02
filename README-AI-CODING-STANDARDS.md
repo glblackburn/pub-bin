@@ -323,6 +323,12 @@ If you encounter issues with hooks:
 - Test hooks: `cd git/ && make test`
 - See `git/README.md` for troubleshooting
 
+## Cursor plan documents (pub-bin)
+
+For work on **`osx/macos_mouse_click.py`** and related docs, **canonical plans** live under **[`docs/osx/plans/`](docs/osx/plans/)** as **`plan-###-….md`** (see **`.cursorrules`** for numbering and feature ownership). **When the user asks to save a plan document into the repository,** write it there (or under the appropriate **`docs/<product>/plans/`** tree for other products) — **do not** leave the only copy under **`~/.cursor/plans/`**. Merge or extend the owning **`plan-###`** file when the content belongs to an existing plan.
+
+The same **save plans into `docs/.../plans/`** requirement is duplicated in **`.cursorrules`** (quick reference, rule 3). **Keep `.cursorrules` and this section aligned** when changing this policy (agents may edit this README in modes where `.cursorrules` is not writable).
+
 ## Project-Specific Standards
 
 Projects may have additional standards beyond these core rules. Refer to each project's README.md for project-specific AI coding standards.
