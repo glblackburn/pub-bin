@@ -25,7 +25,11 @@ After reading the full standards, remember these are the most frequently violate
 
 2. **File Creation:** "Review X" means provide review in conversation, NOT create a review document file. Only create documentation files when explicitly requested.
 
-3. **Plan files:** Store **mouse-clicker** planning in **`docs/osx/plans/`** as **`plan-###-….md`** (extend the plan that owns the feature — e.g. operator loop / preview → **plan-002**, TUI automation → **plan-003**, arrow nav → **plan-009**). Use **kebab-case ASCII** filenames; no spaces or shell-metacharacters in paths. Cross-repo or non-clicker **reference** session notes may live in **`docs/osx/plans/`** as additional **`.plan.md`** files (see **`react2shell-server-test-framework-reference.plan.md`**), or under a product-specific **`docs/<product>/plans/`** tree. Do not leave the repo’s canonical plan under **`~/.cursor/plans/`** — merge session notes into the owning **`plan-###`** file (or the appropriate **`docs/`** plans folder for that product). **When the user asks to save a plan document into the repo,** write that content as a new or updated markdown file under the correct **`docs/.../plans/`** tree (for this clicker, usually **`docs/osx/plans/`**), then treat that path as canonical — do not rely on **`~/.cursor/plans/`** as the only copy.
+3. **Plan files:** Store **all** planning documents — **working drafts and final versions** — under the **`docs/`** tree (see **`.cursor/rules/plans-in-docs-tree.mdc`** for the folder list and policy). **`~/.cursor/plans/`** must never be the **only** copy; merge or copy into **`docs/.../plans/`** in the repo.
+
+   **Current `docs/**/plans/` directories:** **`docs/osx/plans/`** (canonical clicker / Cookie Clicker **`plan-###-….md`**, hand-offs, **`.plan.md`** references — index **`docs/osx/plans/README.md`**); **`docs/plans/`** (hub / pointer — **`docs/plans/README.md`**).
+
+   **Mouse-clicker:** extend the owning **`plan-###`** under **`docs/osx/plans/`** (e.g. operator loop / preview → **plan-002**, TUI automation → **plan-003**, arrow nav → **plan-009**). **Kebab-case ASCII** filenames; no spaces or shell-metacharacters in paths. Other products: **`docs/<product>/plans/`** when that tree exists. **When the user asks to save a plan document,** write it under the correct **`docs/.../plans/`** path and treat that as canonical.
 
 4. **Code Quality:** No trailing whitespace, files must end with newline, remove backup files.
 

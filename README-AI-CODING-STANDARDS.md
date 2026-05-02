@@ -325,9 +325,16 @@ If you encounter issues with hooks:
 
 ## Cursor plan documents (pub-bin)
 
-For work on **`osx/macos_mouse_click.py`** and related docs, **canonical plans** live under **[`docs/osx/plans/`](docs/osx/plans/)** as **`plan-###-….md`** (see **`.cursorrules`** for numbering and feature ownership). **When the user asks to save a plan document into the repository,** write it there (or under the appropriate **`docs/<product>/plans/`** tree for other products) — **do not** leave the only copy under **`~/.cursor/plans/`**. Merge or extend the owning **`plan-###`** file when the content belongs to an existing plan.
+**Policy:** **Every** plan — **working draft or final** — lives under the **`docs/`** tree in a **`plans/`** folder for the product or topic. **`~/.cursor/plans/`** is not canonical; merge or copy into **`docs/.../plans/`** so git holds the source of truth. See **`.cursor/rules/plans-in-docs-tree.mdc`** (always-on rule) for the authoritative list of plan directories.
 
-The same **save plans into `docs/.../plans/`** requirement is duplicated in **`.cursorrules`** (quick reference, rule 3). **Keep `.cursorrules` and this section aligned** when changing this policy (agents may edit this README in modes where `.cursorrules` is not writable).
+**Current `docs/**/plans/` directories in this repository:**
+
+| Path | Role |
+|------|------|
+| **[`docs/osx/plans/`](docs/osx/plans/)** | Canonical macOS clicker / Cookie Clicker **`plan-###-….md`**, hand-offs, **`.plan.md`** reference notes. Index: [`docs/osx/plans/README.md`](docs/osx/plans/README.md). |
+| **[`docs/plans/`](docs/plans/)** | Hub pointing at osx plans; [`docs/plans/README.md`](docs/plans/README.md). |
+
+For **`osx/macos_mouse_click.py`** work, extend the owning **`plan-###-….md`** (see **`.cursorrules`** rule 3 for numbering / feature ownership). **Keep `.cursorrules`, this section, and `.cursor/rules/plans-in-docs-tree.mdc` aligned** when changing this policy.
 
 ## Project-Specific Standards
 
