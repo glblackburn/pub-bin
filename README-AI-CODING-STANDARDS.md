@@ -332,6 +332,7 @@ If you encounter issues with hooks:
 | Path | Role |
 |------|------|
 | **[`docs/osx/plans/`](docs/osx/plans/)** | Canonical macOS clicker / Cookie Clicker **`plan-###-….md`**, hand-offs, **`.plan.md`** reference notes. Index: [`docs/osx/plans/README.md`](docs/osx/plans/README.md). |
+| **[`docs/osx/plans/cursor-plans-import/`](docs/osx/plans/cursor-plans-import/README.md)** | Archived **`~/.cursor/plans/*.plan.md`** copies for this repo (historical drafts). |
 | **[`docs/plans/`](docs/plans/)** | Hub pointing at osx plans; [`docs/plans/README.md`](docs/plans/README.md). |
 
 For **`osx/macos_mouse_click.py`** work, extend the owning **`plan-###-….md`** (see **`.cursorrules`** rule 3 for numbering / feature ownership). **Keep `.cursorrules`, this section, and `.cursor/rules/plans-in-docs-tree.mdc` aligned** when changing this policy.
