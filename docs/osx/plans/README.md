@@ -10,9 +10,9 @@ Reference material that is **not** a **`plan-###`** clicker spec but is kept wit
 
 **Mouse-clicker:** extend the relevant **`plan-###-….md`** in this directory (for example **[plan-002](plan-002-macos-mouse-click-terminal-ux.md)**, **[plan-003](plan-003-macos-mouse-click-tui-automation.md)**, **[plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)**). Do **not** treat `~/.cursor/plans/` as canonical — copy material into the numbered plan that owns the feature. **When the user asks to save a plan document into the repo,** write it under this directory (new **`plan-###-….md`** or update an existing plan); the repo path is the canonical copy.
 
-## Shortcut: plan numbers **01**–**12**
+## Shortcut: plan numbers **01**–**13**
 
-The lookup table below maps **01**–**10** (legacy product plan labels) plus **11**–**12** (session review archives) to files in this directory.
+The lookup table below maps **01**–**10** (legacy product plan labels) plus **11**–**13** (session notes and design plans) to files in this directory.
 
 | Plan | Document |
 |------|----------|
@@ -28,6 +28,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 | **10** | [plan-010 — learn-point collect](plan-010-macos-mouse-click-learn-points-collect.md) |
 | **11** | [plan-011 — code review archive (`macos_mouse_click.py`)](plan-011-macos-mouse-click-code-review.md) |
 | **12** | [plan-012 — code review archive (`macos_mouse_click_loop.sh`)](plan-012-macos-mouse-click-loop-code-review.md) |
+| **13** | [plan-013 — profile layout / calibration design](plan-013-cookie-clicker-profile-layout-and-calibration.md) |
 
 ## Plan index (dates and status)
 
@@ -49,6 +50,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 | plan-010 | Learn-point collect (`--learn-points`) | 2026-04-23 | 2026-04-23 | **Shipped** | [plan-010-macos-mouse-click-learn-points-collect.md](plan-010-macos-mouse-click-learn-points-collect.md) |
 | plan-011 | Code review archive (`macos_mouse_click.py`) | 2026-05-02 | — | Session note | [plan-011-macos-mouse-click-code-review.md](plan-011-macos-mouse-click-code-review.md) |
 | plan-012 | Code review archive (`macos_mouse_click_loop.sh`) | 2026-05-02 | — | Session note | [plan-012-macos-mouse-click-loop-code-review.md](plan-012-macos-mouse-click-loop-code-review.md) |
+| plan-013 | Cookie Clicker profile layout / calibration design | 2026-05-03 | — | Design / roadmap | [plan-013-cookie-clicker-profile-layout-and-calibration.md](plan-013-cookie-clicker-profile-layout-and-calibration.md) |
 | plan-handoff | LinkedIn draft session (2026-04-18) | 2026-04-18 | — | Session note | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
 | hand-off | Rich pre-run TUI layout (session to next agent) | 2026-04-21 | — | Session note | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
 
