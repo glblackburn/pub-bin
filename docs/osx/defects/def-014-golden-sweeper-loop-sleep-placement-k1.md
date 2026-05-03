@@ -83,7 +83,7 @@ Pick **one** primary “after cookie work” hook so **`-k 1`** and **`-k` > 1**
 3. **`osx/README.md`** — note post-cookie sweeper + that **`CYCLE_SLEEP_SECONDS`** also separates outer cycles; align plan-015 integration blurb.
 4. **Defects index + plan-002** — close **DEF-014** in tables and subsection.
 
-**Git:** — (paste **`git rev-parse HEAD`** after the close-out commit lands on **`main`**).
+**Git:** `f0fdbcf` (close-out commit on **`main`**).
 
 ---
 
