@@ -11,10 +11,10 @@ isProject: false
 
 **Terminology:** **`CYCLE_SLEEP_SECONDS`** — pause duration loaded from profile **`preview_defaults`** / **`cycle_sleep_seconds`**, used in **[`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh)** in **two** places. **`golden_sweeper`** — **[`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py)** (plan-015). **`run_phased_cookie_bursts`** — runs **`post_ladder_cookie_burst_factor`** (**`-k`**) cookie **`click_target`** rounds with optional sleep between rounds (DEF-013). Shared defect vocabulary: **[`README.md`](README.md)**.
 
-- **Status:** **Open** (documented; no fix landed in this change set).
-- **Severity:** Medium — operators using **`-k 1`** (the default) never get a looper-triggered golden sweep; behavior contradicts the intent “run the sweeper after the cookie-phase sleep” when that sleep does not exist for **k = 1**.
+- **Status:** **Fixed** (loop + regression test + docs).
+- **Severity:** Medium — operators using **`-k 1`** (the default) never got a looper-triggered golden sweep while the sweeper lived only inside **`i < k`** (DEF-014 **Observed**).
 - **Opened:** 2026-05-03
-- **Completed:** —
+- **Completed:** 2026-05-03
 - **Affects:** [`osx/macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (**`golden_sweeper`**, **`run_phased_cookie_bursts`**, main **`while`** loop); operator workflows combining **`-S`** and **`-k 1`**; [plan-015](../plans/plan-015-cookie-clicker-golden-cookie-sweeper.md) (looper integration §7).
 
 ---
@@ -78,4 +78,16 @@ Pick **one** primary “after cookie work” hook so **`-k 1`** and **`-k` > 1**
 
 ### Resolution
 
-— (fill in **Git** SHA and **Status** when a fix is approved and merged.)
+1. **`macos_mouse_click_loop.sh`:** Remove **`"${golden_sweeper}"`** from inside **`if [ "${i}" -lt "${k}" ]`** (inter-phase block is sleep only). Invoke **`"${golden_sweeper}" --capture display --dry-run --max-wall-seconds 2`** **once** after the **`while`** loop in **`run_phased_cookie_bursts`** completes, so **`-k 1`** and **`-k` > 1** each run **one** sweep per **`run_once`** after all cookie phases for that cycle.
+2. **`osx/tests/test_def014_loop_golden_sweeper_hook.py`:** Assert a single sweeper argv line and that it is not immediately after inter-phase **`sleep`**.
+3. **`osx/README.md`** — note post-cookie sweeper + that **`CYCLE_SLEEP_SECONDS`** also separates outer cycles; align plan-015 integration blurb.
+4. **Defects index + plan-002** — close **DEF-014** in tables and subsection.
+
+**Git:** — (paste **`git rev-parse HEAD`** after the close-out commit lands on **`main`**).
+
+---
+
+### Regression check (verified)
+
+- **`-k 1 -S`:** **`run_phased_cookie_bursts`** runs one cookie **`click_target`**, then **`golden_sweeper`** (requires Screen Recording for **`screencapture`**).
+- **`-k 2`:** Two cookie phases with sleep between; **one** **`golden_sweeper`** after both complete (not two).

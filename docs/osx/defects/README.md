@@ -22,6 +22,6 @@ Detail files for **DEF-001**–**DEF-014**. The **Defect summary** table (status
 | DEF-011 | Mouse-move abort annulus: default arm radius > threshold → false stop on buy ladder | 2026-04-26 | 2026-04-26 | **Fixed** (script) | [def-011-mouse-move-abort-arm-threshold-annulus.md](def-011-mouse-move-abort-arm-threshold-annulus.md) |
 | DEF-012 | `-P` forces preview; `source_image: "builtin"` → OpenCV imread failure (coords-only profiles) | 2026-04-28 | 2026-04-28 | **Fixed** (script + docs) | [def-012-loop-profile-forces-preview-on-builtin.md](def-012-loop-profile-forces-preview-on-builtin.md) |
 | DEF-013 | **`-k`** scales **`-n`** in one cookie burst instead of K phased bursts with sleep between | 2026-05-02 | 2026-05-02 | **Fixed** | [def-013-loop-k-factor-cookie-single-burst-vs-phased.md](def-013-loop-k-factor-cookie-single-burst-vs-phased.md) |
-| DEF-014 | Golden sweeper only after inter-phase sleep → **`-k 1`** never runs it; two **`CYCLE_SLEEP_SECONDS`** sites | 2026-05-03 | — | **Open** | [def-014-golden-sweeper-loop-sleep-placement-k1.md](def-014-golden-sweeper-loop-sleep-placement-k1.md) |
+| DEF-014 | Golden sweeper only after inter-phase sleep → **`-k 1`** never ran it; two **`CYCLE_SLEEP_SECONDS`** sites | 2026-05-03 | 2026-05-03 | **Fixed** | [def-014-golden-sweeper-loop-sleep-placement-k1.md](def-014-golden-sweeper-loop-sleep-placement-k1.md) |
 
 **Plans index:** **[`../plans/README.md`](../plans/README.md)**.

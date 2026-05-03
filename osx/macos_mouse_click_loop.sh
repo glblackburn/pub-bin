@@ -367,10 +367,10 @@ function run_phased_cookie_bursts {
         if [ "${i}" -lt "${k}" ]; then
             echo "sleep between cookie phases: ${CYCLE_SLEEP_SECONDS}s" >&2
             sleep "${CYCLE_SLEEP_SECONDS}"
-            "${golden_sweeper}" --capture display --dry-run --max-wall-seconds 2
         fi
         i=$((i + 1))
     done
+    "${golden_sweeper}" --capture display --dry-run --max-wall-seconds 2
 }
 
 function run_buy_ladder {

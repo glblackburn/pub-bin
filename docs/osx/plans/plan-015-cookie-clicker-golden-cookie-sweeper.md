@@ -1,6 +1,6 @@
 # Plan 015 — Cookie Clicker golden / “magic” cookie sweeper
 
-**Status:** Design / roadmap — **v0 script shipped:** [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py) (HSV heuristic; standalone + subprocess-friendly CLI). Looper wiring (**§7**) remains future work.
+**Status:** Design / roadmap — **v0 script shipped:** [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py) (HSV heuristic; standalone + subprocess-friendly CLI). **§7.0** — minimal post-cookie hook in **`macos_mouse_click_loop.sh`** (**DEF-014**). Options **§7.3–§7.5** (flags, background child, chunking) remain future work.
 
 **Scope:** Design a **sweeper** that repeatedly captures the **browser window** (or a defined screen region), detects **special cookies** that appear transiently in Cookie Clicker (commonly **golden cookies**; optionally **wrath** cookies, seasonal variants, **reindeer**, etc.), and **always outputs the coordinates** of each magic-cookie hit (global **Quartz** **x, y** suitable for `macos_mouse_click.py`), then optionally triggers clicks. Coordinate emission is **required** whenever a candidate is accepted by the detector — including **`--dry-run`** (no click, but still print / JSON-log the hit). The deliverable **must** support **two invocations**: (1) **standalone** — operator runs the script directly for long sessions or smoke tests; (2) **looper-callable** — [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (or a thin shell wrapper it invokes) calls the **same Python entrypoint** with non-interactive flags so behavior is identical whether run alone or from the loop. This plan is the **normative product spec**; implementation would add a new script or module under [`osx/`](../../../osx/) and tests under [`osx/tests/`](../../../osx/tests/).
 
@@ -184,7 +184,13 @@ Whenever the detector **accepts** at least one magic cookie in a poll (or in a s
 
 ## 7. Integration with [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh)
 
-This section revises the earlier “future hook” sketch into **three alternative in-repo integration strategies** plus a **baseline** that does not change the shell script. **No code changes are specified here** — only product and ordering decisions for a future implementation.
+### 7.0 Shipped hook (**DEF-014**)
+
+**[`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh)** invokes **`cookie_clicker_golden_sweeper.py --capture display --dry-run --max-wall-seconds 2`** **once** at the **end** of **`run_phased_cookie_bursts`** (after all **`-k`** cookie **`click_target`** rounds for that **`run_once`**). This is **not** Option **A–C** below: no **`-G`**, no background child, no burst chunking — a fixed **dry-run** sweep per cycle. Requires **Screen Recording** for **`screencapture`**.
+
+---
+
+This section revises the earlier “future hook” sketch into **three alternative in-repo integration strategies** plus a **baseline** (**§7.2** sidecar). **§7.0** is implemented in the shell script; the subsections below remain **product** sketches for richer integration (**A–C**). **No further shell changes** are implied by **§7.3–§7.5** until explicitly picked up.
 
 **Looper integration always calls the standalone script:** Options **A–C** assume the loop runs the **same** `cookie_clicker_golden_sweeper.py` (name TBD) the operator would run alone, with **stricter** time/poll limits and **no** interactive prompts. There is **no** separate “embedded” sweeper implementation inside the shell except for **`fork`/`trap`** wiring (Option B) or **ordering** of **`run_once`** steps (Options A/C).
 
@@ -192,9 +198,9 @@ This section revises the earlier “future hook” sketch into **three alternati
 
 Today each **outer cycle** runs **`run_once`**: optionally **`run_buy_ladder`** (unless **`-S`**), then **`run_phased_cookie_bursts`** (one or more **`click_target`** calls to **`macos_mouse_click.py`**, each potentially a **long** **`-Y`** synthetic burst). The main script then **`sleep`s** **`CYCLE_SLEEP_SECONDS`** and repeats. Golden cookies can appear **during** those long bursts or during sleep; the loop has **no** visibility into the framebuffer between **`click_target`** invocations.
 
-### 7.2 Baseline (no shell integration)
+### 7.2 Baseline (sidecar terminal)
 
-**Sidecar:** operator runs the sweeper CLI in a **second terminal** (or **tmux** pane). **`macos_mouse_click_loop.sh`** is unchanged. **Pros:** zero risk to loop stability; easiest to ship and A/B test. **Cons:** no lifecycle coupling; two processes must agree on profile/window assumptions manually.
+**Sidecar:** operator runs the sweeper CLI in a **second terminal** (or **tmux** pane) instead of relying on **§7.0**. **Pros:** independent cadence and flags; easy A/B test. **Cons:** no lifecycle coupling; two processes must agree on profile/window assumptions manually. (The loop may still run the **§7.0** inline hook each cycle; sidecar is for a separate, operator-driven sweeper session.)
 
 **Recommendation:** treat sidecar as **v0 / v1 ship** while CV and capture mature; pick one of **§7.3–§7.5** only after false-click rates and operator workflow are acceptable.
 
@@ -298,4 +304,4 @@ flowchart LR
 1. **Spike:** one-off capture → disk PNG + manual OpenCV playground on corpus images — **partially done** (`--capture display`, `screencapture`).
 2. **Library:** `detect_magic_cookie_hits` (HSV v0) + tests in [`osx/tests/test_cookie_clicker_golden_sweeper.py`](../../../osx/tests/test_cookie_clicker_golden_sweeper.py) — **done (v0)**.
 3. **CLI:** poll loop + JSON/text output; **`--dry-run`**; **sidecar (§7.2)** — **done (v0)**; refine templates / wrath / window-only capture as needed.
-4. **Looper integration (pick §7.3–§7.5)** — **not started**; update **`macos_mouse_click_loop.sh` `usage`**, preview **`options_hash`** if new flags affect **`-R`**.
+4. **Looper integration (pick §7.3–§7.5)** — **not started** (**§7.0** post-cookie hook **done**, **DEF-014**); update **`macos_mouse_click_loop.sh` `usage`**, preview **`options_hash`** if new flags affect **`-R`**.

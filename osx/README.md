@@ -6,7 +6,7 @@ Synthetic left-click automation for macOS (see `macos_mouse_click.py` and repo r
 
 ## Operator loop (`macos_mouse_click_loop.sh`)
 
-Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** skips the buy ladder and runs only the cookie burst each cycle. **`-k N`** (integer **≥ 1**, default **1**) runs **N** separate cookie **`click_target`** calls per cycle, **each** with the profile’s **`cookie_click_count`** (not one multiplied **`-n`**). **`CYCLE_SLEEP_SECONDS`** from the profile is used as **sleep between** those cookie phases (not after the last). CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates can come from a machine-specific profile JSON (recommended) or fallback defaults in the script.
+Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** skips the buy ladder and runs only the cookie burst each cycle. **`-k N`** (integer **≥ 1**, default **1**) runs **N** separate cookie **`click_target`** calls per cycle, **each** with the profile’s **`cookie_click_count`** (not one multiplied **`-n`**). **`CYCLE_SLEEP_SECONDS`** from the profile is used as **sleep between** those cookie phases when **N > 1** (not after the last phase), and again as **sleep between outer cycles** when the loop continues. After all cookie phases in a cycle, the loop runs **`cookie_clicker_golden_sweeper.py`** once (**`--capture display --dry-run --max-wall-seconds 2`**; plan-015) so **`-k 1`** still gets a sweep — requires Screen Recording for **`screencapture`**. CLI pattern matches the repo **`shell-template.sh`** (`usage` + **`getopts`**). Coordinates can come from a machine-specific profile JSON (recommended) or fallback defaults in the script.
 
 ```bash
 ./osx/macos_mouse_click_loop.sh -h           # usage
@@ -53,7 +53,7 @@ Helper scripts:
 - **`osx/cookie_clicker_preview_plan.py`**: renders click targets and per-target click counts into an annotated PNG and JSON manifest.
 - **`osx/cookie_clicker_golden_sweeper.py`**: plan-015 **v0** — poll for golden-ish blobs, emit **`x y`** / JSONL (see **`docs/osx/plans/plan-015-cookie-clicker-golden-cookie-sweeper.md`**). Executable like the other `osx/*.py` helpers (shebang + **`osx/.venv`** re-exec). **`--capture display`** uses **`screencapture`**; by default each poll’s **raw** PNG is written under **`docs/osx/screenshots/golden-sweeper-captures/`** (that path is **gitignored** — local captures only). When hits are found, a second **`…-annotated.png`** holds boxes, centroids, and **confidence** labels (raw file unchanged). A **JSONL** sidecar **`{raw-basename}.json`** (one object per line: `x`, `y`, `confidence`, etc.) is written beside the **raw** PNG (or beside **`--input-image`**). Use **`--no-capture-save`** for temp-only captures. Example: `./osx/cookie_clicker_golden_sweeper.py --capture display --dry-run --max-wall-seconds 5 --output json`.
 
-**Roadmap:** **`cookie_clicker_golden_sweeper.py`** is a **v0 heuristic** (HSV blobs); **`macos_mouse_click_loop.sh` integration** (plan-015 §7) is still optional / future. Normative spec: **[plan-015](../docs/osx/plans/plan-015-cookie-clicker-golden-cookie-sweeper.md)**.
+**Roadmap:** **`cookie_clicker_golden_sweeper.py`** is a **v0 heuristic** (HSV blobs). **`macos_mouse_click_loop.sh`** invokes it once per cycle after cookie bursts (dry-run, short wall clock; see **DEF-014**). Further looper hooks remain optional — **[plan-015](../docs/osx/plans/plan-015-cookie-clicker-golden-cookie-sweeper.md)** §7.
 
 Loop flags for profile workflow:
 
