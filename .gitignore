@@ -59,3 +59,6 @@ osx/coverage.xml
 osx/config/cookie_clicker_profiles/*.json
 !osx/config/cookie_clicker_profiles/.gitkeep
 docs/osx/screenshots/cookie-clicker/previews/
+
+# Golden sweeper live screencaptures (local only; do not commit)
+docs/osx/screenshots/golden-sweeper-captures/

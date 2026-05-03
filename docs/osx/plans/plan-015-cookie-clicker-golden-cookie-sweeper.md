@@ -1,6 +1,6 @@
 # Plan 015 — Cookie Clicker golden / “magic” cookie sweeper
 
-**Status:** Design / roadmap (no implementation commitment in this document until v1 scope is locked).
+**Status:** Design / roadmap — **v0 script shipped:** [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py) (HSV heuristic; standalone + subprocess-friendly CLI). Looper wiring (**§7**) remains future work.
 
 **Scope:** Design a **sweeper** that repeatedly captures the **browser window** (or a defined screen region), detects **special cookies** that appear transiently in Cookie Clicker (commonly **golden cookies**; optionally **wrath** cookies, seasonal variants, **reindeer**, etc.), and **always outputs the coordinates** of each magic-cookie hit (global **Quartz** **x, y** suitable for `macos_mouse_click.py`), then optionally triggers clicks. Coordinate emission is **required** whenever a candidate is accepted by the detector — including **`--dry-run`** (no click, but still print / JSON-log the hit). The deliverable **must** support **two invocations**: (1) **standalone** — operator runs the script directly for long sessions or smoke tests; (2) **looper-callable** — [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (or a thin shell wrapper it invokes) calls the **same Python entrypoint** with non-interactive flags so behavior is identical whether run alone or from the loop. This plan is the **normative product spec**; implementation would add a new script or module under [`osx/`](../../../osx/) and tests under [`osx/tests/`](../../../osx/tests/).
 
@@ -94,7 +94,9 @@ Reuse **`opencv-python`** (same as detect/preview stack in `osx/`).
 
 ## 6. CLI shape (sketch)
 
-No script exists yet; normative sketch for v1 discussion. Flags below must work for **both** standalone and looper subprocess invocation.
+**Implemented (v0):** [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py) — **`--output`** supports **`text`** and **`json`** only; **`--overlay-path`** is optional; **`--coord-log`** supported. **`--capture display`** uses **`/usr/sbin/screencapture -x -t png`** (main display); PNGs are **retained by default** under **`docs/osx/screenshots/golden-sweeper-captures/`** (repo **`.gitignore`** excludes that directory from version control; **`--capture-save-dir`** / **`--no-capture-save`** override behavior). Quartz mapping → **`quartz_global`**. **`--input-image`** emits **`image_pixels`** (plan §6.1 **`coord_space`** field in JSON).
+
+Normative sketch below; flags must work for **both** standalone and looper subprocess invocation.
 
 ```text
 cookie_clicker_golden_sweeper.py  # name TBD
@@ -160,7 +162,7 @@ Today each **outer cycle** runs **`run_once`**: optionally **`run_buy_ladder`** 
 
 ### 7.4 Option B — **Loop-managed background** sweeper (parallel child)
 
-**Idea:** When the loop starts (after profile load / preview gates), **`macos_mouse_click_loop.sh`** **`fork`s** a **background** sweeper subprocess ( **`python …/cookie_clicker_golden_sweeper.py … &`** ), stores **`$!`**, and registers **`trap`** cleanup to **`kill`** the child on exit or **SIGINT**. The main **`while`** loop and **`run_once`** sequence stay **unchanged**; the child independently polls the screen and clicks goldens.
+**Idea:** When the loop starts (after profile load / preview gates), **`macos_mouse_click_loop.sh`** **`fork`s** a **background** sweeper subprocess (e.g. **`"${script_dir}/cookie_clicker_golden_sweeper.py" … &`** — same executable entrypoint as **`./osx/cookie_clicker_golden_sweeper.py`** from repo root), stores **`$!`**, and registers **`trap`** cleanup to **`kill`** the child on exit or **SIGINT**. The main **`while`** loop and **`run_once`** sequence stay **unchanged**; the child independently polls the screen and clicks goldens.
 
 | Pros | Cons |
 |------|------|
@@ -226,7 +228,7 @@ flowchart LR
 
 ## 9. Documentation touchpoints (when implemented)
 
-- [`osx/README.md`](../../../osx/README.md): sweeper CLI, deps, permissions, link to this plan.
+- [`osx/README.md`](../../../osx/README.md): sweeper CLI, deps, permissions, link to this plan — **done (v0)**.
 - [plan-002](plan-002-macos-mouse-click-terminal-ux.md): update backlog row from “tier 3 candidate” to “see plan-015” when a script ships.
 
 ---
@@ -242,7 +244,7 @@ flowchart LR
 
 ## 11. Suggested implementation order (after scope lock)
 
-1. **Spike:** one-off capture → disk PNG + manual OpenCV playground on corpus images.
-2. **Library:** `detect_special_cookies(image_bgr) -> list[Detection]` with tests on fixtures.
-3. **CLI:** poll loop + JSON output; **dry-run** default; **sidecar (§7.2)** as first operator-facing ship.
-4. **Looper integration (pick §7.3–§7.5)** only after sidecar metrics justify complexity; update **`usage`**, preview **`options_hash`** if new flags affect **`-R`**, and extend [`osx/README.md`](../../../osx/README.md) with the chosen option’s caveats.
+1. **Spike:** one-off capture → disk PNG + manual OpenCV playground on corpus images — **partially done** (`--capture display`, `screencapture`).
+2. **Library:** `detect_magic_cookie_hits` (HSV v0) + tests in [`osx/tests/test_cookie_clicker_golden_sweeper.py`](../../../osx/tests/test_cookie_clicker_golden_sweeper.py) — **done (v0)**.
+3. **CLI:** poll loop + JSON/text output; **`--dry-run`**; **sidecar (§7.2)** — **done (v0)**; refine templates / wrath / window-only capture as needed.
+4. **Looper integration (pick §7.3–§7.5)** — **not started**; update **`macos_mouse_click_loop.sh` `usage`**, preview **`options_hash`** if new flags affect **`-R`**.

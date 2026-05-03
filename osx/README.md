@@ -51,8 +51,9 @@ Helper scripts:
 
 - **`osx/cookie_clicker_detect_coords.py`**: creates profile JSON with cookie + ladder coordinates and confidence metadata.
 - **`osx/cookie_clicker_preview_plan.py`**: renders click targets and per-target click counts into an annotated PNG and JSON manifest.
+- **`osx/cookie_clicker_golden_sweeper.py`**: plan-015 **v0** — poll for golden-ish blobs, emit **`x y`** / JSONL (see **`docs/osx/plans/plan-015-cookie-clicker-golden-cookie-sweeper.md`**). Executable like the other `osx/*.py` helpers (shebang + **`osx/.venv`** re-exec). **`--capture display`** uses **`screencapture`**; by default each poll’s PNG is written under **`docs/osx/screenshots/golden-sweeper-captures/`** (that path is **gitignored** — local captures only). When hits are found, the saved PNG is **overwritten** with boxes, centroids, and **confidence** labels. A **JSONL** sidecar with the same basename and **`.json`** (one object per line: `x`, `y`, `confidence`, etc.) is written beside that PNG (or beside **`--input-image`**). Use **`--no-capture-save`** for temp-only captures. Example: `./osx/cookie_clicker_golden_sweeper.py --capture display --dry-run --max-wall-seconds 5 --output json`.
 
-**Roadmap (not shipped yet):** golden / “magic” cookie **sweeper** — live window capture + OpenCV to find transient golden cookies — is specified in **[plan-015](../docs/osx/plans/plan-015-cookie-clicker-golden-cookie-sweeper.md)**. There is no `cookie_clicker_*` sweeper script in the repo until that plan is implemented.
+**Roadmap:** **`cookie_clicker_golden_sweeper.py`** is a **v0 heuristic** (HSV blobs); **`macos_mouse_click_loop.sh` integration** (plan-015 §7) is still optional / future. Normative spec: **[plan-015](../docs/osx/plans/plan-015-cookie-clicker-golden-cookie-sweeper.md)**.
 
 Loop flags for profile workflow:
 
