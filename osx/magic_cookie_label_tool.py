@@ -169,6 +169,14 @@ Prev / Next (Left / Right)
 --------------------------
 Browse without writing the current image to disk.
 
+Prev unlabeled / Next unlabeled (Alt+Left / Alt+Right)
+------------------------------------------------------
+Jump to another image that has **no row yet** in the JSONL for this labels file
+(same idea as “unset” on load: never saved). Search wraps around the list.
+If every image already has a saved row, a message says so. If only the
+current image lacks a row, “next” / “prev” report that you are already on the
+only one.
+
 Quit (Q or close window)
 -------------------------
 If Present, Absent, or Skip is selected for the current image, you are asked to
@@ -177,13 +185,15 @@ save that decision or discard edits for this image only.
 Restarts
 --------
 The JSONL is reloaded when you start the tool; saved rows show again when you
-open each image. The list always starts at the first PNG in sorted order — use
-Next to reach the first image you have not labeled yet.
+open each image. The list always starts at the first PNG in sorted order; use Next unlabeled
+(Alt+Right) or Prev unlabeled (Alt+Left) to jump among images that still have
+no JSONL row.
 
 Shortcuts
 ---------
 Y Present · N Absent · U Skip · Enter save+next · Ctrl+Shift+W save&quit ·
-Backspace clear box · Left/Right prev/next · Q quit · F1 or Help button = this window
+Backspace clear box · Left/Right prev/next image · Alt+Left/Alt+Right prev/next
+unlabeled (no JSONL row) · Q quit · F1 or Help = this window
 """
 
     class ImageViewport(QWidget):
@@ -315,6 +325,8 @@ Backspace clear box · Left/Right prev/next · Q quit · F1 or Help button = thi
                     "Unsure / defer: saves magic_cookie=null (no box). Use when you cannot "
                     "say present vs absent but want this frame marked as reviewed."
                 ),
+                "Prev unlabeled": "Go to the previous PNG that has no saved row in this JSONL (Alt+Left). Wraps.",
+                "Next unlabeled": "Go to the next PNG that has no saved row in this JSONL (Alt+Right). Wraps.",
             }
             for txt, slot in (
                 ("Present (Y)", self._on_present),
@@ -334,6 +346,18 @@ Backspace clear box · Left/Right prev/next · Q quit · F1 or Help button = thi
                     b.setToolTip(tip)
                 btn_row.addWidget(b)
             lay.addLayout(btn_row)
+            jump_row = QHBoxLayout()
+            for txt, slot in (
+                ("Prev unlabeled", self._on_prev_unlabeled),
+                ("Next unlabeled", self._on_next_unlabeled),
+            ):
+                b = QPushButton(txt)
+                b.clicked.connect(slot)
+                tip = _btn_tips.get(txt)
+                if tip:
+                    b.setToolTip(tip)
+                jump_row.addWidget(b)
+            lay.addLayout(jump_row)
             self.setCentralWidget(central)
             sb = QStatusBar()
             self.setStatusBar(sb)
@@ -348,6 +372,8 @@ Backspace clear box · Left/Right prev/next · Q quit · F1 or Help button = thi
                 ("Backspace", self._on_clear_box),
                 ("Left", self._on_prev),
                 ("Right", self._on_next),
+                ("Alt+Left", self._on_prev_unlabeled),
+                ("Alt+Right", self._on_next_unlabeled),
                 ("Q", self.close),
                 ("F1", self._on_help),
             ):
@@ -381,7 +407,7 @@ Backspace clear box · Left/Right prev/next · Q quit · F1 or Help button = thi
             n = len(self._paths)
             self.statusBar().showMessage(
                 f"[{self._index + 1}/{n}] {p.name} | state={self._state} | labels={self._labels_path}"
-                " — Save+next writes JSONL; Save&quit or close: save/discard current if labeled"
+                " — Save+next writes JSONL; Alt+Left/Right = jump to image with no JSONL row yet"
             )
 
         def _load_frame(self) -> None:
@@ -512,6 +538,65 @@ Backspace clear box · Left/Right prev/next · Q quit · F1 or Help button = thi
             if self._index + 1 < len(self._paths):
                 self._index += 1
                 self._load_frame()
+
+        def _any_unlabeled_on_disk(self) -> bool:
+            return any(self._store.get(p) is None for p in self._paths)
+
+        def _next_unlabeled_index(self) -> Optional[int]:
+            """Index after ``self._index`` (wrapping) whose path has no JSONL row, or ``None``."""
+            n = len(self._paths)
+            for step in range(1, n):
+                i = (self._index + step) % n
+                if self._store.get(self._paths[i]) is None:
+                    return i
+            return None
+
+        def _prev_unlabeled_index(self) -> Optional[int]:
+            """Index before ``self._index`` (wrapping) whose path has no JSONL row, or ``None``."""
+            n = len(self._paths)
+            for step in range(1, n):
+                i = (self._index - step) % n
+                if self._store.get(self._paths[i]) is None:
+                    return i
+            return None
+
+        def _on_next_unlabeled(self) -> None:
+            if not self._any_unlabeled_on_disk():
+                QMessageBox.information(
+                    self,
+                    "No unlabeled images",
+                    "Every PNG in this folder already has a saved row in the JSONL.",
+                )
+                return
+            j = self._next_unlabeled_index()
+            if j is None:
+                QMessageBox.information(
+                    self,
+                    "No other unlabeled image",
+                    "Only this image lacks a saved row in the JSONL; there is no other frame to jump to.",
+                )
+                return
+            self._index = j
+            self._load_frame()
+
+        def _on_prev_unlabeled(self) -> None:
+            if not self._any_unlabeled_on_disk():
+                QMessageBox.information(
+                    self,
+                    "No unlabeled images",
+                    "Every PNG in this folder already has a saved row in the JSONL.",
+                )
+                return
+            j = self._prev_unlabeled_index()
+            if j is None:
+                QMessageBox.information(
+                    self,
+                    "No other unlabeled image",
+                    "Only this image lacks a saved row in the JSONL; there is no other frame to jump to.",
+                )
+                return
+            self._index = j
+            self._load_frame()
 
         def _on_save_next(self) -> None:
             if self._state == "unset":
