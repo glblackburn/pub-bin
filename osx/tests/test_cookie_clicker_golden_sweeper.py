@@ -53,6 +53,17 @@ def test_exclude_near_cookie() -> None:
     assert not hits
 
 
+def test_tall_gold_ui_strip_rejected() -> None:
+    """Tall golden-hue UI bars (aspect ratio) must not count as magic cookies."""
+    import cv2
+    import numpy as np
+
+    img = np.zeros((420, 400, 3), dtype=np.uint8)
+    cv2.rectangle(img, (50, 30), (74, 340), (0, 200, 255), -1)
+    hits = detect_magic_cookie_hits(img, exclude_xy=None)
+    assert not hits
+
+
 def test_cli_input_image_json_stdout(tmp_path: Path) -> None:
     import cv2
 

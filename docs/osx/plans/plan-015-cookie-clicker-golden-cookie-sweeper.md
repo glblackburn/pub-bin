@@ -90,9 +90,9 @@ Reuse **`opencv-python`** (same as detect/preview stack in `osx/`).
 
 **Training corpus:** Use and extend [`docs/osx/screenshots/cookie-clicker/`](../../screenshots/cookie-clicker/) plus committed **synthetic crops** (golden present / absent) for regression tests.
 
-### 5.1 Current v0 detector (how it works today)
+### 5.1 Current detector (HSV v2 + corpus filters)
 
-**Code:** [`detect_magic_cookie_hits`](../../../osx/cookie_clicker_golden_sweeper.py) in **`osx/cookie_clicker_golden_sweeper.py`** — this is **not** machine learning; it is a **fixed heuristic pipeline** (same on every run until constants change).
+**Code:** [`detect_magic_cookie_hits`](../../../osx/cookie_clicker_golden_sweeper.py) in **`osx/cookie_clicker_golden_sweeper.py`** — **not** machine learning; a **fixed heuristic pipeline**. Local sweeper captures are indexed for triage in **[`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md)** (regenerate with **`tools/build_golden_sweeper_corpus_index.py`**).
 
 | Step | What happens |
 |------|----------------|
@@ -100,14 +100,17 @@ Reuse **`opencv-python`** (same as detect/preview stack in `osx/`).
 | **2. Golden-ish threshold** | Two **`cv2.inRange`** masks merged with **`bitwise_or`**: (a) **H 12–35**, **S ≥ 80**, **V ≥ 140**; (b) **H 0–11**, **S ≥ 90**, **V ≥ 140**. Intention: catch yellow–orange “gold” UI without a single tight ellipse in HSV. |
 | **3. Denoise / shape** | **`medianBlur(5)`** on the binary mask, then **`morphologyEx(MORPH_OPEN)`** with a **5×5 ellipse** kernel (one iteration) to drop speckle and separate blobs slightly. |
 | **4. Contours** | **`findContours(..., RETR_EXTERNAL, CHAIN_APPROX_SIMPLE)`** — each external contour is a **candidate** region. |
-| **5. Area gate** | **`contourArea`** must be in **[120, 9000]** px² (hard-coded). |
+| **5. Area gate** | **`contourArea`** in **[150, 7200]** px² (defaults). |
 | **6. Size gate** | Bounding box **`max(width, height) ≤ 0.18 × min(image width, image height)`** — rejects very tall/wide UI strips that still passed HSV. |
+| **6b. Short-side gate** | **`min(width, height) ≥ 12`** px — drops hairline fragments. |
+| **6c. Aspect ratio** | **`max(w,h) / min(w,h) ≤ 2.35`** — rejects tall gold **scroll**/**column** smears that passed **§6**. |
+| **6d. Extent / solidity / circularity** | **Extent** = `area / (w·h)` ≥ **0.50**; **solidity** = `area / convexHullArea` ≥ **0.76**; **circularity** = `4π·area / perimeter²` ≥ **0.38** — keeps compact blobs, drops bar-like and hollow UI. |
 | **7. Centroid hit** | Hit position **(x, y)** = **center of the axis-aligned bounding rectangle** (not image moments). |
 | **8. Big-cookie exclusion** | If a profile-derived **exclude** center exists (image or global→image), drop candidates whose centroid lies within **`exclude_radius`** (default **140** px) of that point. |
-| **9. “Confidence”** | **Not** a calibrated probability. **`confidence = min(0.95, 0.45 + min(area, 3000) / 6000)`** — larger blobs score slightly higher, capped at **0.95**. Used for ordering (`sort` descending) and display only. |
+| **9. Rank + cap** | Candidates scored by **`circularity × extent × solidity × √area`**; keep at most **`max_hits` = 6** (default). **Confidence** scales a base **`min(0.95, 0.45 + min(area,3000)/6000)`** by relative rank vs best blob (still **not** calibrated probability). |
 | **10. Output** | Sorted list of **`Hit`** objects (bbox + synthetic confidence). Downstream maps centroids to **Quartz global** when **`--capture display`**. |
 
-**Limits of v0:** Any UI element whose pixels fall in the same **HSV bands** (buffs, buttons, highlights, store chrome) can become a **false positive**. Wrath / seasonal sprites are **not** modeled separately. **No** temporal tracking (same blob across polls) and **no** learned score.
+**Limits:** Gold-tinted **square** UI (buffs, buttons) can still rank in the top **K**. Wrath / seasonal sprites are **not** modeled separately. **No** temporal tracking and **no** learned score.
 
 ### 5.2 Using your runs (magic cookie present vs absent) to improve detection
 

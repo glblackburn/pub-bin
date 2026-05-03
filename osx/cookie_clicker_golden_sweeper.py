@@ -168,10 +168,21 @@ def detect_magic_cookie_hits(
     *,
     exclude_xy: Optional[Tuple[float, float]] = None,
     exclude_radius: float = 140.0,
-    min_area: int = 120,
-    max_area: int = 9000,
+    min_area: int = 150,
+    max_area: int = 7200,
+    max_hits: int = 6,
+    max_aspect: float = 2.35,
+    min_extent: float = 0.50,
+    min_solidity: float = 0.76,
+    min_circularity: float = 0.38,
+    min_side_px: int = 12,
 ) -> List[Hit]:
-    """HSV blob detector tuned for small golden-ish UI pickups (heuristic v1)."""
+    """HSV blob detector tuned for compact golden-ish blobs (heuristic v2).
+
+    Corpus-driven filters (``docs/osx/golden-sweeper-corpus-INDEX.md``): drop tall
+    gold UI strips and hollow bars using aspect ratio, extent, solidity, and
+    circularity; keep at most ``max_hits`` candidates ranked by blob compactness.
+    """
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     # Two golden-ish ranges (OpenCV H 0-180)
     lower1 = (12, 80, 140)
@@ -185,7 +196,7 @@ def detect_magic_cookie_hits(
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    hits: List[Hit] = []
+    scored: List[Tuple[float, float, float, float, float, Tuple[int, int, int, int]]] = []
     ih, iw = bgr.shape[:2]
     for cnt in contours:
         area = cv2.contourArea(cnt)
@@ -194,6 +205,24 @@ def detect_magic_cookie_hits(
         x, y, cw, ch = cv2.boundingRect(cnt)
         if max(cw, ch) > min(iw, ih) * 0.18:
             continue
+        if min(cw, ch) < min_side_px:
+            continue
+        aspect = max(cw, ch) / max(1, min(cw, ch))
+        if aspect > max_aspect:
+            continue
+        rect_a = float(cw * ch)
+        extent = area / rect_a if rect_a > 1e-6 else 0.0
+        if extent < min_extent:
+            continue
+        hull = cv2.convexHull(cnt)
+        hull_area = cv2.contourArea(hull)
+        solidity = area / hull_area if hull_area > 1e-6 else 0.0
+        if solidity < min_solidity:
+            continue
+        perim = cv2.arcLength(cnt, True)
+        circularity = (4.0 * math.pi * area) / (perim * perim) if perim > 1e-6 else 0.0
+        if circularity < min_circularity:
+            continue
         cx = x + cw * 0.5
         cy = y + ch * 0.5
         if exclude_xy is not None:
@@ -201,8 +230,19 @@ def detect_magic_cookie_hits(
             dy = cy - exclude_xy[1]
             if math.hypot(dx, dy) < exclude_radius:
                 continue
-        conf = min(0.95, 0.45 + min(area, 3000.0) / 6000.0)
-        hits.append(Hit(x=float(cx), y=float(cy), confidence=float(conf), bbox=(x, y, cw, ch)))
+        rank = circularity * extent * solidity * math.sqrt(area)
+        base_conf = min(0.95, 0.45 + min(area, 3000.0) / 6000.0)
+        scored.append((rank, base_conf, cx, cy, (x, y, cw, ch)))
+    scored.sort(key=lambda t: -t[0])
+    top = scored[: max(0, max_hits)]
+    if not top:
+        return []
+    best_rank = top[0][0]
+    hits: List[Hit] = []
+    for rank, base_conf, cx, cy, bbox in top:
+        rel = rank / best_rank if best_rank > 1e-9 else 1.0
+        conf = min(0.95, base_conf * (0.82 + 0.18 * min(1.0, rel)))
+        hits.append(Hit(x=float(cx), y=float(cy), confidence=float(conf), bbox=bbox))
     hits.sort(key=lambda h: -h.confidence)
     return hits
 
