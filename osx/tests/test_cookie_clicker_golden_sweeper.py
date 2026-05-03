@@ -83,6 +83,8 @@ def test_cli_input_image_json_stdout(tmp_path: Path) -> None:
     assert isinstance(row["x"], (int, float))
     sidecar = png.with_suffix(".json")
     assert sidecar.is_file(), f"missing sidecar {sidecar}"
+    annotated = png.parent / f"{png.stem}-annotated{png.suffix}"
+    assert annotated.is_file(), f"missing annotated sibling {annotated}"
     file_lines = [ln for ln in sidecar.read_text(encoding="utf-8").splitlines() if ln.strip()]
     assert file_lines == lines
 

@@ -8,9 +8,10 @@ By default PNGs are kept under ``docs/osx/screenshots/golden-sweeper-captures/``
 that directory is listed in the repo ``.gitignore`` — local captures only). Use ``--no-capture-save`` for
 ephemeral temp files only.
 
-When there is at least one hit, a **JSONL** sidecar is written next to the image: same basename as the
-screenshot (or ``--input-image`` path) with a ``.json`` extension — one detection object per line (same
-payload as ``--output json`` on stdout).
+When there is at least one hit, a **JSONL** sidecar is written next to the **raw** image basename
+(``*.json``). For ``--capture display``, **raw** ``screencapture`` bytes stay in ``*.png``; a second file
+``*-annotated.png`` holds boxes + confidence markup. For ``--input-image``, the input file is unchanged;
+``*-annotated.png`` is written beside it when hits exist.
 """
 
 from __future__ import annotations
@@ -224,6 +225,11 @@ def _emit_json(h: Hit, *, ts: str, frame_id: int, coord_space: str) -> str:
     return json.dumps(obj, separators=(",", ":"))
 
 
+def _annotated_image_path(raw_path: Path) -> Path:
+    """Sibling path ``{stem}-annotated{suffix}`` (e.g. ``foo.png`` → ``foo-annotated.png``)."""
+    return raw_path.parent / f"{raw_path.stem}-annotated{raw_path.suffix}"
+
+
 def _annotate_hits_on_bgr(bgr, hits: Sequence[Hit]):
     """Return a BGR copy with each hit: green bbox, centroid dot, confidence label."""
     vis = bgr.copy()
@@ -318,7 +324,7 @@ def parse_args() -> argparse.Namespace:
         "--capture-save-dir",
         default="",
         metavar="DIR",
-        help="Save each poll's screencapture PNG under DIR (default: docs/osx/screenshots/golden-sweeper-captures).",
+        help="Save each poll's raw screencapture PNG under DIR; on hits also writes *-annotated.png (default: docs/osx/screenshots/golden-sweeper-captures).",
     )
     p.add_argument(
         "--no-capture-save",
@@ -402,10 +408,18 @@ def main() -> int:
             polls += 1
             frame_id += 1
 
-            if cap_path is not None and hits_img:
+            if hits_img:
                 vis = _annotate_hits_on_bgr(bgr, hits_img)
-                if not cv2.imwrite(str(cap_path), vis):
-                    raise SystemExit(f"Error: failed to write annotated capture: {cap_path}")
+                if cap_path is not None:
+                    ann_path = _annotated_image_path(cap_path)
+                    if not cv2.imwrite(str(ann_path), vis):
+                        raise SystemExit(f"Error: failed to write annotated capture: {ann_path}")
+                    print(f"# annotated: {ann_path.resolve()}", file=sys.stderr, flush=True)
+                elif img_path is not None:
+                    ann_path = _annotated_image_path(img_path)
+                    if not cv2.imwrite(str(ann_path), vis):
+                        raise SystemExit(f"Error: failed to write annotated image: {ann_path}")
+                    print(f"# annotated: {ann_path.resolve()}", file=sys.stderr, flush=True)
 
             hits_out: List[Hit] = []
             for h in hits_img:

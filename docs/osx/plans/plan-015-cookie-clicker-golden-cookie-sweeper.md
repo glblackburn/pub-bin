@@ -90,11 +90,62 @@ Reuse **`opencv-python`** (same as detect/preview stack in `osx/`).
 
 **Training corpus:** Use and extend [`docs/osx/screenshots/cookie-clicker/`](../../screenshots/cookie-clicker/) plus committed **synthetic crops** (golden present / absent) for regression tests.
 
+### 5.1 Current v0 detector (how it works today)
+
+**Code:** [`detect_magic_cookie_hits`](../../../osx/cookie_clicker_golden_sweeper.py) in **`osx/cookie_clicker_golden_sweeper.py`** — this is **not** machine learning; it is a **fixed heuristic pipeline** (same on every run until constants change).
+
+| Step | What happens |
+|------|----------------|
+| **1. Color space** | Input **BGR** frame → **`cv2.cvtColor(..., COLOR_BGR2HSV)`**. OpenCV uses **H ∈ [0, 180]**, **S,V ∈ [0, 255]**. |
+| **2. Golden-ish threshold** | Two **`cv2.inRange`** masks merged with **`bitwise_or`**: (a) **H 12–35**, **S ≥ 80**, **V ≥ 140**; (b) **H 0–11**, **S ≥ 90**, **V ≥ 140**. Intention: catch yellow–orange “gold” UI without a single tight ellipse in HSV. |
+| **3. Denoise / shape** | **`medianBlur(5)`** on the binary mask, then **`morphologyEx(MORPH_OPEN)`** with a **5×5 ellipse** kernel (one iteration) to drop speckle and separate blobs slightly. |
+| **4. Contours** | **`findContours(..., RETR_EXTERNAL, CHAIN_APPROX_SIMPLE)`** — each external contour is a **candidate** region. |
+| **5. Area gate** | **`contourArea`** must be in **[120, 9000]** px² (hard-coded). |
+| **6. Size gate** | Bounding box **`max(width, height) ≤ 0.18 × min(image width, image height)`** — rejects very tall/wide UI strips that still passed HSV. |
+| **7. Centroid hit** | Hit position **(x, y)** = **center of the axis-aligned bounding rectangle** (not image moments). |
+| **8. Big-cookie exclusion** | If a profile-derived **exclude** center exists (image or global→image), drop candidates whose centroid lies within **`exclude_radius`** (default **140** px) of that point. |
+| **9. “Confidence”** | **Not** a calibrated probability. **`confidence = min(0.95, 0.45 + min(area, 3000) / 6000)`** — larger blobs score slightly higher, capped at **0.95**. Used for ordering (`sort` descending) and display only. |
+| **10. Output** | Sorted list of **`Hit`** objects (bbox + synthetic confidence). Downstream maps centroids to **Quartz global** when **`--capture display`**. |
+
+**Limits of v0:** Any UI element whose pixels fall in the same **HSV bands** (buffs, buttons, highlights, store chrome) can become a **false positive**. Wrath / seasonal sprites are **not** modeled separately. **No** temporal tracking (same blob across polls) and **no** learned score.
+
+### 5.2 Using your runs (magic cookie present vs absent) to improve detection
+
+**What each run already produces (v0):**
+
+- **Raw PNG** — for **`--capture display`**, **`screencapture`** bytes are written to **`golden-sweeper-…-fNNNNN.png`** and **never** overwritten by markup. When there are **no** hits, that file is the only image artifact for the poll.
+- **Annotated PNG** — when there is **at least one** hit, a sibling **`…-fNNNNN-annotated.png`** (same directory, stem **`{raw-stem}-annotated`**) holds boxes, centroids, and numeric **confidence** labels. For **`--input-image`**, the input file is unchanged; **`{input-stem}-annotated{suffix}`** is written beside it on hits.
+- **`.json` sidecar** — **JSONL** next to the **raw** basename (for display capture, the **`screencapture`** PNG stem; for **`--input-image`**, the input path stem): **`{raw-or-input-basename}.json`**, one object per **accepted** candidate for that poll (same schema as stdout): **`bbox`**, centroid-derived **`x`/`y`**, **`confidence`**, **`coord_space`**, etc.  
+  **Gap today:** if a frame has **no** detections, the script **does not** write a `.json` file — you still have a **negative** example as **PNG only** (or add a future **`--emit-empty-json`** for tooling).
+
+**Raw vs annotated for learning / tuning:** Keep **raw** frames for anything that depends on **true framebuffer pixels** — HSV sweeps, template matching, or CNN training — because overlays **change** colors and edges. Use **annotated** PNGs plus **JSONL** for **human review**, geometry checks, and many metadata workflows; **annotated-only** corpora are weak for learning **appearance** because the draw layer alters the underlying sprite signal.
+
+**How that data helps *without* ML first:**
+
+1. **Audit false positives** — Open PNG + JSON side-by-side; note which **`bbox`** lines are wrong. Adjust **§5.1** constants: H/S/V spans, **`min_area` / `max_area`**, **`max(cw,ch)` ratio**, **`exclude_radius`**, or add **ROI masks** (e.g. ignore store column) in code.
+2. **Template library** — Crop **true** golden cookies from your PNGs into **`docs/osx/screenshots/...`** (or a new `golden-sweeper-templates/`), then add a second stage: **`matchTemplate`** on HSV-masked ROIs only when blob size is ambiguous.
+3. **Histogram / clustering offline** — From **true** crops vs **false** crops, plot H/S/V distributions to tighten **`inRange`** bounds with evidence instead of guessing.
+4. **Pytest fixtures** — Commit a few **de-identified** or synthetic crops + expected hit counts as regression tests (same pattern as today’s yellow-circle synthetic test).
+
+**How labeled runs feed *traditional* ML (optional next step):**
+
+- **Classical ML (usually enough before deep nets):** For each contour (or each **`bbox`** crop), compute **hand-crafted features** — area, aspect ratio, extent, solidity, mean/std **H/S/V** inside the patch, edge density, distance to big-cookie, etc. Train **`sklearn`** **SVM**, **RandomForest**, or **logistic regression** on **CSV/JSON** exported from your runs where you add a boolean **`is_true_golden`** (manual label or rules). Needs **tens to a few hundreds** of labeled candidates; imbalanced classes are normal (many negatives).
+- **Template + classifier cascade:** Keep cheap HSV pre-filter; run ML only on **top-K** candidates per frame to save CPU.
+- **Deep learning (only if needed):** Small **CNN** (or fine-tuned backbone) on **fixed-size crops** — stronger for texture and wrath variants, but wants **hundreds+** labeled patches, training script, and versioned **weights** file in or beside the repo. Higher operational cost than OpenCV constants.
+
+**Recommendation:** Use your runs to **measure** false-positive rate and **tighten heuristics + templates** first; add **classical ML on contour/crop features** if heuristics plateau; reserve **CNN** for persistent failure modes (wrath vs golden, heavy UI skins) after you have enough labeled data.
+
+### 5.3 Do we *need* traditional machine learning?
+
+**No, not strictly** — v0 proves **color blob + geometry rules** can run end-to-end. **Yes, optionally** — if after data-driven tuning of HSV/area/bbox gates you still see systematic false positives, **traditional ML on engineered features** is the next **cost-effective** step before jumping to deep learning.
+
+**Operational note:** Any improvement path should keep **paired artifacts** (raw frame + optional annotated view + machine-readable labels) under a **consistent naming scheme**; the current **raw PNG + `*-annotated.png` (on hits) + `.json`** sidecar is a good spine for semi-automated labeling scripts (`tools/` or `osx/` one-off notebooks).
+
 ---
 
 ## 6. CLI shape (sketch)
 
-**Implemented (v0):** [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py) — **`--output`** supports **`text`** and **`json`** only; **`--overlay-path`** is optional; **`--coord-log`** supported. **`--capture display`** uses **`/usr/sbin/screencapture -x -t png`** (main display); PNGs are **retained by default** under **`docs/osx/screenshots/golden-sweeper-captures/`** (repo **`.gitignore`** excludes that directory from version control; **`--capture-save-dir`** / **`--no-capture-save`** override behavior). Quartz mapping → **`quartz_global`**. **`--input-image`** emits **`image_pixels`** (plan §6.1 **`coord_space`** field in JSON).
+**Implemented (v0):** [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py) — **`--output`** supports **`text`** and **`json`** only; **`--overlay-path`** is optional; **`--coord-log`** supported. **`--capture display`** uses **`/usr/sbin/screencapture -x -t png`** (main display); each poll’s **raw** PNG is **retained by default** under **`docs/osx/screenshots/golden-sweeper-captures/`** (repo **`.gitignore`** excludes that directory from version control; **`--capture-save-dir`** / **`--no-capture-save`** override behavior). On hits, a second **`…-annotated.png`** file carries confidence markup; **`.json`** stays paired with the **raw** basename. Quartz mapping → **`quartz_global`**. **`--input-image`** emits **`image_pixels`** (plan §6.1 **`coord_space`** field in JSON).
 
 Normative sketch below; flags must work for **both** standalone and looper subprocess invocation.
 
