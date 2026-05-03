@@ -89,13 +89,16 @@ State = Literal["unset", "present", "absent", "skip"]
 def main(argv: List[str]) -> int:
     ns = parse_args(argv[1:])
     try:
-        from PySide6.QtCore import Qt, QRect, QPoint, QSize, QTimer  # noqa: PLC0415
+        from PySide6.QtCore import Qt, QRect, QPoint, QSize, QTimer, Signal  # noqa: PLC0415
         from PySide6.QtGui import QPainter, QPen, QColor, QPixmap, QImage, QShortcut, QKeySequence  # noqa: PLC0415
         from PySide6.QtWidgets import (  # noqa: PLC0415
             QApplication,
+            QDialog,
+            QDialogButtonBox,
             QHBoxLayout,
             QMainWindow,
             QMessageBox,
+            QPlainTextEdit,
             QPushButton,
             QStatusBar,
             QVBoxLayout,
@@ -120,7 +123,72 @@ def main(argv: List[str]) -> int:
     store = LabelStore(labels_path)
     store.load()
 
+    HELP_TEXT = """\
+Magic cookie label tool — quick reference
+========================================
+
+Purpose
+-------
+You walk PNG captures (default: golden sweeper raw frames, sorted by filename).
+For each image you choose Present, Absent, or Skip, optionally draw a box, then
+save. Rows are appended to a JSONL file (see status bar for path).
+
+Present (Y)
+-----------
+A magic (golden-type) cookie is visible. Drag a rectangle around it in the
+image. Enter / Save + next requires a box. Drawing a box also switches to
+Present.
+
+Absent (N)
+----------
+No magic cookie in this frame. Any box is cleared. No bounding box is stored.
+
+Skip (U) — unsure / defer
+-------------------------
+You looked at the frame but will not commit to present vs absent (unclear
+image, wrong capture, occlusion, wrong game state, etc.). On save, the JSONL
+stores magic_cookie as null with no bbox — the frame is still “reviewed” so
+pipelines can ignore it or treat it separately from true/false training labels.
+
+Clear box (Backspace)
+---------------------
+Removes only the yellow rectangle. It does not change Present / Absent / Skip.
+
+Save + next (Enter)
+-------------------
+Writes the current image’s label into the JSONL (the whole file is rewritten),
+then moves to the next PNG.
+
+Save & quit (Ctrl+Shift+W)
+--------------------------
+Saves the current image if it is labeled, then closes. If nothing is selected
+for this image, asks whether to quit anyway — images you already saved with
+Save + next are already on disk.
+
+Prev / Next (Left / Right)
+--------------------------
+Browse without writing the current image to disk.
+
+Quit (Q or close window)
+-------------------------
+If Present, Absent, or Skip is selected for the current image, you are asked to
+save that decision or discard edits for this image only.
+
+Restarts
+--------
+The JSONL is reloaded when you start the tool; saved rows show again when you
+open each image. The list always starts at the first PNG in sorted order — use
+Next to reach the first image you have not labeled yet.
+
+Shortcuts
+---------
+Y Present · N Absent · U Skip · Enter save+next · Ctrl+Shift+W save&quit ·
+Backspace clear box · Left/Right prev/next · Q quit · F1 or Help button = this window
+"""
+
     class ImageViewport(QWidget):
+        box_completed = Signal()
+
         def __init__(self) -> None:
             super().__init__()
             self._pixmap = QPixmap()
@@ -220,6 +288,8 @@ def main(argv: List[str]) -> int:
                 self._rubber = QRect(self._drag_start, e.position().toPoint()).normalized()
                 self._drag_start = None
                 self.update()
+                if not self._rubber.isNull():
+                    self.box_completed.emit()
 
         def resizeEvent(self, e) -> None:  # noqa: N802
             super().resizeEvent(e)
@@ -235,21 +305,33 @@ def main(argv: List[str]) -> int:
             self._labels_path = labels_path
             self._state: State = "unset"
             self._viewport = ImageViewport()
+            self._viewport.box_completed.connect(self._on_box_drawn)
             central = QWidget()
             lay = QVBoxLayout(central)
             lay.addWidget(self._viewport, stretch=1)
             btn_row = QHBoxLayout()
+            _btn_tips = {
+                "Skip (U)": (
+                    "Unsure / defer: saves magic_cookie=null (no box). Use when you cannot "
+                    "say present vs absent but want this frame marked as reviewed."
+                ),
+            }
             for txt, slot in (
                 ("Present (Y)", self._on_present),
                 ("Absent (N)", self._on_absent),
                 ("Skip (U)", self._on_skip),
                 ("Clear box", self._on_clear_box),
                 ("Save + next (Enter)", self._on_save_next),
+                ("Save & quit", self._on_save_and_quit),
                 ("Prev", self._on_prev),
                 ("Next", self._on_next),
+                ("Help", self._on_help),
             ):
                 b = QPushButton(txt)
                 b.clicked.connect(slot)
+                tip = _btn_tips.get(txt)
+                if tip:
+                    b.setToolTip(tip)
                 btn_row.addWidget(b)
             lay.addLayout(btn_row)
             self.setCentralWidget(central)
@@ -262,13 +344,28 @@ def main(argv: List[str]) -> int:
                 ("N", self._on_absent),
                 ("U", self._on_skip),
                 ("Return", self._on_save_next),
+                ("Ctrl+Shift+W", self._on_save_and_quit),
                 ("Backspace", self._on_clear_box),
                 ("Left", self._on_prev),
                 ("Right", self._on_next),
                 ("Q", self.close),
+                ("F1", self._on_help),
             ):
                 sc = QShortcut(QKeySequence(key), self)
                 sc.activated.connect(slot)
+
+        def _on_help(self) -> None:
+            dlg = QDialog(self)
+            dlg.setWindowTitle("Magic cookie labeler — help")
+            v = QVBoxLayout(dlg)
+            body = QPlainTextEdit(HELP_TEXT)
+            body.setReadOnly(True)
+            body.setMinimumSize(520, 400)
+            v.addWidget(body)
+            box = QDialogButtonBox(QDialogButtonBox.Ok)
+            box.accepted.connect(dlg.accept)
+            v.addWidget(box)
+            dlg.exec()
 
         def _state_from_record(self, rec: Optional[LabelRecord]) -> State:
             if rec is None:
@@ -284,6 +381,7 @@ def main(argv: List[str]) -> int:
             n = len(self._paths)
             self.statusBar().showMessage(
                 f"[{self._index + 1}/{n}] {p.name} | state={self._state} | labels={self._labels_path}"
+                " — Save+next writes JSONL; Save&quit or close: save/discard current if labeled"
             )
 
         def _load_frame(self) -> None:
@@ -298,6 +396,10 @@ def main(argv: List[str]) -> int:
                 self._viewport.apply_record(rec)
 
             QTimer.singleShot(0, apply)
+            self._refresh_status()
+
+        def _on_box_drawn(self) -> None:
+            self._state = "present"
             self._refresh_status()
 
         def _on_present(self) -> None:
@@ -318,20 +420,10 @@ def main(argv: List[str]) -> int:
             self._viewport.clear_box()
             self.update()
 
-        def _on_prev(self) -> None:
-            if self._index > 0:
-                self._index -= 1
-                self._load_frame()
-
-        def _on_next(self) -> None:
-            if self._index + 1 < len(self._paths):
-                self._index += 1
-                self._load_frame()
-
-        def _on_save_next(self) -> None:
+        def _record_for_current(self) -> Tuple[Optional[LabelRecord], Optional[str]]:
+            """Build ``LabelRecord`` for the current image, or ``(None, err)`` if present without a valid box."""
             if self._state == "unset":
-                QMessageBox.information(self, "Choose label", "Press Y, N, or U before saving.")
-                return
+                return None, None
             path = self._paths[self._index]
             magic: Optional[bool]
             bbox: Optional[Tuple[int, int, int, int]]
@@ -339,10 +431,7 @@ def main(argv: List[str]) -> int:
                 magic = True
                 bbox = self._viewport.bbox_image_px()
                 if bbox is None or bbox[2] < 1 or bbox[3] < 1:
-                    QMessageBox.information(
-                        self, "Bounding box required", "Drag a rectangle around the magic cookie before saving."
-                    )
-                    return
+                    return None, "Drag a rectangle around the magic cookie before saving."
             elif self._state == "absent":
                 magic = False
                 bbox = None
@@ -358,6 +447,81 @@ def main(argv: List[str]) -> int:
                 labeled_at=utc_now_iso(),
                 tool_version=TOOL_VERSION,
             )
+            return rec, None
+
+        def _on_save_and_quit(self) -> None:
+            if self._state == "unset":
+                r = QMessageBox.question(
+                    self,
+                    "Quit?",
+                    "No label is selected for this image (nothing will be written for it).\n\n"
+                    "Images you already saved with Save + next are already in the JSONL file.\nQuit anyway?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No,
+                )
+                if r != QMessageBox.Yes:
+                    return
+            else:
+                rec, err = self._record_for_current()
+                if err:
+                    QMessageBox.information(self, "Cannot save", err)
+                    return
+                assert rec is not None
+                self._store.upsert(rec)
+                self._store.save()
+            self.close()
+
+        def closeEvent(self, event) -> None:  # noqa: N802
+            if self._state == "unset":
+                event.accept()
+                return
+            dlg = QMessageBox(self)
+            dlg.setIcon(QMessageBox.Question)
+            dlg.setWindowTitle("Quit labeling?")
+            dlg.setText(
+                "Save the current image to the JSONL before quitting?\n\n"
+                "Images you already saved with Save + next are on disk."
+            )
+            save_btn = dlg.addButton("Save current", QMessageBox.AcceptRole)
+            discard_btn = dlg.addButton("Discard edits for current", QMessageBox.DestructiveRole)
+            cancel_btn = dlg.addButton("Cancel", QMessageBox.RejectRole)
+            dlg.exec()
+            clicked = dlg.clickedButton()
+            if clicked == cancel_btn:
+                event.ignore()
+                return
+            if clicked == save_btn:
+                rec, err = self._record_for_current()
+                if err:
+                    QMessageBox.information(self, "Cannot save", err)
+                    event.ignore()
+                    return
+                assert rec is not None
+                self._store.upsert(rec)
+                self._store.save()
+                event.accept()
+                return
+            event.accept()
+
+        def _on_prev(self) -> None:
+            if self._index > 0:
+                self._index -= 1
+                self._load_frame()
+
+        def _on_next(self) -> None:
+            if self._index + 1 < len(self._paths):
+                self._index += 1
+                self._load_frame()
+
+        def _on_save_next(self) -> None:
+            if self._state == "unset":
+                QMessageBox.information(self, "Choose label", "Press Y, N, or U before saving.")
+                return
+            rec, err = self._record_for_current()
+            if err:
+                QMessageBox.information(self, "Bounding box required", err)
+                return
+            assert rec is not None
             self._store.upsert(rec)
             self._store.save()
             if self._index + 1 < len(self._paths):
