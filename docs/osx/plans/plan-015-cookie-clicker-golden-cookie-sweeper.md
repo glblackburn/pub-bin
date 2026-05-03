@@ -2,7 +2,7 @@
 
 **Status:** Design / roadmap (no implementation commitment in this document until v1 scope is locked).
 
-**Scope:** Design a **sweeper** that repeatedly captures the **browser window** (or a defined screen region), detects **special cookies** that appear transiently in Cookie Clicker (commonly **golden cookies**; optionally **wrath** cookies, seasonal variants, **reindeer**, etc.), and surfaces coordinates (and optionally triggers clicks). The deliverable **must** support **two invocations**: (1) **standalone** — operator runs the script directly for long sessions or smoke tests; (2) **looper-callable** — [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (or a thin shell wrapper it invokes) calls the **same Python entrypoint** with non-interactive flags so behavior is identical whether run alone or from the loop. This plan is the **normative product spec**; implementation would add a new script or module under [`osx/`](../../../osx/) and tests under [`osx/tests/`](../../../osx/tests/).
+**Scope:** Design a **sweeper** that repeatedly captures the **browser window** (or a defined screen region), detects **special cookies** that appear transiently in Cookie Clicker (commonly **golden cookies**; optionally **wrath** cookies, seasonal variants, **reindeer**, etc.), and **always outputs the coordinates** of each magic-cookie hit (global **Quartz** **x, y** suitable for `macos_mouse_click.py`), then optionally triggers clicks. Coordinate emission is **required** whenever a candidate is accepted by the detector — including **`--dry-run`** (no click, but still print / JSON-log the hit). The deliverable **must** support **two invocations**: (1) **standalone** — operator runs the script directly for long sessions or smoke tests; (2) **looper-callable** — [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (or a thin shell wrapper it invokes) calls the **same Python entrypoint** with non-interactive flags so behavior is identical whether run alone or from the loop. This plan is the **normative product spec**; implementation would add a new script or module under [`osx/`](../../../osx/) and tests under [`osx/tests/`](../../../osx/tests/).
 
 **Related:** [plan-002 — operator loop / backlog](plan-002-macos-mouse-click-terminal-ux.md) (tier 3 “golden-cookie region sweep”), [plan-013 — profile layout / window-relative coords](plan-013-cookie-clicker-profile-layout-and-calibration.md), [plan-014 — post-ladder cookie burst factor](plan-014-macos-mouse-click-loop-cookie-before-ladder.md), [`osx/cookie_clicker_detect_coords.py`](../../../osx/cookie_clicker_detect_coords.py), [`osx/macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh), [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py), screenshot corpus [`docs/osx/screenshots/cookie-clicker/`](../../screenshots/cookie-clicker/).
 
@@ -14,7 +14,8 @@
 |------|---------|
 | **Magic cookie** | Operator shorthand for any **non-big-cookie** special pickup the game spawns at unpredictable **(x, y)** — primarily **golden cookie**; may include **wrath cookie**, event sprites. |
 | **Big cookie** | The permanent large cookie; already automated via profile **`cookie`** coordinates in the loop. **Must not** be confused with golden-cookie detection. |
-| **Sweeper** | A **poll loop**: capture → detect → emit/act → sleep; runs concurrently with or **between** other automation phases. |
+| **Sweeper** | A **poll loop**: capture → detect → **emit coordinates** → optional click → sleep; runs concurrently with or **between** other automation phases. |
+| **Hit coordinates** | The **global** **(x, y)** (floating-point or rounded **px**) of the **click target** for a detected magic cookie — typically **centroid** or **template peak** after mapping from capture space to Quartz space. **Must** be written to stdout/stderr or JSON per **§6.1** on every accepted hit. |
 | **Capture frame** | Bitmap in **window** or **display** space used for CV; mapping to **global Quartz (x, y)** for `macos_mouse_click.py` must be explicit. |
 
 ---
@@ -22,7 +23,7 @@
 ## 2. Goals
 
 1. **Detect** at least one visual class (v1 TBD) of special cookies in a captured frame with acceptable false-positive rate on a **fixed** layout (same assumptions as today’s loop: stable window size and position relative to profile coordinates).
-2. **Report** detections as **global coordinates** (or window-local + window origin) suitable for **`macos_mouse_click.py -x -y -Y`**.
+2. **Report** every accepted magic-cookie detection by **outputting its coordinates** — **global Quartz (x, y)** in a stable, machine-parsable form (**§6.1**). Coordinates are **required** on each hit even when clicks are disabled (**`--dry-run`**); optional clicks use the **same** emitted pair for **`macos_mouse_click.py -x -y`**. If multiple cookies appear in one frame, emit **one record per hit** (sorted by confidence or scan order, documented in CLI help).
 3. **Operate** on macOS with documented **Screen Recording** (and any other) permissions.
 4. **Run standalone** as the **primary operator and QA path**: same process used for development, demos, and “prove it finds a magic cookie when one spawns” without starting the full buy ladder loop.
 5. **Run under the looper** when integration options in **§7** are enabled: the loop script must call the sweeper as a **subprocess** (or `source` a shared shell snippet that execs the same CLI) with explicit **argv** — **no** reliance on TTY prompts for that path unless `-A`-style auto flags are also defined.
@@ -50,7 +51,7 @@
 | Decision | Options | Notes |
 |----------|---------|--------|
 | **Visual classes (v1)** | Golden only; golden + wrath; + seasonal | Each class may need separate templates or HSV rules. |
-| **Output mode** | JSON lines; stdout **x y**; overlay PNG; all | Drives CLI and composability with shell. |
+| **Output mode** | JSON lines; stdout **`x y`**; overlay PNG; all | **Coordinates are mandatory** in **text** and **json** modes (see **§6.1**). Overlay mode still should log coords to stderr or a sidecar JSONL for automation. |
 | **Click integration** | None (detect only); subprocess `macos_mouse_click.py`; **`macos_mouse_click_loop.sh`** hook (see **§7**) | In-loop integration implies **ordering**, **wall-clock budget**, and/or **chunking** vs long **`-Y`** bursts. |
 | **Latency budget** | e.g. poll every **250 ms–2 s** | Tradeoff: CPU vs miss window before cookie fades or moves. |
 | **Capture target** | Frontmost browser window; named app window; full display crop | See §4. |
@@ -111,6 +112,20 @@ cookie_clicker_golden_sweeper.py  # name TBD
 **Looper subprocess contract:** the shell passes **absolute** paths to **`--profile`**, fixed **`--poll-interval`**, and a **hard** **`--max-wall-seconds`** (or **`--max-polls`**) so a stuck sweeper cannot block the loop forever. Exit codes: **0** = finished normally (timeout or max polls); **non-zero** = error (bad capture, import failure) so the loop can **`set -e`** or log and continue per product choice.
 
 **Click path (optional v1):** invoke `macos_mouse_click.py -x … -y … -n 1 -d 0 -Y` (or at-cursor if design prefers) per detection; document **double-click** or **miss** behavior.
+
+### 6.1 Coordinate output (normative)
+
+Whenever the detector **accepts** at least one magic cookie in a poll (or in a still frame for tests), the script **must** emit coordinates before any optional click:
+
+| `--output` | Required coordinate emission |
+|------------|-------------------------------|
+| **`text`** | One line per hit to **stdout**: whitespace-separated **`x y`** (global Quartz), optional third column **`confidence`** if implemented; use a **`#`** prefix for human-only comments so shell pipelines can **`grep -v '^#'`**. |
+| **`json`** | One **JSON object per line** (**JSONL**) to **stdout** for each hit, minimum keys: **`x`**, **`y`** (numbers), **`kind`** (e.g. `golden`), **`ts`** (ISO8601 or monotonic counter). Extra keys (`confidence`, `bbox`, `frame_id`) are allowed. |
+| **`overlay-path`** | Write annotated PNG to the given path **and** emit the same **`json`** or **`text`** records to **stderr** (or a **`--coord-log PATH`** file) so operators and the looper can parse hits without OCR of the image. |
+
+**Precision:** document whether **`x`/`y`** are **integers** (rounded) or **floats**; match what `macos_mouse_click.py` accepts on **`-x`/`-y`**.
+
+**No hit:** when a poll finds nothing, emit **no** coordinate lines (or a single **`json`** status line only if **`--verbose-polls`** is enabled — product choice; default should stay quiet to avoid flooding logs).
 
 ---
 
@@ -205,7 +220,7 @@ flowchart LR
 | **Unit / CV** | Static PNG fixtures: assert **count** and **(x, y)** within tolerance vs known golden positions (pytest + `cv2`, skip if import fails — mirror existing `osx/tests` patterns). |
 | **Capture** | Mock frame injection in tests; one **manual** or CI-skipped test that runs `screencapture` only when `RUN_WINDOW_CAPTURE=1`. |
 | **Integration** | Optional: dry-run against a saved full-screen PNG in repo (large file policy: prefer crops). |
-| **Standalone operator acceptance** | Run **`cookie_clicker_golden_sweeper.py`** **alone** (game open, golden allowed to spawn): verify stderr/JSON logs show **detections** when a magic cookie appears; repeat with **`--dry-run`** then without to validate click path. **Do not** require the looper for this gate — once standalone is trusted, add a short **`macos_mouse_click_loop.sh -G`** (or equivalent) smoke test that only checks subprocess exit **0** and bounded runtime. |
+| **Standalone operator acceptance** | Run **`cookie_clicker_golden_sweeper.py`** **alone** (game open, golden allowed to spawn): verify **stdout** (or coord log) contains **§6.1** records with **`x`/`y`** when a magic cookie appears — **`--dry-run`** must still emit coordinates. Repeat without **`--dry-run`** to validate clicks use the **same** pair. **Do not** require the looper for this gate — once standalone is trusted, add a short **`macos_mouse_click_loop.sh -G`** (or equivalent) smoke test that only checks subprocess exit **0** and bounded runtime. |
 
 ---
 
