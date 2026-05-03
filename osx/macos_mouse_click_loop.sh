@@ -25,6 +25,7 @@ post_ladder_cookie_burst_factor=
 mouse_click=${script_dir}/macos_mouse_click.py
 detect_script=${script_dir}/cookie_clicker_detect_coords.py
 preview_script=${script_dir}/cookie_clicker_preview_plan.py
+golden_sweeper=${script_dir}/cookie_clicker_golden_sweeper.py
 default_profile_json=${script_dir}/config/cookie_clicker_profile.defaults.json
 
 ################################################################################
@@ -366,6 +367,7 @@ function run_phased_cookie_bursts {
         if [ "${i}" -lt "${k}" ]; then
             echo "sleep between cookie phases: ${CYCLE_SLEEP_SECONDS}s" >&2
             sleep "${CYCLE_SLEEP_SECONDS}"
+            "${golden_sweeper}" --capture display --dry-run --max-wall-seconds 2
         fi
         i=$((i + 1))
     done
