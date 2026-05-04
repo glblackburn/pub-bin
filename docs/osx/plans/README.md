@@ -12,9 +12,9 @@ Reference material that is **not** a **`plan-###`** clicker spec but is kept wit
 
 **Mouse-clicker:** extend the relevant **`plan-###-….md`** in this directory (for example **[plan-002](plan-002-macos-mouse-click-terminal-ux.md)**, **[plan-003](plan-003-macos-mouse-click-tui-automation.md)**, **[plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md)**). Do **not** treat `~/.cursor/plans/` as canonical — copy material into the numbered plan that owns the feature. **When the user asks to save a plan document into the repo,** write it under this directory (new **`plan-###-….md`** or update an existing plan); the repo path is the canonical copy.
 
-## Shortcut: plan numbers **01**–**16**
+## Shortcut: plan numbers **01**–**17**
 
-The lookup table below maps **01**–**10** (legacy product plan labels) plus **11**–**16** (session notes, design plans, and loop roadmap) to files in this directory.
+The lookup table below maps **01**–**10** (legacy product plan labels) plus **11**–**17** (session notes, design plans, and loop roadmap) to files in this directory.
 
 | Plan | Document |
 |------|----------|
@@ -34,6 +34,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 | **14** | [plan-014 — post-ladder cookie burst factor (loop)](plan-014-macos-mouse-click-loop-cookie-before-ladder.md) |
 | **15** | [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md) |
 | **16** | [plan-016 — magic cookie screenshot label tool](plan-016-magic-cookie-screenshot-label-tool.md) |
+| **17** | [plan-017 — magic cookie detector eval and tuning](plan-017-magic-cookie-detector-eval-and-tuning.md) |
 
 ## Plan index (dates and status)
 
@@ -59,6 +60,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 | plan-014 | Post-ladder cookie burst factor — phased **`-k`** + preview (**v2**) | 2026-05-04 | 2026-05-02 | **Shipped** | [plan-014-macos-mouse-click-loop-cookie-before-ladder.md](plan-014-macos-mouse-click-loop-cookie-before-ladder.md) |
 | plan-015 | Cookie Clicker golden / magic cookie sweeper (capture + CV) | 2026-05-02 | — | Design / roadmap | [plan-015-cookie-clicker-golden-cookie-sweeper.md](plan-015-cookie-clicker-golden-cookie-sweeper.md) |
 | plan-016 | Magic cookie screenshot labeler (PySide + JSONL) | 2026-05-03 | 2026-05-03 | **Shipped** | [plan-016-magic-cookie-screenshot-label-tool.md](plan-016-magic-cookie-screenshot-label-tool.md) |
+| plan-017 | Magic cookie detector eval and tuning (label-driven) | 2026-05-03 | — | **Roadmap** | [plan-017-magic-cookie-detector-eval-and-tuning.md](plan-017-magic-cookie-detector-eval-and-tuning.md) |
 | plan-handoff | LinkedIn draft session (2026-04-18) | 2026-04-18 | — | Session note | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
 | hand-off | Rich pre-run TUI layout (session to next agent) | 2026-04-21 | — | Session note | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
 

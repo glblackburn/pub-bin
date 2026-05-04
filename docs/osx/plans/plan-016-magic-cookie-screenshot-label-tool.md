@@ -2,7 +2,7 @@
 
 **Status:** **Shipped (v1)** — [`osx/magic_cookie_label_tool.py`](../../../osx/magic_cookie_label_tool.py) (PySide6 UI), [`osx/magic_cookie_labels.py`](../../../osx/magic_cookie_labels.py) (JSONL schema + coordinate math + store). **Normative** for label file format and tool behavior.
 
-**Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md) (detector consumes same **image pixel** space as stored `bbox_px`), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md).
+**Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md) (detector consumes same **image pixel** space as stored `bbox_px`), [plan-017 — detector eval and tuning](plan-017-magic-cookie-detector-eval-and-tuning.md) (offline eval vs this JSONL), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md).
 
 ---
 
