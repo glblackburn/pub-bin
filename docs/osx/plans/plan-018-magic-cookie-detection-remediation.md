@@ -2,7 +2,7 @@
 
 **Status:** In progress — eval tooling and detector tuning surface shipped; label-driven metrics and further detector tracks are iterative.
 
-**Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md), [plan-016 — screenshot label tool](plan-016-magic-cookie-screenshot-label-tool.md), [plan-017 — detector eval and tuning](plan-017-magic-cookie-detector-eval-and-tuning.md) (Phase 1 script; execution status cross-linked), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`tools/eval_magic_cookie_labels.py`](../../../tools/eval_magic_cookie_labels.py).
+**Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md), [plan-016 — screenshot label tool](plan-016-magic-cookie-screenshot-label-tool.md), [plan-017 — detector eval and tuning](plan-017-magic-cookie-detector-eval-and-tuning.md) (Phase 1 script; execution status cross-linked), [plan-019 — label tool find by stem](plan-019-magic-cookie-label-tool-find-image.md), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`tools/eval_magic_cookie_labels.py`](../../../tools/eval_magic_cookie_labels.py).
 
 ---
 
@@ -94,6 +94,34 @@ Pick **one primary line** after Phase 1 numbers; combine only if metrics justify
 - [x] Detector **`min_confidence`** + **`--det-*`** CLI on golden sweeper.
 - [x] Baseline eval on default `magic-cookie-labels.jsonl` (see **Metrics appendix**).
 - [ ] Operator: re-run eval after each substantive detector change; append rows to **Metrics appendix**.
+
+---
+
+## Field observations (2026-05 operator / research session)
+
+Captures under [`golden-sweeper-captures/`](../screenshots/golden-sweeper-captures/) are **gitignored**; this section records **triage conclusions** from live Cookie Clicker + sweeper runs so they are not only in chat history.
+
+### Exemplar stem
+
+- **`golden-sweeper-20260504-223259-223436-f00001`** (and siblings **`-annotated.png`**, **`.json`** when present): anchor frame for discussing **middle-column false positives** vs **missed spawns** on the **big cookie** or **Mine** row art.
+
+### Observed detector behavior (v2 HSV, full display)
+
+- **`max_hits=6`** often **saturates** with **compact gold-ish blobs** in the **building preview column** and nearby UI — not necessarily the **transient** golden the operator cares about.
+- **High-confidence false positives:** static **row chrome / Portal-style** icons can reach **~0.95**, **outranking** a **true** floating golden when that blob’s score sits **~0.72–0.77** (similar band to **garden / plant** false positives).
+- **False negatives:** a **spawned** golden on the **large cookie** or over **Mine** artwork may **fail** to appear in the top six after **HSV + geometry** gates, or interact with **profile big-cookie exclusion** when **`--profile`** is enabled — **annotated boxes present** does not imply the **click-worthy** golden was found.
+
+### Sidecar JSON triage
+
+- For **`coord_space": "quartz_global"`** rows, **`bbox`** is **PNG pixel space**; **`x`/`y`** are **Quartz**. See **plan-015 §5.2** sidecar contract callout.
+
+### Evaluation follow-up
+
+- **Offline eval** without **`--profile`** can show **recall@K = 0** on positives if detector centroids never reach **IoU** threshold against human **`bbox_px`** — rerun with **`--profile`** when label **`image_wh`** matches profile **`detector`** metadata so exclusion matches production.
+
+### Label tool workflow
+
+- Jump to a known stem: **[plan-019](plan-019-magic-cookie-label-tool-find-image.md)** (**Ctrl+F**, **F3**, **`--jump-query`**) — e.g. resume on **`golden-sweeper-20260504-223259-223436-f00001`** without linear paging.
 
 ---
 

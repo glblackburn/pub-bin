@@ -18,6 +18,8 @@ Path (default operator location): `docs/osx/screenshots/golden-sweeper-captures/
 - **`magic_cookie: null` (skip):** 0
 - **Image size:** 3360×2100 (all rows in the analyzed snapshot)
 
+**Counts drift:** As labeling continues, totals above become **stale**. Treat the **Metrics appendix** in [plan-018](plan-018-magic-cookie-detection-remediation.md) (dated eval rows) as the **live measurement snapshot** for FN/FP/recall; refresh this §1 table when you publish a new label-set snapshot.
+
 **Positive bboxes:** centroids and sizes vary widely (examples: top-left ~`(200,450)` ~185×153 px; center-right ~`(550,950)` ~160×171; bottom ~`(180,1750)` ~249×218; one tight **63×60** box). The detector must handle **scale and placement** across the full canvas, not a fixed ROI.
 
 **Context:** The corpus index still describes v2 hits with heuristic “No verified golden” text for many stems; human labels now mark **16** frames as present. **Human labels are the ground truth for this plan**; use label-vs-detector metrics for tuning, not the index assessment column alone.

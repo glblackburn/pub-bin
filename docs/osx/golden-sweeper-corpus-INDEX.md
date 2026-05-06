@@ -2,7 +2,7 @@
 
 Raw PNGs, sidecar JSONL, and legacy ``*-annotated.png`` live under [`screenshots/golden-sweeper-captures/`](screenshots/golden-sweeper-captures/) (directory is **gitignored** — present only on machines that ran the sweeper).
 
-**Labeling:** None of these frames were operator-flagged as “golden visible.” Legacy sidecars often contained **dozens** of lines from gold-tinted UI (scroll strips, buff rows). **Detector v2** keeps compact, blob-shaped HSV regions and caps output (see ``detect_magic_cookie_hits`` in ``osx/cookie_clicker_golden_sweeper.py``). The **assessment** column is a **heuristic** for triage, not ground truth.
+**Labeling:** None of these frames were operator-flagged as “golden visible.” Legacy sidecars often contained **dozens** of lines from gold-tinted UI (scroll strips, buff rows). **Detector v2** keeps compact, blob-shaped HSV regions and caps output (see ``detect_magic_cookie_hits`` in ``osx/cookie_clicker_golden_sweeper.py``). The **assessment** column is a **heuristic** for triage, not ground truth. For **human-labeled** ground truth and session triage notes (building-column false positives, **`max_hits`** saturation, JSON **`bbox`** vs **`x`/`y`** coordinate spaces), see **[plan-018 — Field observations](plans/plan-018-magic-cookie-detection-remediation.md)** (section *Field observations*) and **`tools/eval_magic_cookie_labels.py`**.
 
 Regenerate this file and ``*-v2-annotated.png`` after new captures:
 
