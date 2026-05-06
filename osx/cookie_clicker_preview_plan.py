@@ -12,7 +12,7 @@ import json
 import os
 import sys
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 
 def _reexec_with_project_venv() -> None:
@@ -140,27 +140,63 @@ def _label(target: Dict) -> str:
     return f'{target["id"]}:{target["name"]} x{target["click_count"]}'
 
 
+def _put_text_outlined(
+    img,
+    text: str,
+    org: Tuple[int, int],
+    *,
+    font: int,
+    scale: float,
+    fg_bgr: Tuple[int, int, int],
+    fg_thickness: int = 1,
+    outline_thickness: int = 4,
+) -> None:
+    """Draw label with black outline so it stays readable on busy game art (BGR)."""
+    ox, oy = org
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            if dx == 0 and dy == 0:
+                continue
+            cv2.putText(
+                img,
+                text,
+                (ox + dx, oy + dy),
+                font,
+                scale,
+                (0, 0, 0),
+                outline_thickness,
+                cv2.LINE_AA,
+            )
+    cv2.putText(img, text, org, font, scale, fg_bgr, fg_thickness, cv2.LINE_AA)
+
+
 def _draw_preview(img, targets: List[Dict]):
+    font = cv2.FONT_HERSHEY_SIMPLEX
     cookie_stack = 0
     for target in targets:
         x = int(round(target["x"]))
         y = int(round(target["y"]))
-        color = (50, 220, 255) if target["phase"] == "cookie_burst" else (50, 160, 50)
-        cv2.circle(img, (x, y), 12, color, 2)
-        cv2.drawMarker(img, (x, y), color, markerType=cv2.MARKER_CROSS, markerSize=18, thickness=2)
-        ty = max(20, y - 10)
         if target["phase"] == "cookie_burst":
-            ty -= cookie_stack * 16
+            color = (0, 230, 255)
+            label_bgr = (0, 255, 255)
+        else:
+            color = (60, 200, 60)
+            label_bgr = (220, 255, 220)
+        cv2.circle(img, (x, y), 12, color, 2)
+        cv2.drawMarker(img, (x, y), color, markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
+        ty = max(24, y - 10)
+        if target["phase"] == "cookie_burst":
+            ty -= cookie_stack * 18
             cookie_stack += 1
-        cv2.putText(
+        _put_text_outlined(
             img,
             _label(target),
-            (x + 10, ty),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.45,
-            color,
-            1,
-            cv2.LINE_AA,
+            (x + 12, ty),
+            font=font,
+            scale=0.58,
+            fg_bgr=label_bgr,
+            fg_thickness=1,
+            outline_thickness=4,
         )
     return img
 

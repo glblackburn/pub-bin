@@ -3,7 +3,7 @@
 
 .PHONY: help test-setup check-venv test test-quick test-report test-report-coverage \
 	test-coverage coverage coverage-quick test-clean test-timings \
-	setup detect-cookie-clicker preview-cookie-clicker
+	setup tesseract detect-cookie-clicker preview-cookie-clicker
 
 .DEFAULT_GOAL := help
 
@@ -32,7 +32,8 @@ PYTEST_COV_FLAGS := --cov=$(COV_MODULE) --cov-config=$(COV_CONFIG) \
 
 help:
 	@echo "osx / macOS mouse click test targets (from repo: make -C osx <target>)"
-	@echo "  setup        Create .venv under osx/ and install runtime requirements.txt"
+	@echo "  tesseract    macOS: brew install tesseract only if tesseract is not already on PATH"
+	@echo "  setup        Depends on tesseract; create .venv; pip install requirements.txt"
 	@echo "  test-setup   Create .venv under osx/ and pip install requirements-test.txt"
 	@echo "  test         Full pytest (verbose)"
 	@echo "  test-quick   pytest -q --tb=short (includes table_nav on darwin)"
@@ -55,7 +56,16 @@ test-setup:
 	$(MAKE) setup
 	"$(PIP)" install -r "$(OSX_DIR)/requirements-test.txt"
 
-setup:
+# cookie_clicker_detect_coords OCR needs `tesseract` on PATH. On macOS, install via Homebrew when missing.
+ifeq ($(shell uname -s),Darwin)
+tesseract:
+	command -v tesseract >/dev/null 2>&1 || brew install tesseract
+else
+tesseract:
+	@:
+endif
+
+setup: tesseract
 	python3 -m venv "$(VENV)"
 	"$(PIP)" install -U pip
 	"$(PIP)" install -r "$(OSX_DIR)/requirements.txt"

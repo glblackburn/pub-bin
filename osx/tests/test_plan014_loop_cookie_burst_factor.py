@@ -58,6 +58,7 @@ def test_preview_plan_burst_factor_scales_cookie_target(
             str(profile_json),
             "--profile",
             "pytest-plan014",
+            "--no-ocr",
         ],
         capture_output=True,
         text=True,
