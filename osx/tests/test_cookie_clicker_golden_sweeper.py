@@ -21,6 +21,35 @@ from cookie_clicker_golden_sweeper import (  # noqa: E402
 )
 
 
+def test_cli_smoke_help_runs() -> None:
+    """Subprocess smoke: script imports (cv2, etc.), argparse, and exits 0 — catches broken venv bootstrap."""
+    r = subprocess.run(
+        [sys.executable, str(SWEEPER), "--help"],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    out = (r.stdout or "") + (r.stderr or "")
+    assert r.returncode == 0, out
+    assert "--input-image" in out and "--capture" in out, out
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX shebang execution")
+def test_cli_smoke_help_via_script_path() -> None:
+    """Same as operator ``./osx/cookie_clicker_golden_sweeper.py --help`` (shebang + optional osx/.venv re-exec)."""
+    r = subprocess.run(
+        [str(SWEEPER), "--help"],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    out = (r.stdout or "") + (r.stderr or "")
+    assert r.returncode == 0, out
+    assert "--input-image" in out and "--capture" in out, out
+
+
 def _yellow_blob_bgr(w: int = 480, h: int = 320, cx: int = 120, cy: int = 100, r: int = 22) -> "object":
     import numpy as np
     import cv2
@@ -71,6 +100,67 @@ def test_tall_gold_ui_strip_rejected() -> None:
     cv2.rectangle(img, (50, 30), (74, 340), (0, 200, 255), -1)
     hits = detect_magic_cookie_hits(img, exclude_xy=None)
     assert not hits
+
+
+def test_cli_no_sidecar_when_no_hits_without_emit_empty_json(tmp_path: Path) -> None:
+    import cv2
+    import numpy as np
+
+    png = tmp_path / "strip.png"
+    img = np.zeros((420, 400, 3), dtype=np.uint8)
+    cv2.rectangle(img, (50, 30), (74, 340), (0, 200, 255), -1)
+    cv2.imwrite(str(png), img)
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SWEEPER),
+            "--input-image",
+            str(png),
+            "--output",
+            "json",
+            "--max-polls",
+            "1",
+        ],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert r.returncode == 0, r.stderr
+    assert not [ln for ln in r.stdout.splitlines() if ln.strip()]
+    assert not png.with_suffix(".json").is_file()
+
+
+def test_cli_emit_empty_json_writes_empty_sidecar_when_no_hits(tmp_path: Path) -> None:
+    import cv2
+    import numpy as np
+
+    png = tmp_path / "strip.png"
+    img = np.zeros((420, 400, 3), dtype=np.uint8)
+    cv2.rectangle(img, (50, 30), (74, 340), (0, 200, 255), -1)
+    cv2.imwrite(str(png), img)
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SWEEPER),
+            "--input-image",
+            str(png),
+            "--output",
+            "json",
+            "--max-polls",
+            "1",
+            "--emit-empty-json",
+        ],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert r.returncode == 0, r.stderr
+    assert not [ln for ln in r.stdout.splitlines() if ln.strip()]
+    sidecar = png.with_suffix(".json")
+    assert sidecar.is_file(), "expected sidecar for negative frame when --emit-empty-json"
+    assert sidecar.read_text(encoding="utf-8") == ""
 
 
 def test_cli_input_image_json_stdout(tmp_path: Path) -> None:

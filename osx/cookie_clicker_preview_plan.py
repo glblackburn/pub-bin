@@ -31,7 +31,8 @@ def _reexec_with_project_venv() -> None:
     os.execve(venv_python, [venv_python, os.path.abspath(__file__), *sys.argv[1:]], env)
 
 
-_reexec_with_project_venv()
+if __name__ == "__main__":
+    _reexec_with_project_venv()
 
 try:
     import cv2  # type: ignore[import-not-found]

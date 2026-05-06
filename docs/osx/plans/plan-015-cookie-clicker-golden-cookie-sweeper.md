@@ -92,7 +92,7 @@ Reuse **`opencv-python`** (same as detect/preview stack in `osx/`).
 
 ### 5.1 Current detector (HSV v2 + corpus filters)
 
-**Code:** [`detect_magic_cookie_hits`](../../../osx/cookie_clicker_golden_sweeper.py) in **`osx/cookie_clicker_golden_sweeper.py`** — **not** machine learning; a **fixed heuristic pipeline**. Local sweeper captures are indexed for triage in **[`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md)** (regenerate with **`tools/build_golden_sweeper_corpus_index.py`**).
+**Code:** [`detect_magic_cookie_hits`](../../../osx/cookie_clicker_golden_sweeper.py) in **`osx/cookie_clicker_golden_sweeper.py`** — **not** machine learning; a **fixed heuristic pipeline**. Label-driven **offline eval** and tuning backlog: **[plan-017](plan-017-magic-cookie-detector-eval-and-tuning.md)** / **[plan-018](plan-018-magic-cookie-detection-remediation.md)**. Local sweeper captures are indexed for triage in **[`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md)** (regenerate with **`tools/build_golden_sweeper_corpus_index.py`**).
 
 | Step | What happens |
 |------|----------------|
@@ -120,7 +120,7 @@ Reuse **`opencv-python`** (same as detect/preview stack in `osx/`).
 - **Annotated PNG** — when there is **at least one** hit, a sibling **`…-fNNNNN-annotated.png`** (same directory, stem **`{raw-stem}-annotated`**) holds boxes, centroids, and numeric **confidence** labels. For **`--input-image`**, the input file is unchanged; **`{input-stem}-annotated{suffix}`** is written beside it on hits.
 - **`.json` sidecar** — **JSONL** next to the **raw** basename (for display capture, the **`screencapture`** PNG stem; for **`--input-image`**, the input path stem): **`{raw-or-input-basename}.json`**, one object per **accepted** candidate for that poll (same schema as stdout): **`bbox`**, centroid-derived **`x`/`y`**, **`confidence`**, **`coord_space`**, etc.  
   **Sidecar coordinate contract (`--capture display`):** When **`coord_space`** is **`quartz_global`**, **`x`/`y`** are **Quartz global centroids** (points, suitable for `macos_mouse_click.py`), while **`bbox`** remains **`[x, y, w, h]` in capture PNG pixel space** (bitmap top-left origin). Parsers, overlays, and label-vs-detector tooling must **not** mix those numeric spaces without explicit conversion (same mapping as inside [`cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py)). Field triage notes: [plan-018](plan-018-magic-cookie-detection-remediation.md) § Field observations.  
-  **Gap today:** if a frame has **no** detections, the script **does not** write a `.json` file — you still have a **negative** example as **PNG only** (or add a future **`--emit-empty-json`** for tooling).
+  **No-hit sidecars:** by default, a frame with **no** detections has **PNG only**. With **`--emit-empty-json`**, the sweeper still writes **`{basename}.json`** as an **empty** JSONL file (zero lines) next to the raw/input image for tooling that expects paired artifacts.
 
 **Raw vs annotated for learning / tuning:** Keep **raw** frames for anything that depends on **true framebuffer pixels** — HSV sweeps, template matching, or CNN training — because overlays **change** colors and edges. Use **annotated** PNGs plus **JSONL** for **human review**, geometry checks, and many metadata workflows; **annotated-only** corpora are weak for learning **appearance** because the draw layer alters the underlying sprite signal.
 

@@ -453,7 +453,7 @@ Screenshot set under **`docs/osx/screenshots/cookie-clicker/`** motivated a **pr
 |------|-----------|
 | **1 — low complexity** | External config for ladder coords / counts / sleep; CLI flags for burst length and cycle sleep; explicit bulk-buy contract; structured per-cycle logs; named window profiles. |
 | **2 — state-aware** | Skip likely-disabled rows; optional scroll / ladder profiles; header-offset calibration before first row click. |
-| **3 — advanced** | Golden-cookie region sweep; upgrades-strip pass; richer template automation than static Y offsets. |
+| **3 — advanced** | Golden-cookie region sweep (**v0 script + roadmap:** **[plan-015](plan-015-cookie-clicker-golden-cookie-sweeper.md)**); upgrades-strip pass; richer template automation than static Y offsets. |
 
 Cross-cutting risks: **bulk mode** toggles which rows are purchasable; **CpS** swings with buffs; **scrollable** store breaks fixed **Y**; **upgrades strip** shifts header and first visible building row.
 

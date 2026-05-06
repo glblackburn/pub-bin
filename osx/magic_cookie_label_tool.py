@@ -25,8 +25,6 @@ def _reexec_with_project_venv() -> None:
     os.execve(venv_python, [venv_python, os.path.abspath(__file__), *sys.argv[1:]], env)
 
 
-_reexec_with_project_venv()
-
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 if _script_dir not in sys.path:
     sys.path.insert(0, _script_dir)
@@ -754,4 +752,5 @@ F1 or Help = this window
 
 
 if __name__ == "__main__":
+    _reexec_with_project_venv()
     raise SystemExit(main(sys.argv))

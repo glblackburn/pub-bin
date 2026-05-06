@@ -9,7 +9,8 @@ that directory is listed in the repo ``.gitignore`` — local captures only). Us
 ephemeral temp files only.
 
 When there is at least one hit, a **JSONL** sidecar is written next to the **raw** image basename
-(``*.json``). For ``--capture display``, **raw** ``screencapture`` bytes stay in ``*.png``; a second file
+(``*.json``). With ``--emit-empty-json``, a **zero-line** JSONL sidecar is written on no-hit polls too.
+For ``--capture display``, **raw** ``screencapture`` bytes stay in ``*.png``; a second file
 ``*-annotated.png`` holds boxes + confidence markup. For ``--input-image``, the input file is unchanged;
 ``*-annotated.png`` is written beside it when hits exist.
 """
@@ -51,7 +52,10 @@ def _reexec_with_project_venv() -> None:
     os.execve(venv_python, [venv_python, os.path.abspath(__file__), *sys.argv[1:]], env)
 
 
-_reexec_with_project_venv()
+# Must run before ``import cv2`` so direct ``./osx/cookie_clicker_golden_sweeper.py`` uses ``osx/.venv``
+# when present. Skip when imported as a module (``__name__ != "__main__"``) so pytest keeps its interpreter.
+if __name__ == "__main__":
+    _reexec_with_project_venv()
 
 
 def default_capture_save_dir(script_dir: Path) -> Path:
@@ -390,6 +394,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not keep PNGs on disk; capture to a temp file and delete after each poll.",
     )
+    p.add_argument(
+        "--emit-empty-json",
+        action="store_true",
+        help="When a poll has no hits, still write the .json sidecar next to the raw/input image (empty JSONL).",
+    )
     ns = p.parse_args()
     if ns.capture == "display":
         if not (ns.max_polls > 0 or ns.run_seconds > 0 or ns.max_wall_seconds > 0):
@@ -536,9 +545,10 @@ def main() -> int:
                     coord_log_fp.flush()
 
             sidecar_src = img_path if img_path is not None else cap_path
-            if jsonl_lines and sidecar_src is not None:
+            if sidecar_src is not None and (jsonl_lines or (args.emit_empty_json and not jsonl_lines)):
                 json_path = sidecar_src.with_suffix(".json")
-                json_path.write_text("\n".join(jsonl_lines) + "\n", encoding="utf-8")
+                body = ("\n".join(jsonl_lines) + "\n") if jsonl_lines else ""
+                json_path.write_text(body, encoding="utf-8")
 
             if args.overlay_path:
                 # plan-015: overlay mode still emit coords — already to stdout; mirror to stderr human hint
