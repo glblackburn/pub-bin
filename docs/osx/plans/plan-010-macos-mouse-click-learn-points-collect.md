@@ -1,5 +1,11 @@
 # Plan 010 — Learn-point collect (`--learn-points`)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** Shipped (v1).
 
 ## Summary

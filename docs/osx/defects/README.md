@@ -25,3 +25,11 @@ Detail files for **DEF-001**–**DEF-014**. The **Defect summary** table (status
 | DEF-014 | Golden sweeper only after inter-phase sleep → **`-k 1`** never ran it; two **`CYCLE_SLEEP_SECONDS`** sites | 2026-05-03 | 2026-05-03 | **Fixed** | [def-014-golden-sweeper-loop-sleep-placement-k1.md](def-014-golden-sweeper-loop-sleep-placement-k1.md) |
 
 **Plans index:** **[`../plans/README.md`](../plans/README.md)**.
+
+## Defect workflow (effective 2026-05-06)
+
+Plan files `plan-001`..`plan-019`, the two hand-offs, and `cursor-plans-import/` are **Frozen — superseded by [plan-020-uber-true-up](../plans/plan-020-uber-true-up.md)** and **read-only** (see banners on each file). The defect workflow now routes around them:
+
+- **Filing a new defect:** create **`def-###-…md`** under this directory. Its YAML frontmatter **must** include a `related_plans:` list containing **both** (a) the **historical** plan that documented the affected behavior (e.g. `../plans/plan-002-macos-mouse-click-terminal-ux.md`) **and** (b) `../plans/plan-020-uber-true-up.md`. This keeps the historical context discoverable while making plan-020 the active coordinator.
+- **Closing / fixing a defect:** update this `README.md` (status / Completed / SHA), the `def-###` file's status, and the matching checklist item in **plan-020** (tick the box, link the commit SHA). **Do not** edit the historical plan or the legacy "Defect summary" table inside [plan-002](../plans/plan-002-macos-mouse-click-terminal-ux.md); that table is now frozen alongside the rest of plan-002.
+- **DEF-001..DEF-014** above were filed before the freeze and pre-date this workflow; their existing references stay as-is for history. New defects (DEF-015+) follow the rules in this section.

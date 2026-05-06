@@ -20,6 +20,12 @@ isProject: false
 
 # Plan 05: Click target preview (where on the screen before run)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 This document designs how [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) helps the user **understand spatially** where synthetic clicks will land **before** Quartz runs (or immediately before the first synthetic), so that invocations like **`./osx/macos_mouse_click.py -x 400 -y 300 -n 2 -d 0`** are not opaque pairs of numbers.
 
 It complements **[`plan-001-macos-clicker.md`](plan-001-macos-clicker.md)** (global Quartz coordinates, modes), **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)** (pre-run Rich table), **[`plan-003-macos-mouse-click-tui-automation.md`](plan-003-macos-mouse-click-tui-automation.md)** (dry-run exit after editor — machine-readable summary without Quartz), and **[`plan-004-macos-mouse-click-run-progress-ui.md`](plan-004-macos-mouse-click-run-progress-ui.md)** (post-start progress). Plan **05** is specifically **“where is (x,y)?”** and optional **on-glass** feedback.

@@ -27,9 +27,11 @@ After reading the full standards, remember these are the most frequently violate
 
 3. **Plan files:** Store **all** planning documents — **working drafts and final versions** — under the **`docs/`** tree (see **`.cursor/rules/plans-in-docs-tree.mdc`** for the folder list and policy). **`~/.cursor/plans/`** must never be the **only** copy; merge or copy into **`docs/.../plans/`** in the repo.
 
+   **Active plan (2026-05-06+):** the **only** open plan is **[`docs/osx/plans/plan-020-uber-true-up.md`](docs/osx/plans/plan-020-uber-true-up.md)**. **Do not edit any other plan file** under **`docs/osx/plans/`** — `plan-001`..`plan-019`, the two hand-offs, and `cursor-plans-import/` are **Frozen — superseded by plan-020** and read-only. **New features** ⇒ new **`plan-021+`** document. **Code or spec drift found in code or a frozen spec** ⇒ new defect under **`docs/osx/defects/`** whose `related_plans:` frontmatter lists **both** the historical plan and `plan-020-uber-true-up.md`; the fix ticks plan-020's checklist (not the historical plan).
+
    **Current `docs/**/plans/` directories:** **`docs/osx/plans/`** (canonical clicker / Cookie Clicker **`plan-###-….md`**, hand-offs, **`.plan.md`** references — index **`docs/osx/plans/README.md`**); **`docs/osx/plans/cursor-plans-import/`** (archived **`~/.cursor/plans`** copies — **`cursor-plans-import/README.md`**); **`docs/plans/`** (hub / pointer — **`docs/plans/README.md`**).
 
-   **Mouse-clicker:** extend the owning **`plan-###`** under **`docs/osx/plans/`** (e.g. operator loop / preview → **plan-002**, TUI automation → **plan-003**, arrow nav → **plan-009**). **Kebab-case ASCII** filenames; no spaces or shell-metacharacters in paths. Other products: **`docs/<product>/plans/`** when that tree exists. **When the user asks to save a plan document,** write it under the correct **`docs/.../plans/`** path and treat that as canonical.
+   **Mouse-clicker (active routing):** edits go to **`plan-020-uber-true-up.md`** or a new **`plan-021+`** under **`docs/osx/plans/`** — **never** to plan-002 / plan-003 / plan-009 / etc. (they are frozen). **Kebab-case ASCII** filenames; no spaces or shell-metacharacters in paths. Other products: **`docs/<product>/plans/`** when that tree exists. **When the user asks to save a plan document,** write it under the correct **`docs/.../plans/`** path and treat that as canonical.
 
 4. **Code Quality:** No trailing whitespace, files must end with newline, remove backup files.
 

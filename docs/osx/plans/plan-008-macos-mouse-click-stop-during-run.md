@@ -20,6 +20,12 @@ isProject: false
 
 # Plan 08: Stop the clicker **during** a run (without foreground terminal)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 This document designs a way to **abort an in-progress Quartz run** (learn anchor recorded, synthetic loop running, or warmup sleeps) when the user **cannot reach the terminal** quickly enough for **Ctrl+C** / **SIGINT**. It applies especially to **`-Y`/`--yes`** paths where there is **no** Rich pre-run pause and **stdin may not be a TTY** — for example:
 
 ```bash

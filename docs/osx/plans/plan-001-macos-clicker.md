@@ -14,6 +14,12 @@ isProject: false
 
 # Plan 01: macOS clicker utility
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 ## Design decision: implementation language (v1)
 
 **Use Python 3** for the first shipped version: a single script under `osx/` that drives **Quartz** mouse events through **PyObjC** (`CGEvent` create + post for left button down/up). Same underlying macOS mechanism as Swift; tradeoff is a **pip-installed** dependency (`pyobjc-framework-Quartz`) in exchange for fast iteration and readable code.

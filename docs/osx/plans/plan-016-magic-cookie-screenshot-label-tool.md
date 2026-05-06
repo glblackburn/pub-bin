@@ -1,5 +1,11 @@
 # Plan 016 — Magic cookie screenshot labeler (PySide)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** **Shipped (v1)** — [`osx/magic_cookie_label_tool.py`](../../../osx/magic_cookie_label_tool.py) (PySide6 UI), [`osx/magic_cookie_labels.py`](../../../osx/magic_cookie_labels.py) (JSONL schema + coordinate math + store). **Normative** for label file format and tool behavior.
 
 **Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md) (detector consumes same **image pixel** space as stored `bbox_px`), [plan-017 — detector eval and tuning](plan-017-magic-cookie-detector-eval-and-tuning.md) (offline eval vs this JSONL), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md).

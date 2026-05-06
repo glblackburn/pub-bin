@@ -1,5 +1,11 @@
 # Plan 012 — Code review archive (`macos_mouse_click_loop.sh`)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** **Closed (archive)** — Read-only code review snapshot; **not** a normative product spec. **No open follow-up** in this document (optional maintainer polish only; “Risks / polish” below is informational).
 
 **Summary:** Archived review of [`osx/macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) companion to [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py).

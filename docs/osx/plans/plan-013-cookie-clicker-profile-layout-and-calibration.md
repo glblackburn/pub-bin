@@ -1,5 +1,11 @@
 # Plan 013 — Cookie Clicker profile layout: coordinate review and calibration design
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** Design / roadmap (no implementation commitment in this document).
 
 **Scope:** Compare existing profile JSONs under [`osx/config/`](../../../osx/config/), explain why adjustment is painful today, and propose **easier ways** to adapt coordinates when the **browser window** moves or resizes. **No code changes** are specified here—only product/design direction for future work.

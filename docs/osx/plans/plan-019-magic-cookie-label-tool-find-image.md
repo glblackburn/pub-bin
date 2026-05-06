@@ -1,5 +1,11 @@
 # Plan 019 — Magic cookie label tool: find image by stem / path
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** Shipped — [`osx/magic_cookie_label_tool.py`](../../../osx/magic_cookie_label_tool.py).
 
 **Related:** [plan-016 — screenshot label tool](plan-016-magic-cookie-screenshot-label-tool.md) (v1 corpus walk), [plan-017 / plan-018](plan-017-magic-cookie-detector-eval-and-tuning.md) (eval stems).

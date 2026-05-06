@@ -1,5 +1,11 @@
 # Imported Cursor home plans (`cursor-plans-import/`)
 
+> **Frozen — superseded by [plan-020-uber-true-up](../plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This folder and its files are **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###` under [`docs/osx/plans/`](../). Problems → defects under
+> [`docs/osx/defects/`](../../defects/) whose `related_plans:` references the relevant historical plan and `plan-020`.
+
 These files were **copied** from **`~/.cursor/plans/*.plan.md`** into the repository so session plans for this project live under **`docs/osx/plans/`** (see **`.cursorrules`** and **`.cursor/rules/plans-in-docs-tree.mdc`**).
 
 ## How to use this folder

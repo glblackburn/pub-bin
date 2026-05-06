@@ -20,6 +20,12 @@ isProject: false
 
 # Plan 04: Run-time Rich output (after **S** / clicker start)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 This document specifies **post-start** terminal UX for [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py): once the user confirms **Start** (**S**) in the pre-run editor (plan **02**) or starts via **`-Y`** / legacy paths, the tool should present **clear, attractive output** of the **resolved run settings** and **visible progress** through the synthetic click loop (and learn-phase messaging where applicable).
 
 It builds on **[`plan-002-macos-mouse-click-terminal-ux.md`](plan-002-macos-mouse-click-terminal-ux.md)** (pre-run Rich TUI), **[`plan-001-macos-clicker.md`](plan-001-macos-clicker.md)** (click semantics, signals), and may share styling ideas with **[`plan-003-macos-mouse-click-tui-automation.md`](plan-003-macos-mouse-click-tui-automation.md)** (Rich usage patterns).

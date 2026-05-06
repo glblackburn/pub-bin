@@ -1,5 +1,11 @@
 # Plan 017 — Magic cookie detector eval and tuning (label-driven)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** **Roadmap** — measurement and `detect_magic_cookie_hits` tuning guided by human labels in JSONL.
 
 **Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md) (detector entrypoint), [plan-016 — screenshot label tool](plan-016-magic-cookie-screenshot-label-tool.md) (JSONL schema), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md) (heuristic triage; not ground truth vs labels).

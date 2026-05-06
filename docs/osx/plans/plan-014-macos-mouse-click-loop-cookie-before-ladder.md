@@ -1,5 +1,11 @@
 # Plan 014 — Post-ladder cookie burst factor (`macos_mouse_click_loop.sh`)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** Shipped (v2) — **`-k`** runs **N** phased cookie **`click_target`** calls (profile **`cookie_click_count`** each) with **`CYCLE_SLEEP_SECONDS`** between phases; preview emits **N** **`cookie_burst`** rows. **DEF-013** fixed (same train).
 
 **Note:** Filename still says `cookie-before-ladder`; **normative behavior is after the buy ladder** (when the ladder runs), then **N** cookie phases.

@@ -1,5 +1,11 @@
 # Plan 015 — Cookie Clicker golden / “magic” cookie sweeper
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** Design / roadmap — **v0 script shipped:** [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py) (HSV heuristic; standalone + subprocess-friendly CLI). **§7.0** — minimal post-cookie hook in **`macos_mouse_click_loop.sh`** (**DEF-014**). Options **§7.3–§7.5** (flags, background child, chunking) remain future work.
 
 **Scope:** Design a **sweeper** that repeatedly captures the **browser window** (or a defined screen region), detects **special cookies** that appear transiently in Cookie Clicker (commonly **golden cookies**; optionally **wrath** cookies, seasonal variants, **reindeer**, etc.), and **always outputs the coordinates** of each magic-cookie hit (global **Quartz** **x, y** suitable for `macos_mouse_click.py`), then optionally triggers clicks. Coordinate emission is **required** whenever a candidate is accepted by the detector — including **`--dry-run`** (no click, but still print / JSON-log the hit). The deliverable **must** support **two invocations**: (1) **standalone** — operator runs the script directly for long sessions or smoke tests; (2) **looper-callable** — [`macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) (or a thin shell wrapper it invokes) calls the **same Python entrypoint** with non-interactive flags so behavior is identical whether run alone or from the loop. This plan is the **normative product spec**; implementation would add a new script or module under [`osx/`](../../../osx/) and tests under [`osx/tests/`](../../../osx/tests/).

@@ -1,5 +1,11 @@
 # Plan 018 — Magic cookie detection remediation (measurement-first)
 
+> **Frozen — superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md) on 2026-05-06.**
+>
+> This document is **read-only**. Do not add new work, status updates, or fix references here.
+> Open work moved to plan-020. New features → new `plan-###`. Problems → defects under
+> [`docs/osx/defects/`](../defects/) whose `related_plans:` references this file and `plan-020`.
+
 **Status:** In progress — eval tooling and detector tuning surface shipped; label-driven metrics and further detector tracks are iterative.
 
 **Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md), [plan-016 — screenshot label tool](plan-016-magic-cookie-screenshot-label-tool.md), [plan-017 — detector eval and tuning](plan-017-magic-cookie-detector-eval-and-tuning.md) (Phase 1 script; execution status cross-linked), [plan-019 — label tool find by stem](plan-019-magic-cookie-label-tool-find-image.md), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`tools/eval_magic_cookie_labels.py`](../../../tools/eval_magic_cookie_labels.py).
