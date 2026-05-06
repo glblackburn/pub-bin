@@ -40,7 +40,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 
 ## Plan index (dates and status)
 
-**Hand-off** session notes (`hand-off-*.md`, `plan-handoff-*.md`) summarize work for the next agent; they are not normative product specs.
+**Hand-off** session notes (`hand-off-*.md`, `plan-handoff-*.md`) summarize work for the next agent; they are not normative product specs. Rows marked **Closed (archive)** are **done as documents**—open engineering work, if any, continues only in the **numbered plans** or **defect** files they reference.
 
 **Dates:** **Opened** is the **first** commit date (`git log --follow --diff-filter=A`, `%cs`, ISO) for each file under **`docs/osx/plans/`**. **Completed** is **—** for **Roadmap** or **Session note** rows. For **Shipped** / **Closed (v1)**, **Completed** is the **last** commit date on that file (proxy for last doc revision), not a separate product sign-off.
 
@@ -56,8 +56,8 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 | plan-008 | Stop during run | 2026-04-18 | — | **Roadmap** | [plan-008-macos-mouse-click-stop-during-run.md](plan-008-macos-mouse-click-stop-during-run.md) |
 | plan-009 | TUI Up/Down arrows — phased remediation | 2026-04-20 | — | **Roadmap** | [plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md) |
 | plan-010 | Learn-point collect (`--learn-points`) | 2026-04-23 | 2026-04-23 | **Shipped** | [plan-010-macos-mouse-click-learn-points-collect.md](plan-010-macos-mouse-click-learn-points-collect.md) |
-| plan-011 | Code review archive (`macos_mouse_click.py`) | 2026-05-02 | — | Session note | [plan-011-macos-mouse-click-code-review.md](plan-011-macos-mouse-click-code-review.md) |
-| plan-012 | Code review archive (`macos_mouse_click_loop.sh`) | 2026-05-02 | — | Session note | [plan-012-macos-mouse-click-loop-code-review.md](plan-012-macos-mouse-click-loop-code-review.md) |
+| plan-011 | Code review archive (`macos_mouse_click.py`) | 2026-05-02 | 2026-05-06 | **Closed (archive)** | [plan-011-macos-mouse-click-code-review.md](plan-011-macos-mouse-click-code-review.md) |
+| plan-012 | Code review archive (`macos_mouse_click_loop.sh`) | 2026-05-02 | 2026-05-06 | **Closed (archive)** | [plan-012-macos-mouse-click-loop-code-review.md](plan-012-macos-mouse-click-loop-code-review.md) |
 | plan-013 | Cookie Clicker profile layout / calibration design | 2026-05-03 | — | Design / roadmap | [plan-013-cookie-clicker-profile-layout-and-calibration.md](plan-013-cookie-clicker-profile-layout-and-calibration.md) |
 | plan-014 | Post-ladder cookie burst factor — phased **`-k`** + preview (**v2**) | 2026-05-04 | 2026-05-02 | **Shipped** | [plan-014-macos-mouse-click-loop-cookie-before-ladder.md](plan-014-macos-mouse-click-loop-cookie-before-ladder.md) |
 | plan-015 | Cookie Clicker golden / magic cookie sweeper (capture + CV) | 2026-05-02 | — | Design / roadmap | [plan-015-cookie-clicker-golden-cookie-sweeper.md](plan-015-cookie-clicker-golden-cookie-sweeper.md) |
@@ -65,10 +65,10 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 | plan-017 | Magic cookie detector eval and tuning (label-driven) | 2026-05-03 | — | **Roadmap** | [plan-017-magic-cookie-detector-eval-and-tuning.md](plan-017-magic-cookie-detector-eval-and-tuning.md) |
 | plan-018 | Magic cookie detection remediation (measurement-first) | 2026-05-04 | — | In progress | [plan-018-magic-cookie-detection-remediation.md](plan-018-magic-cookie-detection-remediation.md) |
 | plan-019 | Magic cookie label tool — find image by stem / path | 2026-05-05 | 2026-05-05 | **Shipped** | [plan-019-magic-cookie-label-tool-find-image.md](plan-019-magic-cookie-label-tool-find-image.md) |
-| plan-handoff | LinkedIn draft session (2026-04-18) | 2026-04-18 | — | Session note | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
-| hand-off | Rich pre-run TUI layout (session to next agent) | 2026-04-21 | — | Session note | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
+| plan-handoff | LinkedIn draft session (2026-04-18) | 2026-04-18 | 2026-05-06 | **Closed (archive)** | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
+| hand-off | Rich pre-run TUI layout (session to next agent) | 2026-04-21 | 2026-05-06 | **Closed (archive)** | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
 
-**Status (summary):** **Shipped** = normative behavior spec matches the script; **Closed (v1)** = that plan’s v1 milestone signed off in-doc; **Roadmap** = future work.
+**Status (summary):** **Shipped** = normative behavior spec matches the script; **Closed (v1)** = that plan’s v1 milestone signed off in-doc; **Closed (archive)** = session note or code-review snapshot **explicitly complete** (no backlog in that file); **Roadmap** = future work.
 
 ## Plan 01 (**Shipped**) vs plan 02 (**Closed (v1)**)
 

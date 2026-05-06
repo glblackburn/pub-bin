@@ -1,6 +1,6 @@
 # Plan 012 — Code review archive (`macos_mouse_click_loop.sh`)
 
-**Status:** Session note (read-only review; not a normative product spec).
+**Status:** **Closed (archive)** — Read-only code review snapshot; **not** a normative product spec. **No open follow-up** in this document (optional maintainer polish only; “Risks / polish” below is informational).
 
 **Summary:** Archived review of [`osx/macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh) companion to [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py).
 
@@ -31,3 +31,9 @@ Matches repo Bash conventions (section headers, functions, heredoc Python for st
 ## Follow-up
 
 None unless the maintainer wants (e.g.) debug exports gated by env, comment fixes, more tests, or README alignment.
+
+---
+
+## Closure (repository)
+
+This archive is **complete**. Do not treat it as a backlog. New loop work belongs in **plan-002** / **plan-014** / defects or a new **plan-###**, not in follow-up edits to plan-012.

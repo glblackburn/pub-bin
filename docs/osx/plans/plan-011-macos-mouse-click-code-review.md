@@ -1,6 +1,6 @@
 # Plan 011 — Code review archive (`macos_mouse_click.py`)
 
-**Status:** Session note (read-only review; not a normative product spec).
+**Status:** **Closed (archive)** — Read-only code review snapshot; **not** a normative product spec. **No open follow-up** in this document (optional maintainer polish only).
 
 **Summary:** Archived review of [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) as of 2026-05-02. Canonical copy lives in this repository; do not rely on `~/.cursor/plans/` alone.
 
@@ -55,3 +55,9 @@ flowchart LR
 ## Follow-up
 
 None from this review unless the maintainer requests refactors, new flags, bugfixes, or test gaps.
+
+---
+
+## Closure (repository)
+
+This archive is **complete**. Do not treat it as a backlog. New work belongs in the owning **plan-###** or a defect file, not in follow-up edits to plan-011.

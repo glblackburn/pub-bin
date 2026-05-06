@@ -1,9 +1,10 @@
 # Handoff: LinkedIn draft (Apr 18, 2026) — macOS clicker / scaffolding post
 
+**Status:** **Closed (archive)** — Session narrative and repo pointers are **complete** for archival purposes. Optional **editorial** follow-up (publish post, add URL) is outside the numbered plan queue.
 
 **Terminology:** **CSI** (*Control Sequence Introducer*) — terminal control sequences usually beginning with **`ESC` `[`** (bytes `0x1B 0x5B`), including common **arrow-key** encodings. **SS3** (historically *Single Shift 3*; **arrow** sequences in this doc) — bytes introduced by **`ESC` `O`** (`0x1B 0x4F`) instead of **`ESC` `[`**. **PTY** (*pseudo-terminal*) — a paired **kernel TTY** (master/slave) so test harnesses (**pexpect**, **pytest** subprocess) can attach a fake terminal. **PTY tests** spawn **`osx/macos_mouse_click.py`** under a PTY and assert on captured transcripts (sometimes with stderr merged into the capture).
 
-Session note for the next person or agent working from **`pub-bin`**. This file is **not** a numbered plan; it captures **marketing copy + repo state** tied to the same macOS clicker effort as plans **01–10** (engineering backbone: **[`README.md`](README.md)** in this folder under **`docs/osx/`**).
+Historical session note for **`pub-bin`**. This file is **not** a numbered plan; it captures **marketing copy + repo state** tied to the same macOS clicker effort as plans **01–10** (engineering backbone: **[`README.md`](README.md)** in this folder under **`docs/osx/`**). **No further updates are required** to consider this hand-off **done**; treat **Suggested next steps** as optional operator tasks.
 
 ## macOS clicker plans — engineering context (linked)
 
@@ -165,6 +166,12 @@ This section records **what we worked on together in this session**, how decisio
 
 - **`README-AI-CODING-STANDARDS.md`** and **`.cursorrules`**: two-step commit flow — user saying “commit” means **show** message, files, and diffs first; **separate** confirmation before `git commit`.
 - Commit previews often include a **short subject** plus a **full** multi-paragraph message (and **`Made-with: Cursor`** when using Cursor-driven commits).
+
+---
+
+## Closure (repository)
+
+This hand-off is **complete as an archive**. **Suggested next steps** are **optional** (publishing / indexing); they do not block closing this document.
 
 ---
 

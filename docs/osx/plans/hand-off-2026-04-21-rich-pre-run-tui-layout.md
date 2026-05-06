@@ -15,7 +15,7 @@ related_defects:
 
 **Audience:** Next agent working on **`osx/macos_mouse_click.py`** Rich pre-run editor layout, blank rows, resize, or PTY tests.
 
-**Status:** Layout is **still reported as broken** on some real terminals after this work. Automated tests pass; manual TUI may not match operator expectations.
+**Status:** **Closed (archive)** — This file is a **frozen session snapshot** (Apr 21, 2026). At write time, layout was **still reported broken** on some real terminals while automated tests passed. **Normative follow-up** lives in **plan-006**, **plan-009**, and **DEF-009** / **DEF-010**; **do not extend this hand-off** as if it were an open checklist.
 
 ---
 
@@ -63,7 +63,9 @@ related_defects:
 
 ---
 
-#### Open problems for the next agent
+#### Historical context (superseded by plans 006 / 009 + defects)
+
+The bullets below were **session notes for the next agent** at hand-off time. They are **not** an open backlog for this file. Track work in **plan-006**, **plan-009**, and **`docs/osx/defects/`** instead.
 
 1. **Manual layout still wrong** (per reporter): reproduce with the same Terminal profile, font, line spacing, and **`MACOS_MOUSE_CLICK_DEBUG_TUI`** on/off; compare transcript to **`layout_corruption_reason`** / **`def010_vertical_spacer_reason`** output.
 2. **`┃┃` / `││` heuristics** can disagree with **valid** narrow `HEAVY_HEAD` + nested `Panel` output; **`def010_vertical_spacer_reason`** was added to assert spacer absence **without** the full DEF-009 bundle on narrow renders.
@@ -82,3 +84,9 @@ related_defects:
 #### Index
 
 Listed in **[`docs/osx/plans/README.md`](README.md)** under **Hand-off** session notes.
+
+---
+
+#### Closure (repository)
+
+This hand-off is **complete as an archive**. No further edits are required to “finish” it. Open TUI product work continues only under the **numbered plans** and **defect** docs linked above.
