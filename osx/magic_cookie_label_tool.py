@@ -8,7 +8,7 @@ import math
 import os
 import sys
 from pathlib import Path
-from typing import List, Literal, Optional, Tuple
+from typing import List, Literal, Optional, Sequence, Tuple
 
 
 def _reexec_with_project_venv() -> None:
@@ -66,6 +66,25 @@ def gather_png_paths(image_dir: Path) -> List[Path]:
     return out
 
 
+def png_path_matches_search_query(path: Path, query: str) -> bool:
+    """True if ``query`` matches this corpus path: resolved file equality, else basename substring (case-insensitive)."""
+    q = (query or "").strip()
+    if not q:
+        return False
+    try:
+        cand = Path(q).expanduser()
+        if cand.is_file() and path.resolve() == cand.resolve():
+            return True
+    except (OSError, ValueError):
+        pass
+    return q.lower() in path.name.lower()
+
+
+def png_indices_matching_query(paths: Sequence[Path], query: str) -> List[int]:
+    """Indices into ``paths`` (sorted order) where ``png_path_matches_search_query`` is true."""
+    return [i for i, p in enumerate(paths) if png_path_matches_search_query(p, query)]
+
+
 def parse_args(argv: List[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Label magic cookie present/absent on PNG captures (plan-016).")
     p.add_argument(
@@ -79,6 +98,13 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         type=Path,
         default=None,
         help=f"JSONL output path (default: {default_labels_path()})",
+    )
+    p.add_argument(
+        "--jump-query",
+        default="",
+        metavar="SUBSTRING",
+        help="On startup, open the first PNG whose basename contains SUBSTRING (case-insensitive), "
+        "or whose path equals a resolved file path. Warns to stderr if no match.",
     )
     return p.parse_args(argv)
 
@@ -96,6 +122,8 @@ def main(argv: List[str]) -> int:
             QDialog,
             QDialogButtonBox,
             QHBoxLayout,
+            QLabel,
+            QLineEdit,
             QMainWindow,
             QMessageBox,
             QPlainTextEdit,
@@ -119,6 +147,20 @@ def main(argv: List[str]) -> int:
     paths = gather_png_paths(image_dir)
     if not paths:
         raise SystemExit(f"Error: no PNG files in {image_dir}")
+
+    initial_index = 0
+    bootstrap_find: Optional[Tuple[str, List[int]]] = None
+    jump_q = (ns.jump_query or "").strip()
+    if jump_q:
+        bhits = png_indices_matching_query(paths, jump_q)
+        if bhits:
+            initial_index = bhits[0]
+            bootstrap_find = (jump_q, bhits)
+        else:
+            print(
+                f"Warning: --jump-query {jump_q!r} matched no PNG under {image_dir}; starting at first frame.",
+                file=sys.stderr,
+            )
 
     store = LabelStore(labels_path)
     store.load()
@@ -172,10 +214,21 @@ Browse without writing the current image to disk.
 Prev unlabeled / Next unlabeled (Alt+Left / Alt+Right)
 ------------------------------------------------------
 Jump to another image that has **no row yet** in the JSONL for this labels file
-(same idea as “unset” on load: never saved). Search wraps around the list.
+(same idea as “unset” on load: never saved). The unlabeled scan wraps around the list.
 If every image already has a saved row, a message says so. If only the
 current image lacks a row, “next” / “prev” report that you are already on the
 only one.
+
+Find image (Ctrl+F, F3, or button)
+----------------------------------
+Jump to a PNG by **basename substring** (case-insensitive), e.g. a sweeper stem
+fragment, or paste a **full file path** if it resolves to the same file as one
+of the corpus entries. **OK** / **Enter** selects the **first** match in sorted
+filename order. **F3** moves to the **next** match for the last successful
+query (wraps). If there is no prior query, **F3** opens the find dialog.
+
+Command line: **--jump-query SUBSTRING** opens the tool already positioned on
+the first matching frame (same rules as the dialog).
 
 Quit (Q or close window)
 -------------------------
@@ -193,7 +246,8 @@ Shortcuts
 ---------
 Y Present · N Absent · U Skip · Enter save+next · Ctrl+Shift+W save&quit ·
 Backspace clear box · Left/Right prev/next image · Alt+Left/Alt+Right prev/next
-unlabeled (no JSONL row) · Q quit · F1 or Help = this window
+unlabeled (no JSONL row) · Ctrl+F find image · F3 find next match · Q quit ·
+F1 or Help = this window
 """
 
     class ImageViewport(QWidget):
@@ -310,10 +364,17 @@ unlabeled (no JSONL row) · Q quit · F1 or Help = this window
             super().__init__()
             self.setWindowTitle("Magic cookie label tool (plan-016)")
             self._paths = paths
-            self._index = 0
+            self._index = initial_index
             self._store = store
             self._labels_path = labels_path
             self._state: State = "unset"
+            self._find_query = ""
+            self._find_match_indices: List[int] = []
+            self._find_match_cursor = 0
+            if bootstrap_find is not None:
+                self._find_query = bootstrap_find[0]
+                self._find_match_indices = list(bootstrap_find[1])
+                self._find_match_cursor = 0
             self._viewport = ImageViewport()
             self._viewport.box_completed.connect(self._on_box_drawn)
             central = QWidget()
@@ -327,6 +388,7 @@ unlabeled (no JSONL row) · Q quit · F1 or Help = this window
                 ),
                 "Prev unlabeled": "Go to the previous PNG that has no saved row in this JSONL (Alt+Left). Wraps.",
                 "Next unlabeled": "Go to the next PNG that has no saved row in this JSONL (Alt+Right). Wraps.",
+                "Find image…": "Jump by basename substring or full path (Ctrl+F). F3 = next match for last query.",
             }
             for txt, slot in (
                 ("Present (Y)", self._on_present),
@@ -357,6 +419,12 @@ unlabeled (no JSONL row) · Q quit · F1 or Help = this window
                 if tip:
                     b.setToolTip(tip)
                 jump_row.addWidget(b)
+            find_btn = QPushButton("Find image…")
+            find_btn.clicked.connect(self._on_find_image)
+            tip = _btn_tips.get("Find image…")
+            if tip:
+                find_btn.setToolTip(tip)
+            jump_row.addWidget(find_btn)
             lay.addLayout(jump_row)
             self.setCentralWidget(central)
             sb = QStatusBar()
@@ -374,6 +442,8 @@ unlabeled (no JSONL row) · Q quit · F1 or Help = this window
                 ("Right", self._on_next),
                 ("Alt+Left", self._on_prev_unlabeled),
                 ("Alt+Right", self._on_next_unlabeled),
+                ("Ctrl+F", self._on_find_image),
+                ("F3", self._on_find_next),
                 ("Q", self.close),
                 ("F1", self._on_help),
             ):
@@ -402,13 +472,72 @@ unlabeled (no JSONL row) · Q quit · F1 or Help = this window
                 return "absent"
             return "skip"
 
+        def _find_status_suffix(self) -> str:
+            if not self._find_match_indices:
+                return ""
+            k = self._find_match_cursor + 1
+            n = len(self._find_match_indices)
+            return f" | Find «{self._find_query}»: {k}/{n}"
+
         def _refresh_status(self) -> None:
             p = self._paths[self._index]
             n = len(self._paths)
+            tail = (
+                " — Save+next writes JSONL; Alt+Left/Right = unlabeled · Ctrl+F find · F3 next match"
+            )
             self.statusBar().showMessage(
                 f"[{self._index + 1}/{n}] {p.name} | state={self._state} | labels={self._labels_path}"
-                " — Save+next writes JSONL; Alt+Left/Right = jump to image with no JSONL row yet"
+                f"{self._find_status_suffix()}{tail}"
             )
+
+        def _apply_find_query(self, raw: str) -> bool:
+            q = raw.strip()
+            if not q:
+                return False
+            indices = png_indices_matching_query(self._paths, q)
+            if not indices:
+                return False
+            self._find_query = q
+            self._find_match_indices = indices
+            self._find_match_cursor = 0
+            self._index = indices[0]
+            self._load_frame()
+            return True
+
+        def _on_find_image(self) -> None:
+            dlg = QDialog(self)
+            dlg.setWindowTitle("Find image")
+            v = QVBoxLayout(dlg)
+            v.addWidget(QLabel("PNG basename substring or full path to a corpus file:"))
+            edit = QLineEdit()
+            edit.setPlaceholderText("e.g. golden-sweeper-20260504-223259-223436-f00001")
+            if self._find_query:
+                edit.setText(self._find_query)
+            v.addWidget(edit)
+            box = QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+            )
+            v.addWidget(box)
+            box.accepted.connect(dlg.accept)
+            box.rejected.connect(dlg.reject)
+            edit.returnPressed.connect(dlg.accept)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                return
+            text = edit.text()
+            if not self._apply_find_query(text):
+                QMessageBox.information(
+                    self,
+                    "Find",
+                    f"No PNG matches «{text.strip()}» in this folder.",
+                )
+
+        def _on_find_next(self) -> None:
+            if not self._find_match_indices:
+                self._on_find_image()
+                return
+            self._find_match_cursor = (self._find_match_cursor + 1) % len(self._find_match_indices)
+            self._index = self._find_match_indices[self._find_match_cursor]
+            self._load_frame()
 
         def _load_frame(self) -> None:
             path = self._paths[self._index]

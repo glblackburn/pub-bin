@@ -183,3 +183,26 @@ class LabelStore:
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def bbox_iou(a: Tuple[int, int, int, int], b: Tuple[int, int, int, int]) -> float:
+    """Intersection-over-union for axis-aligned boxes ``(x, y, w, h)`` in image pixels."""
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    ax2, ay2 = ax + max(0, aw), ay + max(0, ah)
+    bx2, by2 = bx + max(0, bw), by + max(0, bh)
+    ix1 = max(ax, bx)
+    iy1 = max(ay, by)
+    ix2 = min(ax2, bx2)
+    iy2 = min(ay2, by2)
+    iw = max(0, ix2 - ix1)
+    ih = max(0, iy2 - iy1)
+    inter = float(iw * ih)
+    if inter <= 0.0:
+        return 0.0
+    area_a = float(max(0, aw) * max(0, ah))
+    area_b = float(max(0, bw) * max(0, bh))
+    union = area_a + area_b - inter
+    if union <= 1e-9:
+        return 0.0
+    return inter / union

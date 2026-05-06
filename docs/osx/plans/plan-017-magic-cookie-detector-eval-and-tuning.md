@@ -4,6 +4,8 @@
 
 **Related:** [plan-015 — golden / magic cookie sweeper](plan-015-cookie-clicker-golden-cookie-sweeper.md) (detector entrypoint), [plan-016 — screenshot label tool](plan-016-magic-cookie-screenshot-label-tool.md) (JSONL schema), [`osx/cookie_clicker_golden_sweeper.py`](../../../osx/cookie_clicker_golden_sweeper.py), [`docs/osx/golden-sweeper-corpus-INDEX.md`](../golden-sweeper-corpus-INDEX.md) (heuristic triage; not ground truth vs labels).
 
+**Execution status:** [plan-018 — magic cookie detection remediation](plan-018-magic-cookie-detection-remediation.md) owns the **measurement-first** rollout (offline eval script, baseline metrics table, detector tuning CLI, phased tracks). Use plan-018 as the working tracker; this document stays the **eval metric definition** and label snapshot reference.
+
 ---
 
 ## 1. Data snapshot (`magic-cookie-labels.jsonl`)
@@ -110,8 +112,10 @@ After each substantive change: re-run eval; keep **existing pytest** green; add 
 
 ## 8. Implementation checklist
 
-- [ ] Add `tools/eval_magic_cookie_labels.py`: load JSONL, run `detect_magic_cookie_hits`, IoU on positives, FP on negatives, stem list + optional debug dir.
-- [ ] Run eval on current `magic-cookie-labels.jsonl`; record FN/FP counts and worst stems.
+**Canonical tracker:** [plan-018](plan-018-magic-cookie-detection-remediation.md) (deliverables, metrics appendix, open questions).
+
+- [x] Add `tools/eval_magic_cookie_labels.py`: load JSONL, run `detect_magic_cookie_hits`, IoU on positives, FP on negatives, stem list + optional debug dir (**shipped**; see plan-018).
+- [x] Run eval on current `magic-cookie-labels.jsonl`; record FN/FP counts (**baseline row** in plan-018 metrics appendix, 2026-05-04).
 - [ ] Inspect worst FN/FP overlays; bucket causes (HSV vs area vs morphology vs UI blobs).
 - [ ] Adjust `detect_magic_cookie_hits` parameters / mask pipeline; re-run eval until metrics improve.
-- [ ] Extend `osx/tests/test_cookie_clicker_golden_sweeper.py` if feasible without large assets; keep plan-015 / plan-016 cross-links current.
+- [x] Extend tests (`bbox_iou`, eval smoke, `min_confidence`) without large binaries (**shipped**).

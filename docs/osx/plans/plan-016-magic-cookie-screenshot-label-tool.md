@@ -98,7 +98,8 @@ The image is **letterboxed** inside the widget preserving aspect ratio. Pointer 
 
 ## 10. Follow-on (not v1)
 
-- `tools/eval_magic_cookie_labels.py` — compare `bbox_px` to `detect_magic_cookie_hits` (IoU / centroid).
+- `tools/eval_magic_cookie_labels.py` — compare `bbox_px` to `detect_magic_cookie_hits` (IoU / centroid). (**Shipped**; see plan-017 / plan-018.)
+- Find / jump to PNG by stem or path in the labeler UI — **[plan-019](plan-019-magic-cookie-label-tool-find-image.md)** (**shipped**: **Ctrl+F**, **F3**, **Find image…**, **`--jump-query`**).
 - Export fixed-size **crops** for template or ML pipelines (plan-015 §5).
 
 ---

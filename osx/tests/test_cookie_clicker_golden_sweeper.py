@@ -53,6 +53,15 @@ def test_exclude_near_cookie() -> None:
     assert not hits
 
 
+def test_min_confidence_filters_hits() -> None:
+    bgr = _yellow_blob_bgr()
+    hits_all = detect_magic_cookie_hits(bgr, exclude_xy=None)
+    assert hits_all
+    min_c = hits_all[0].confidence + 0.01
+    hits_f = detect_magic_cookie_hits(bgr, exclude_xy=None, min_confidence=min_c)
+    assert not hits_f, "raising min_confidence above top hit should yield empty list"
+
+
 def test_tall_gold_ui_strip_rejected() -> None:
     """Tall golden-hue UI bars (aspect ratio) must not count as magic cookies."""
     import cv2

@@ -176,6 +176,7 @@ def detect_magic_cookie_hits(
     min_solidity: float = 0.76,
     min_circularity: float = 0.38,
     min_side_px: int = 12,
+    min_confidence: Optional[float] = None,
 ) -> List[Hit]:
     """HSV blob detector tuned for compact golden-ish blobs (heuristic v2).
 
@@ -244,6 +245,8 @@ def detect_magic_cookie_hits(
         conf = min(0.95, base_conf * (0.82 + 0.18 * min(1.0, rel)))
         hits.append(Hit(x=float(cx), y=float(cy), confidence=float(conf), bbox=bbox))
     hits.sort(key=lambda h: -h.confidence)
+    if min_confidence is not None:
+        hits = [h for h in hits if h.confidence >= float(min_confidence)]
     return hits
 
 
@@ -350,6 +353,22 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--profile", help="Profile JSON for big-cookie exclusion when dimensions match detector metadata.")
     p.add_argument("--exclude-radius", type=float, default=140.0, help="Exclusion radius around profile cookie (default 140).")
+    p.add_argument(
+        "--min-confidence",
+        type=float,
+        default=None,
+        metavar="C",
+        help="Drop detector hits with confidence below C (default: keep all).",
+    )
+    det = p.add_argument_group("detector overrides (default: built-in v2 constants)")
+    det.add_argument("--det-min-area", type=int, default=None, metavar="N")
+    det.add_argument("--det-max-area", type=int, default=None, metavar="N")
+    det.add_argument("--det-max-hits", type=int, default=None, metavar="N")
+    det.add_argument("--det-max-aspect", type=float, default=None, metavar="R")
+    det.add_argument("--det-min-extent", type=float, default=None, metavar="R")
+    det.add_argument("--det-min-solidity", type=float, default=None, metavar="R")
+    det.add_argument("--det-min-circularity", type=float, default=None, metavar="R")
+    det.add_argument("--det-min-side-px", type=int, default=None, metavar="N")
     p.add_argument("--poll-interval", type=float, default=0.75, help="Seconds between polls (default 0.75).")
     p.add_argument("--run-seconds", type=float, default=0.0, help="Stop after this many seconds (0 = ignore).")
     p.add_argument("--max-polls", type=int, default=0, help="Stop after this many polls (0 = ignore).")
@@ -378,6 +397,35 @@ def parse_args() -> argparse.Namespace:
         if ns.no_capture_save and ns.capture_save_dir:
             p.error("do not combine --no-capture-save with --capture-save-dir")
     return ns
+
+
+def build_detect_kwargs(
+    args: argparse.Namespace,
+    *,
+    exclude_xy: Optional[Tuple[float, float]],
+    exclude_radius: float,
+) -> Dict[str, Any]:
+    """Map argparse ``args`` (golden sweeper) to ``detect_magic_cookie_hits`` keyword args."""
+    kw: Dict[str, Any] = {"exclude_xy": exclude_xy, "exclude_radius": float(exclude_radius)}
+    if args.det_min_area is not None:
+        kw["min_area"] = int(args.det_min_area)
+    if args.det_max_area is not None:
+        kw["max_area"] = int(args.det_max_area)
+    if args.det_max_hits is not None:
+        kw["max_hits"] = int(args.det_max_hits)
+    if args.det_max_aspect is not None:
+        kw["max_aspect"] = float(args.det_max_aspect)
+    if args.det_min_extent is not None:
+        kw["min_extent"] = float(args.det_min_extent)
+    if args.det_min_solidity is not None:
+        kw["min_solidity"] = float(args.det_min_solidity)
+    if args.det_min_circularity is not None:
+        kw["min_circularity"] = float(args.det_min_circularity)
+    if args.det_min_side_px is not None:
+        kw["min_side_px"] = int(args.det_min_side_px)
+    if args.min_confidence is not None:
+        kw["min_confidence"] = float(args.min_confidence)
+    return kw
 
 
 def main() -> int:
@@ -440,11 +488,8 @@ def main() -> int:
                 ih,
                 map_from_global=bool(map_to_global),
             )
-            hits_img = detect_magic_cookie_hits(
-                bgr,
-                exclude_xy=exclude,
-                exclude_radius=float(args.exclude_radius),
-            )
+            det_kw = build_detect_kwargs(args, exclude_xy=exclude, exclude_radius=float(args.exclude_radius))
+            hits_img = detect_magic_cookie_hits(bgr, **det_kw)
             polls += 1
             frame_id += 1
 

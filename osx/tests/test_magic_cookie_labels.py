@@ -10,6 +10,7 @@ import pytest
 from magic_cookie_labels import (  # noqa: E402
     LabelRecord,
     LabelStore,
+    bbox_iou,
     display_rect_to_image_bbox,
     image_bbox_to_display_rect,
     utc_now_iso,
@@ -83,3 +84,20 @@ def test_label_store_upsert_replaces(tmp_path: Path) -> None:
     o = json.loads(lines[0])
     assert o["magic_cookie"] is True
     assert o["bbox_px"] == [0, 0, 2, 2]
+
+
+def test_bbox_iou_identical() -> None:
+    b = (10, 20, 30, 40)
+    assert bbox_iou(b, b) == pytest.approx(1.0)
+
+
+def test_bbox_iou_disjoint() -> None:
+    assert bbox_iou((0, 0, 10, 10), (20, 0, 10, 10)) == 0.0
+
+
+def test_bbox_iou_partial_overlap() -> None:
+    a = (0, 0, 10, 10)
+    b = (5, 5, 10, 10)
+    inter = 5 * 5
+    union = 100 + 100 - inter
+    assert bbox_iou(a, b) == pytest.approx(inter / union)
