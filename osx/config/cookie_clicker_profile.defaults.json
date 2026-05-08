@@ -29,7 +29,7 @@
     {"name": "cursor", "x": 2344.4, "y": -689.3, "confidence": 1.0}
   ],
   "preview_defaults": {
-    "cookie_click_count": 3000,
+    "cookie_click_count": 6000,
     "ladder_click_count": 5,
     "cycle_sleep_seconds": 35
   },

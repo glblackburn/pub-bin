@@ -166,6 +166,30 @@ def warp_cursor(qz: Any, x: float, y: float) -> None:
             pass
 
 
+def _overlay_primary_screen_height(appkit_module: Any) -> Optional[float]:
+    """Return the primary display's height in Cocoa points, or ``None`` if no screens.
+
+    DEF-015: Cocoa global coordinates are anchored at the **primary** display's
+    bottom-left. ``NSScreen.mainScreen()`` returns the screen with current
+    focus (e.g. the terminal's display), which is NOT necessarily the primary
+    on multi-monitor setups; using its height for the Quartz->Cocoa Y
+    conversion silently shifts the overlay by ``(primary_h - focused_h)``
+    pixels. ``NSScreen.screens()[0]`` is the primary by AppKit convention and
+    is what the conversion needs.
+    """
+    try:
+        screens = appkit_module.NSScreen.screens()
+    except AttributeError:  # pragma: no cover - defensive
+        return None
+    if not screens:
+        return None
+    primary = screens[0]
+    try:
+        return float(primary.frame().size.height)
+    except AttributeError:  # pragma: no cover - defensive
+        return None
+
+
 def show_target_overlay(
     x: float,
     y: float,
@@ -202,14 +226,15 @@ def show_target_overlay(
         return
 
     AppKit.NSApplication.sharedApplication()
-    screen = AppKit.NSScreen.mainScreen()
-    if screen is None:  # pragma: no cover - headless smoke
+    screen_h = _overlay_primary_screen_height(AppKit)
+    if screen_h is None:  # pragma: no cover - headless smoke
         return
-    screen_h = float(screen.frame().size.height)
 
     win_w, win_h = 220.0, 70.0
     panel_x = float(x) + 20.0
-    # Cocoa coordinates are bottom-left; Quartz cursor coords are top-left.
+    # Quartz (x, y) -> Cocoa (x, primary_screen_h - y). Using the *primary*
+    # screen height is what makes the conversion correct on multi-monitor
+    # setups even when the terminal sits on a non-primary display (DEF-015).
     panel_y = screen_h - float(y) - win_h - 8.0
     panel_rect = AppKit.NSMakeRect(panel_x, panel_y, win_w, win_h)
     style = AppKit.NSWindowStyleMaskBorderless
