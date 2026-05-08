@@ -13,4 +13,16 @@ def test_golden_sweeper_invoked_once_after_inner_while_done() -> None:
     assert txt.count('"${golden_sweeper}" --capture display') == 1
     bad = 'sleep "${CYCLE_SLEEP_SECONDS}"\n            "${golden_sweeper}"'
     assert bad not in txt, "sweeper must not follow inter-phase sleep inside i<k"
-    assert '    done\n    "${golden_sweeper}" --capture display' in txt
+    # Plan-021 wraps the sweeper call in a ``if [ "${TOUR_MODE}" != true ]`` guard
+    # (tour mode skips the screen-capture sweeper), so the literal
+    # ``done\n    "${golden_sweeper}"`` anchor no longer matches. Check the
+    # semantic instead: the sweeper sits after the cookie-phase ``done`` and
+    # NOT inside the inner ``while [ "${i}" -le "${k}" ]; do`` body.
+    func_body = txt.split("function run_phased_cookie_bursts", 1)[1]
+    inner_body, _, after_inner = func_body.partition("    done\n")
+    assert '"${golden_sweeper}"' not in inner_body, (
+        "sweeper must not run inside the cookie-phase loop body"
+    )
+    assert '"${golden_sweeper}" --capture display' in after_inner.split(
+        "\nfunction ", 1
+    )[0]

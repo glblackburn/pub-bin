@@ -1,6 +1,6 @@
 # macOS clicker plans (`docs/osx/plans/`)
 
-> **Single open plan as of 2026-05-06: [plan-020 — uber true-up](plan-020-uber-true-up.md).**
+> **Open plans (as of 2026-05-07):** [plan-020 — uber true-up](plan-020-uber-true-up.md) (consolidated checklist for residuals from the frozen plans) and [plan-021 — show-only target tour](plan-021-macos-mouse-click-show-only-target-tour.md) (new feature: `--show-only` cursor warp + AppKit overlay with loop pass-through).
 > Every other plan in this directory (`plan-001` … `plan-019`, the two hand-offs, and `cursor-plans-import/`) is **Frozen — superseded by plan-020** and is **read-only**. Open work moved to plan-020's checklist. New features → new `plan-021+`. Code or spec drift → defects under [`../defects/`](../defects/) whose `related_plans:` reference the historical plan **and** plan-020.
 
 **Index** for product and UX specs (**`plan-###-`…** filenames), session hand-offs, status legend, and agent routing for **`osx/macos_mouse_click.py`**. **Implementation:** **[`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py)**. **Parent hub:** **[`../README.md`](../README.md)**. **Defects:** **[`../defects/README.md`](../defects/README.md)**.
@@ -21,6 +21,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 
 | Plan | Document |
 |------|----------|
+| **21** | [plan-021 — show-only target tour](plan-021-macos-mouse-click-show-only-target-tour.md) |
 | **20** | **[plan-020 — uber true-up (active)](plan-020-uber-true-up.md)** |
 | **01** | [plan-001 — macOS clicker](plan-001-macos-clicker.md) |
 | **02** | [plan-002 — terminal UX](plan-002-macos-mouse-click-terminal-ux.md) |
@@ -50,6 +51,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 
 | Plan id | Title | Opened | Completed | Status | Document |
 |---------|-------|--------|-----------|--------|----------|
+| plan-021 | Show-only target tour (warp + AppKit overlay; loop pass-through) | 2026-05-07 | — | **Open** | [plan-021-macos-mouse-click-show-only-target-tour.md](plan-021-macos-mouse-click-show-only-target-tour.md) |
 | plan-020 | **Uber true-up** (consolidated checklist; only open plan) | 2026-05-06 | — | **Open** | [plan-020-uber-true-up.md](plan-020-uber-true-up.md) |
 | plan-001 | macOS clicker (core behavior) | 2026-04-18 | 2026-05-06 | **Frozen** (was: Shipped) | [plan-001-macos-clicker.md](plan-001-macos-clicker.md) |
 | plan-002 | Terminal UX (Rich pre-run) | 2026-04-18 | 2026-05-06 | **Frozen** (was: Closed (v1)) | [plan-002-macos-mouse-click-terminal-ux.md](plan-002-macos-mouse-click-terminal-ux.md) |

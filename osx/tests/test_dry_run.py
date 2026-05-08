@@ -37,6 +37,9 @@ def test_resolved_config_for_dry_run_json() -> None:
         "abort_on_mouse_move": False,
         "mouse_move_threshold_px": 20.0,
         "mouse_arm_radius_px": None,
+        "show_only": False,
+        "show_dwell_seconds": 1.5,
+        "show_step": False,
     }
 
     cfg2 = ResolvedConfig(mode="fixed", count=2, delay=0.0, x=10.0, y=20.5)
@@ -45,6 +48,9 @@ def test_resolved_config_for_dry_run_json() -> None:
     assert d2["abort_on_mouse_move"] is False
     assert d2["mouse_move_threshold_px"] == 20.0
     assert d2["mouse_arm_radius_px"] is None
+    assert d2["show_only"] is False
+    assert d2["show_dwell_seconds"] == 1.5
+    assert d2["show_step"] is False
 
     cfg3 = ResolvedConfig(
         mode="learn_collect", count=0, delay=1.0, learn_point_cap=None
@@ -53,6 +59,7 @@ def test_resolved_config_for_dry_run_json() -> None:
     assert d3["mode"] == "learn_collect"
     assert d3["learn_point_cap"] is None
     assert d3["abort_on_mouse_move"] is False
+    assert d3["show_only"] is False
 
     cfg4 = ResolvedConfig(
         mode="learn_collect", count=0, delay=1.0, learn_point_cap=2
@@ -61,6 +68,22 @@ def test_resolved_config_for_dry_run_json() -> None:
     assert d4["learn_point_cap"] == 2
     assert d4["mouse_move_threshold_px"] == 20.0
     assert d4["mouse_arm_radius_px"] is None
+    assert d4["show_only"] is False
+
+    cfg5 = ResolvedConfig(
+        mode="fixed",
+        count=5,
+        delay=0.0,
+        x=100.0,
+        y=200.0,
+        show_only=True,
+        show_dwell_seconds=0.25,
+        show_step=False,
+    )
+    d5 = mmc.resolved_config_for_dry_run_json(cfg5)
+    assert d5["show_only"] is True
+    assert d5["show_dwell_seconds"] == 0.25
+    assert d5["show_step"] is False
 
 
 def test_dry_run_requested_flag_and_env() -> None:

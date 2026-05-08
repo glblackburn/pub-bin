@@ -19,6 +19,41 @@ Long-running **`-Y`** buy ladder + cookie burst for local dogfooding. **`-S`** s
 ./osx/macos_mouse_click_loop.sh -S -k 2 -c 1 # cookie-only: two bursts + sleep between
 ```
 
+### Show-only target tour (plan-021)
+
+Walk through every ladder + cookie target with **no synthetic clicks**: the cursor warps to each target and a small floating AppKit overlay shows the would-have-been click count beside a red crosshair. Useful for verifying coordinates / `-k` factor before a real run.
+
+```bash
+./osx/macos_mouse_click_loop.sh -T -c 1                # one tour cycle, 1.5s dwell per target
+./osx/macos_mouse_click_loop.sh -T -W 0.5 -c 1         # custom dwell (seconds, float)
+./osx/macos_mouse_click_loop.sh -T -X -c 1             # step mode: press Enter to advance
+./osx/macos_mouse_click_loop.sh -P /tmp/cookie-profile.json -T -c 1   # tour a profile
+```
+
+Direct `macos_mouse_click.py` runs (one target):
+
+```bash
+./osx/macos_mouse_click.py -x 800 -y 500 -n 10 -Y --show-only
+./osx/macos_mouse_click.py -x 800 -y 500 -n 10 -Y --show-only --show-dwell-seconds 0.5
+./osx/macos_mouse_click.py --at-cursor -n 5 -Y --show-only --show-step
+```
+
+Loop flags (pass-through to the python clicker):
+
+- **`-T`** — enable tour mode. Each `click_target` invocation runs with `--show-only` instead of clicking. Drops `--abort-on-mouse-move` (cursor motion is intentional in a tour) and skips the per-cycle `cookie_clicker_golden_sweeper.py` screen capture (the moving cursor + overlay would pollute it).
+- **`-W <seconds>`** — dwell seconds per target (default **1.5**, must be `>= 0`). Forwarded as `--show-dwell-seconds`. Ignored when `-X` is set.
+- **`-X`** — step mode: wait for **Enter** on stdin between targets. Forwarded as `--show-step`. Requires a TTY stdin.
+
+Python clicker flags:
+
+- **`--show-only`** — warp cursor to the target and draw an AppKit overlay (count + `(x, y)` + crosshair); never posts `kCGEventLeftMouseDown` / `kCGEventLeftMouseUp`. Requires fixed (`-x` and `-y`) or `--at-cursor` mode. Mutually exclusive with `--learn` / `--learn-points`. Compatible with `-Y`.
+- **`--show-dwell-seconds SECONDS`** — float, default **1.5**. Time the overlay stays up before returning. Must be `>= 0`. Ignored when `--show-step` is set.
+- **`--show-step`** — wait for Enter on stdin instead of dwelling. Requires `--show-only`.
+
+Permissions: same as a real click run — **Accessibility** for the terminal (cursor warp uses Quartz, no Screen Recording needed). The overlay is a borderless `NSWindow` at `NSStatusWindowLevel` and is `setIgnoresMouseEvents_(True)`, so it does not steal focus or block interaction.
+
+Plan: [plan-021](../docs/osx/plans/plan-021-macos-mouse-click-show-only-target-tour.md). When AppKit / `pyobjc-framework-Cocoa` is missing, the script still works headless and prints `show-only: would click N at (x, y)` on stderr per target.
+
 ### CV profile detection + preview safety gate
 
 Detect coordinates from a screenshot, then render an annotated preview before clicks:

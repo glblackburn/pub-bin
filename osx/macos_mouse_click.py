@@ -148,6 +148,193 @@ def post_synthetic_click(qz: Any, x: float, y: float) -> None:
         qz.CGEventPost(qz.kCGHIDEventTap, ev)
 
 
+def warp_cursor(qz: Any, x: float, y: float) -> None:
+    """Plan-021: move the cursor to (x, y) without posting any click events.
+
+    Uses ``CGWarpMouseCursorPosition`` (global display points, top-left origin),
+    then re-associates the mouse with the cursor so subsequent physical motion
+    is honored. Accessibility permission (already required for clicks) is
+    sufficient; no Screen Recording needed.
+    """
+    point = qz.CGPoint(x=float(x), y=float(y))
+    qz.CGWarpMouseCursorPosition(point)
+    assoc = getattr(qz, "CGAssociateMouseAndMouseCursorPosition", None)
+    if assoc is not None:
+        try:
+            assoc(True)
+        except Exception:  # pragma: no cover - best-effort restore
+            pass
+
+
+def show_target_overlay(
+    x: float,
+    y: float,
+    count: int,
+    dwell_seconds: float,
+    step: bool,
+) -> None:
+    """Plan-021: draw a borderless AppKit overlay near (x, y) with click count.
+
+    Lazy-imports ``AppKit`` so dry-run / non-darwin paths never load Cocoa.
+    Renders two windows: a small floating panel ("would click N" + "(x, y)")
+    and a tiny crosshair sitting at (x, y). Pumps the current run loop in
+    short slices for ``dwell_seconds`` seconds, or until Enter is read on
+    stdin when ``step`` is true.
+    """
+    try:
+        import AppKit  # type: ignore[import-not-found]
+    except ImportError:
+        # PyObjC AppKit (Cocoa) not installed; degrade to a stderr line so the
+        # tour still produces visible output.
+        print(
+            f"show-only: would click {int(count)} at ({float(x):.1f}, {float(y):.1f}) "
+            f"[AppKit not available; install pyobjc-framework-Cocoa for overlay]",
+            file=sys.stderr,
+            flush=True,
+        )
+        if step:
+            try:
+                sys.stdin.readline()
+            except (OSError, ValueError):
+                pass
+        else:
+            time.sleep(max(0.0, float(dwell_seconds)))
+        return
+
+    AppKit.NSApplication.sharedApplication()
+    screen = AppKit.NSScreen.mainScreen()
+    if screen is None:  # pragma: no cover - headless smoke
+        return
+    screen_h = float(screen.frame().size.height)
+
+    win_w, win_h = 220.0, 70.0
+    panel_x = float(x) + 20.0
+    # Cocoa coordinates are bottom-left; Quartz cursor coords are top-left.
+    panel_y = screen_h - float(y) - win_h - 8.0
+    panel_rect = AppKit.NSMakeRect(panel_x, panel_y, win_w, win_h)
+    style = AppKit.NSWindowStyleMaskBorderless
+    backing = AppKit.NSBackingStoreBuffered
+    panel = (
+        AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            panel_rect, style, backing, False
+        )
+    )
+    panel.setLevel_(AppKit.NSStatusWindowLevel)
+    panel.setBackgroundColor_(
+        AppKit.NSColor.colorWithCalibratedWhite_alpha_(0.0, 0.65)
+    )
+    panel.setOpaque_(False)
+    panel.setHasShadow_(True)
+    panel.setIgnoresMouseEvents_(True)
+
+    cv = panel.contentView()
+
+    label_text = (
+        "would click \u221E" if int(count) == 0 else f"would click {int(count)}"
+    )
+    label = AppKit.NSTextField.alloc().initWithFrame_(
+        AppKit.NSMakeRect(10, 36, win_w - 20, 24)
+    )
+    label.setStringValue_(label_text)
+    label.setBezeled_(False)
+    label.setDrawsBackground_(False)
+    label.setEditable_(False)
+    label.setSelectable_(False)
+    label.setTextColor_(AppKit.NSColor.whiteColor())
+    label.setFont_(AppKit.NSFont.boldSystemFontOfSize_(16.0))
+    cv.addSubview_(label)
+
+    coord_text = f"({int(round(float(x)))}, {int(round(float(y)))})"
+    coord = AppKit.NSTextField.alloc().initWithFrame_(
+        AppKit.NSMakeRect(10, 8, win_w - 20, 22)
+    )
+    coord.setStringValue_(coord_text)
+    coord.setBezeled_(False)
+    coord.setDrawsBackground_(False)
+    coord.setEditable_(False)
+    coord.setSelectable_(False)
+    coord.setTextColor_(AppKit.NSColor.whiteColor())
+    coord.setFont_(AppKit.NSFont.systemFontOfSize_(12.0))
+    cv.addSubview_(coord)
+
+    ch_w, ch_h = 30.0, 30.0
+    ch_x = float(x) - ch_w / 2.0
+    ch_y_cocoa = screen_h - float(y) - ch_h / 2.0
+    ch_rect = AppKit.NSMakeRect(ch_x, ch_y_cocoa, ch_w, ch_h)
+    crosshair = (
+        AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            ch_rect, style, backing, False
+        )
+    )
+    crosshair.setLevel_(AppKit.NSStatusWindowLevel)
+    crosshair.setBackgroundColor_(AppKit.NSColor.clearColor())
+    crosshair.setOpaque_(False)
+    crosshair.setHasShadow_(False)
+    crosshair.setIgnoresMouseEvents_(True)
+
+    ch_cv = crosshair.contentView()
+    h_line = AppKit.NSView.alloc().initWithFrame_(
+        AppKit.NSMakeRect(0.0, ch_h / 2.0 - 1.0, ch_w, 2.0)
+    )
+    h_line.setWantsLayer_(True)
+    h_line.layer().setBackgroundColor_(
+        AppKit.NSColor.systemRedColor().CGColor()
+    )
+    ch_cv.addSubview_(h_line)
+    v_line = AppKit.NSView.alloc().initWithFrame_(
+        AppKit.NSMakeRect(ch_w / 2.0 - 1.0, 0.0, 2.0, ch_h)
+    )
+    v_line.setWantsLayer_(True)
+    v_line.layer().setBackgroundColor_(
+        AppKit.NSColor.systemRedColor().CGColor()
+    )
+    ch_cv.addSubview_(v_line)
+
+    panel.orderFrontRegardless()
+    crosshair.orderFrontRegardless()
+
+    try:
+        if step:
+            import select
+
+            while True:
+                if shutdown_requested():
+                    break
+                rl = AppKit.NSRunLoop.currentRunLoop()
+                rl.runUntilDate_(
+                    AppKit.NSDate.dateWithTimeIntervalSinceNow_(0.05)
+                )
+                try:
+                    r, _, _ = select.select([sys.stdin], [], [], 0)
+                except (OSError, ValueError):
+                    break
+                if r:
+                    try:
+                        sys.stdin.readline()
+                    except (OSError, ValueError):
+                        pass
+                    break
+        else:
+            deadline = time.monotonic() + max(0.0, float(dwell_seconds))
+            while time.monotonic() < deadline:
+                if shutdown_requested():
+                    break
+                remaining = deadline - time.monotonic()
+                slice_s = min(0.05, remaining)
+                rl = AppKit.NSRunLoop.currentRunLoop()
+                rl.runUntilDate_(
+                    AppKit.NSDate.dateWithTimeIntervalSinceNow_(slice_s)
+                )
+    finally:
+        panel.orderOut_(None)
+        crosshair.orderOut_(None)
+        try:
+            panel.close()
+            crosshair.close()
+        except Exception:  # pragma: no cover - defensive teardown
+            pass
+
+
 def wait_for_anchor_click(qz: Any) -> Union[tuple, bool, None]:
     """Return (x, y) on success, False if tap could not be created, None if interrupted."""
     anchor: List[tuple] = []
@@ -229,6 +416,17 @@ def _running_message(cfg: ResolvedConfig) -> str:
         cap = cfg.learn_point_cap
         cap_s = "infinite" if cap is None else str(cap)
         return f"mode={cfg.mode} learn_point_cap={cap_s} delay={cfg.delay}s"
+    if cfg.show_only:
+        # Plan-021: tour the target instead of clicking; surface count as a
+        # "would click" preview and the chosen pacing (dwell vs step).
+        if cfg.show_step:
+            pacing = "step"
+        else:
+            pacing = f"dwell={cfg.show_dwell_seconds}s"
+        return (
+            f"mode={cfg.mode} show_only=true would_click={count_label(cfg.count)} "
+            f"{pacing}"
+        )
     return f"mode={cfg.mode} count={count_label(cfg.count)} delay={cfg.delay}s"
 
 
@@ -249,6 +447,10 @@ class ResolvedConfig:
     mouse_move_threshold_px: float = 20.0
     # None => max(60, 2 * mouse_move_threshold_px) at runtime (DEF-010).
     mouse_arm_radius_px: Optional[float] = None
+    # Plan-021: --show-only target tour (warp + AppKit overlay; no synthetic clicks).
+    show_only: bool = False
+    show_dwell_seconds: float = 1.5
+    show_step: bool = False
 
     def set_field(self, name: str, value: Any, source: str) -> None:
         setattr(self, name, value)
@@ -270,6 +472,9 @@ def resolved_config_for_dry_run_json(cfg: ResolvedConfig) -> Dict[str, Any]:
             if cfg.mouse_arm_radius_px is None
             else float(cfg.mouse_arm_radius_px)
         ),
+        "show_only": bool(cfg.show_only),
+        "show_dwell_seconds": float(cfg.show_dwell_seconds),
+        "show_step": bool(cfg.show_step),
     }
     if cfg.mode == "learn_collect":
         d["learn_point_cap"] = cfg.learn_point_cap
@@ -622,6 +827,24 @@ def _debug_tui_emit_anchor(
     }
     if cfg.mode == "learn":
         body["warmup_delay"] = float(cfg.delay)
+    _debug_tui_write_line(body)
+
+
+def _debug_tui_emit_show_target(
+    cfg: ResolvedConfig, x: float, y: float
+) -> None:
+    """Plan-021: one record per show-only invocation (warp + overlay)."""
+    if not _debug_tui_env_enabled():
+        return
+    body: Dict[str, Any] = {
+        "event": "show_target",
+        "mode": cfg.mode,
+        "anchor_x": float(x),
+        "anchor_y": float(y),
+        "would_click": int(cfg.count),
+        "show_dwell_seconds": float(cfg.show_dwell_seconds),
+        "show_step": bool(cfg.show_step),
+    }
     _debug_tui_write_line(body)
 
 
@@ -1103,6 +1326,36 @@ Use -Y or --yes for non-interactive runs (-y is reserved for Y coordinate).
             "Same when env MACOS_MOUSE_CLICK_DRY_RUN is 1/true/yes/on."
         ),
     )
+    p.add_argument(
+        "--show-only",
+        action="store_true",
+        default=False,
+        help=(
+            "Plan-021 target tour: warp the cursor to the target and draw an "
+            "AppKit overlay near it; do NOT post any synthetic mouse events. "
+            "-n is rendered as a 'would click N' label only. Requires fixed "
+            "(-x and -y) or --at-cursor mode."
+        ),
+    )
+    p.add_argument(
+        "--show-dwell-seconds",
+        type=float,
+        default=argparse.SUPPRESS,
+        metavar="SECONDS",
+        help=(
+            "With --show-only: how long the overlay stays up before the script "
+            "exits (default: 1.5). Must be >= 0. Ignored when --show-step is set."
+        ),
+    )
+    p.add_argument(
+        "--show-step",
+        action="store_true",
+        default=False,
+        help=(
+            "With --show-only: wait for Enter on stdin between targets instead "
+            "of dwelling. Requires a TTY stdin."
+        ),
+    )
     return p
 
 
@@ -1121,6 +1374,7 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
         "learn_points": 0,
         "mouse_move_threshold_px": 0,
         "mouse_arm_radius_px": 0,
+        "show_dwell_seconds": 0,
     }
     for tok in argv:
         if tok == "--":
@@ -1181,6 +1435,8 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
             counts["mouse_move_threshold_px"] += 1
         elif tok == "--mouse-arm-radius-px" or tok.startswith("--mouse-arm-radius-px="):
             counts["mouse_arm_radius_px"] += 1
+        elif tok == "--show-dwell-seconds" or tok.startswith("--show-dwell-seconds="):
+            counts["show_dwell_seconds"] += 1
     if counts["count"] > 1:
         return "-n / --count may only appear once"
     if counts["delay"] > 1:
@@ -1195,6 +1451,8 @@ def argv_duplicate_cli_option_error(argv: Sequence[str]) -> Optional[str]:
         return "--mouse-move-threshold-px may only appear once"
     if counts["mouse_arm_radius_px"] > 1:
         return "--mouse-arm-radius-px may only appear once"
+    if counts["show_dwell_seconds"] > 1:
+        return "--show-dwell-seconds may only appear once"
     return None
 
 
@@ -1216,6 +1474,29 @@ def validate_ns(ns: argparse.Namespace) -> Optional[str]:
         return (
             "Use only one of --learn, --learn-points, --at-cursor, or -x with -y"
         )
+    show_only = bool(vd.get("show_only", False))
+    show_step = bool(vd.get("show_step", False))
+    has_show_dwell = "show_dwell_seconds" in vd
+    if show_only:
+        # Plan-021: show-only is preview-only; learn / learn-collect already do not click.
+        if learn or learn_pts:
+            return (
+                "--show-only cannot be combined with --learn or --learn-points "
+                "(use fixed -x/-y or --at-cursor)"
+            )
+        if not (atc or (has_x and has_y)):
+            return (
+                "--show-only requires fixed (-x and -y) or --at-cursor mode"
+            )
+        if has_show_dwell:
+            sds = vd["show_dwell_seconds"]
+            if sds < 0:
+                return "--show-dwell-seconds must be >= 0"
+    else:
+        if has_show_dwell:
+            return "--show-dwell-seconds requires --show-only"
+        if show_step:
+            return "--show-step requires --show-only"
     return None
 
 
@@ -1262,6 +1543,12 @@ def namespace_to_cfg(ns: argparse.Namespace) -> ResolvedConfig:
         )
     if "mouse_arm_radius_px" in vd:
         cfg.set_field("mouse_arm_radius_px", float(vd["mouse_arm_radius_px"]), "cli")
+    if vd.get("show_only"):
+        cfg.set_field("show_only", True, "cli")
+    if "show_dwell_seconds" in vd:
+        cfg.set_field("show_dwell_seconds", float(vd["show_dwell_seconds"]), "cli")
+    if vd.get("show_step"):
+        cfg.set_field("show_step", True, "cli")
     return cfg
 
 
@@ -1438,6 +1725,22 @@ def print_confirmation_sheet(cfg: ResolvedConfig) -> None:
             f"  mouse_arm_radius_px (effective) = {eff_arm}  ({arm_src})",
             file=sys.stderr,
         )
+        if cfg.show_only:
+            print(
+                f"  show_only     = {cfg.show_only}  "
+                f"({cfg.sources.get('show_only', 'default')})",
+                file=sys.stderr,
+            )
+            print(
+                f"  show_dwell_seconds = {cfg.show_dwell_seconds}  "
+                f"({cfg.sources.get('show_dwell_seconds', 'default')})",
+                file=sys.stderr,
+            )
+            print(
+                f"  show_step     = {cfg.show_step}  "
+                f"({cfg.sources.get('show_step', 'default')})",
+                file=sys.stderr,
+            )
     print(file=sys.stderr)
 
 
@@ -1587,6 +1890,22 @@ def run_learn_flow(qz: Any, cfg: ResolvedConfig) -> int:
     return run_synthetic_loop(qz, x, y, cfg.count, cfg.delay, cfg)
 
 
+def run_show_only_loop(qz: Any, x: float, y: float, cfg: ResolvedConfig) -> int:
+    """Plan-021: warp to (x, y) and draw the AppKit overlay; never click."""
+    _debug_tui_emit_show_target(cfg, x, y)
+    warp_cursor(qz, float(x), float(y))
+    show_target_overlay(
+        float(x),
+        float(y),
+        int(cfg.count),
+        float(cfg.show_dwell_seconds),
+        bool(cfg.show_step),
+    )
+    if shutdown_requested():
+        return 130
+    return 0
+
+
 def run_fixed_or_cursor_flow(qz: Any, cfg: ResolvedConfig) -> int:
     if cfg.mode == "at_cursor":
         x, y = get_mouse_location(qz)
@@ -1594,6 +1913,8 @@ def run_fixed_or_cursor_flow(qz: Any, cfg: ResolvedConfig) -> int:
         _debug_tui_emit_anchor(cfg, x, y, cur_msg)
     else:
         x, y = float(cfg.x), float(cfg.y)
+    if cfg.show_only:
+        return run_show_only_loop(qz, x, y, cfg)
     return run_synthetic_loop(qz, x, y, cfg.count, cfg.delay, cfg)
 
 

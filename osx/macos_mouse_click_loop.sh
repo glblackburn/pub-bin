@@ -18,6 +18,10 @@ expected_bulk_mode=
 layout_profile=
 # Post-ladder cookie: one click_target with -n = factor * COOKIE_CLICK_COUNT (plan-014; default 1).
 post_ladder_cookie_burst_factor=
+# Plan-021: show-only target tour (no clicks; AppKit overlay + cursor warp).
+TOUR_MODE=false
+TOUR_STEP=false
+tour_dwell_seconds=
 
 ################################################################################
 # default values
@@ -37,7 +41,7 @@ function usage {
         echo "Message: ${message}"
     fi
     cat <<EOF
-Usage: ${script_name} [-h] [-c <count>] [-k <n>] [-S] [-P <profile_json>] [-D <image.png>] [-N] [-R] [-A] [-B <x1|x10|x100>] [-L <layout>]
+Usage: ${script_name} [-h] [-c <count>] [-k <n>] [-S] [-P <profile_json>] [-D <image.png>] [-N] [-R] [-A] [-B <x1|x10|x100>] [-L <layout>] [-T] [-W <seconds>] [-X]
 
 Operator loop: repeatedly runs a fixed buy ladder then a long cookie burst
 via macos_mouse_click.py (see osx/README.md). When -P is provided, coordinates
@@ -64,6 +68,15 @@ Options
   -A            : Auto-approve preview prompt (non-interactive automation).
   -B <mode>     : Expected bulk mode metadata (x1|x10|x100) for operator checks.
   -L <layout>   : Layout profile label metadata (e.g. desktop-max).
+  -T            : Tour / show-only (plan-021). Warp the cursor to each target
+                 and draw an AppKit overlay with the click count; do NOT post
+                 any synthetic clicks. Drops --abort-on-mouse-move and skips
+                 cookie_clicker_golden_sweeper.py for the cycle.
+  -W <seconds>  : Tour dwell seconds per target (default 1.5). Pass-through to
+                 macos_mouse_click.py --show-dwell-seconds. Ignored with -X.
+  -X            : Tour step mode: wait for Enter on stdin between targets.
+                 Pass-through to macos_mouse_click.py --show-step. Implies a
+                 TTY stdin; -W is ignored.
 
 Example:
   ${script_name} -c 1
@@ -74,6 +87,10 @@ Example:
   ${script_name} -P /tmp/cookie-profile.json -R -A -c 1
   ${script_name} -k 2 -c 1
   ${script_name} -S -k 2 -c 1
+  ${script_name} -T -c 1
+  ${script_name} -T -W 0.75 -c 1
+  ${script_name} -T -X -c 1
+  ${script_name} -P /tmp/cookie-profile.json -T -c 1
   ${script_name} -S
   ${script_name}
 EOF
@@ -82,7 +99,7 @@ EOF
 ################################################################################
 # get command line options
 ################################################################################
-while getopts ":hc:k:SP:D:RA:B:L:N" opt; do
+while getopts ":hc:k:SP:D:RA:B:L:NTW:X" opt; do
     case ${opt} in
         h)
             usage
@@ -118,6 +135,15 @@ while getopts ":hc:k:SP:D:RA:B:L:N" opt; do
         N)
             PREVIEW_ONLY=true
             ;;
+        T)
+            TOUR_MODE=true
+            ;;
+        W)
+            tour_dwell_seconds=${OPTARG}
+            ;;
+        X)
+            TOUR_STEP=true
+            ;;
         \?)
             usage "Invalid option: -${OPTARG}"
             exit 1
@@ -134,6 +160,24 @@ if [ -z "${post_ladder_cookie_burst_factor}" ]; then
     post_ladder_cookie_burst_factor=1
 elif ! [[ "${post_ladder_cookie_burst_factor}" =~ ^[1-9][0-9]*$ ]]; then
     usage "Invalid -k value: must be a positive integer (>= 1)."
+    exit 1
+fi
+
+# Plan-021: validate -T / -W / -X interactions.
+if [ "${TOUR_MODE}" == false ]; then
+    if [ ! -z "${tour_dwell_seconds}" ]; then
+        usage "-W requires -T (tour mode)."
+        exit 1
+    fi
+    if [ "${TOUR_STEP}" == true ]; then
+        usage "-X requires -T (tour mode)."
+        exit 1
+    fi
+fi
+if [ -z "${tour_dwell_seconds}" ]; then
+    tour_dwell_seconds=1.5
+elif ! [[ "${tour_dwell_seconds}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    usage "Invalid -W value: must be a non-negative number (e.g. 0.5, 1.5, 3)."
     exit 1
 fi
 
@@ -178,8 +222,22 @@ function click_target {
     target_y=${3}
     target_n=${4}
     echo "${label}"
-    "${mouse_click}" -d 0 -x "${target_x}" -y "${target_y}" -n "${target_n}" -Y \
-        --abort-on-mouse-move --mouse-move-threshold-px 20
+    if [ "${TOUR_MODE}" == true ]; then
+        # Plan-021: show-only tour. Drop --abort-on-mouse-move because cursor
+        # movement is intentional. Choose pacing per --show-step / --show-dwell-seconds.
+        local -a tour_args=(
+            -d 0 -x "${target_x}" -y "${target_y}" -n "${target_n}" -Y --show-only
+        )
+        if [ "${TOUR_STEP}" == true ]; then
+            tour_args+=(--show-step)
+        else
+            tour_args+=(--show-dwell-seconds "${tour_dwell_seconds}")
+        fi
+        "${mouse_click}" "${tour_args[@]}"
+    else
+        "${mouse_click}" -d 0 -x "${target_x}" -y "${target_y}" -n "${target_n}" -Y \
+            --abort-on-mouse-move --mouse-move-threshold-px 20
+    fi
 }
 
 function detect_profile_from_image {
@@ -370,7 +428,11 @@ function run_phased_cookie_bursts {
         fi
         i=$((i + 1))
     done
-    "${golden_sweeper}" --capture display --dry-run --max-wall-seconds 2
+    # Plan-021: skip the golden-cookie sweeper screen capture during a tour;
+    # the cursor and overlay are deliberately moving and would pollute results.
+    if [ "${TOUR_MODE}" != true ]; then
+        "${golden_sweeper}" --capture display --dry-run --max-wall-seconds 2
+    fi
 }
 
 function run_buy_ladder {
