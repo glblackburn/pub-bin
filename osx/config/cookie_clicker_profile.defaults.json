@@ -31,7 +31,7 @@
   "preview_defaults": {
     "cookie_click_count": 6000,
     "ladder_click_count": 5,
-    "cycle_sleep_seconds": 35
+    "cycle_sleep_seconds": 5
   },
   "warnings": [
     "Built-in defaults used when macos_mouse_click_loop.sh runs without -P. Edit osx/config/cookie_clicker_profile.defaults.json or pass -P <profile.json>."
