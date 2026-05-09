@@ -29,9 +29,9 @@
     {"name": "cursor", "x": 699.4, "y": 299.8112, "confidence": 1.0}
   ],
   "preview_defaults": {
-    "cookie_click_count": 3000,
+    "cookie_click_count": 8000,
     "ladder_click_count": 5,
-    "cycle_sleep_seconds": 25
+    "cycle_sleep_seconds": 5
   },
   "warnings": [
     "Laptop single-screen profile: cookie on-device; buy ladder rows = corrected time_machine anchor + each row's offset from defaults time_machine; store panel edges use same anchor offsets as defaults (verify in game)."
