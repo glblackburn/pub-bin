@@ -1,7 +1,7 @@
 # macOS clicker plans (`docs/osx/plans/`)
 
-> **Open plans (as of 2026-05-07):** [plan-020 — uber true-up](plan-020-uber-true-up.md) (consolidated checklist for residuals from the frozen plans) and [plan-021 — show-only target tour](plan-021-macos-mouse-click-show-only-target-tour.md) (new feature: `--show-only` cursor warp + AppKit overlay with loop pass-through).
-> Every other plan in this directory (`plan-001` … `plan-019`, the two hand-offs, and `cursor-plans-import/`) is **Frozen — superseded by plan-020** and is **read-only**. Open work moved to plan-020's checklist. New features → new `plan-021+`. Code or spec drift → defects under [`../defects/`](../defects/) whose `related_plans:` reference the historical plan **and** plan-020.
+> **Open plans (as of 2026-05-10):** [plan-020 — uber true-up](plan-020-uber-true-up.md) (consolidated checklist for residuals from the frozen plans). [plan-021 — show-only target tour](plan-021-macos-mouse-click-show-only-target-tour.md) **shipped on 2026-05-07** (commits `e2b5161` + DEF-015 fix `1740443`); see plan-020 §4.1 `CL-SHOW-ONLY`.
+> Every other plan in this directory (`plan-001` … `plan-019`, the two hand-offs, and `cursor-plans-import/`) is **Frozen — superseded by plan-020** and is **read-only**. Open work moved to plan-020's checklist. New features → new `plan-022+`. Code or spec drift → defects under [`../defects/`](../defects/) whose `related_plans:` reference the historical plan **and** plan-020.
 
 **Index** for product and UX specs (**`plan-###-`…** filenames), session hand-offs, status legend, and agent routing for **`osx/macos_mouse_click.py`**. **Implementation:** **[`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py)**. **Parent hub:** **[`../README.md`](../README.md)**. **Defects:** **[`../defects/README.md`](../defects/README.md)**.
 
@@ -51,7 +51,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 
 | Plan id | Title | Opened | Completed | Status | Document |
 |---------|-------|--------|-----------|--------|----------|
-| plan-021 | Show-only target tour (warp + AppKit overlay; loop pass-through) | 2026-05-07 | — | **Open** | [plan-021-macos-mouse-click-show-only-target-tour.md](plan-021-macos-mouse-click-show-only-target-tour.md) |
+| plan-021 | Show-only target tour (warp + AppKit overlay; loop pass-through) | 2026-05-07 | 2026-05-07 | **Shipped** (`e2b5161`, `1740443`) | [plan-021-macos-mouse-click-show-only-target-tour.md](plan-021-macos-mouse-click-show-only-target-tour.md) |
 | plan-020 | **Uber true-up** (consolidated checklist; only open plan) | 2026-05-06 | — | **Open** | [plan-020-uber-true-up.md](plan-020-uber-true-up.md) |
 | plan-001 | macOS clicker (core behavior) | 2026-04-18 | 2026-05-06 | **Frozen** (was: Shipped) | [plan-001-macos-clicker.md](plan-001-macos-clicker.md) |
 | plan-002 | Terminal UX (Rich pre-run) | 2026-04-18 | 2026-05-06 | **Frozen** (was: Closed (v1)) | [plan-002-macos-mouse-click-terminal-ux.md](plan-002-macos-mouse-click-terminal-ux.md) |
@@ -75,7 +75,7 @@ The lookup table below maps **01**–**10** (legacy product plan labels) plus **
 | plan-handoff | LinkedIn draft session (2026-04-18) | 2026-04-18 | 2026-05-06 | **Frozen** (was: Closed (archive)) | [plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md](plan-handoff-2026-04-18-linkedin-macos-clicker-draft.md) |
 | hand-off | Rich pre-run TUI layout (session to next agent) | 2026-04-21 | 2026-05-06 | **Frozen** (was: Closed (archive)) | [hand-off-2026-04-21-rich-pre-run-tui-layout.md](hand-off-2026-04-21-rich-pre-run-tui-layout.md) |
 
-**Status legend:** **Open** = currently being worked (only plan-020); **Frozen** = superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md); read-only; the parenthetical `(was: …)` preserves the historical status (Shipped / Closed (v1) / Closed (archive) / Roadmap / Design / In progress) the file held before the freeze.
+**Status legend:** **Open** = currently being worked (only plan-020 today); **Shipped** = `plan-021+` feature plans whose normative scope has landed in code (read-only after closure, but not Frozen — they remain the authoritative spec for the feature until plan-020 itself wraps); **Frozen** = superseded by [plan-020-uber-true-up](plan-020-uber-true-up.md); read-only; the parenthetical `(was: …)` preserves the historical status (Shipped / Closed (v1) / Closed (archive) / Roadmap / Design / In progress) the file held before the freeze.
 
 ## Plan 01 (**Shipped**) vs plan 02 (**Closed (v1)**) — *Historical context (frozen).*
 

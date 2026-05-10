@@ -79,7 +79,7 @@ Items use stable IDs so commits and defects can reference them (`CL-04`, `GS-15.
 - [ ] **CL-07 — Field-edit input sanitization (DEF-004).** Filter `Console.input` echo or move to raw mini-prompt for Mode / Count / Delay / X / Y edits. Source: [plan-007](plan-007-macos-mouse-click-tui-field-edit-input.md).
 - [ ] **CL-08 — Stop during run.** Pick stop surface (file / hotkey / signal) for `-Y` and `count=0`; wire into existing `shutdown_requested()` / `sleep_interruptible()`. Source: [plan-008](plan-008-macos-mouse-click-stop-during-run.md).
 - [ ] **CL-09 — Verify Up/Down acceptance.** Confirm "one keypress, one row" still holds in current `main` against the reporter's terminals; if not, file a defect referencing [plan-009](plan-009-macos-mouse-click-tui-arrow-navigation-narrative.md).
-- [ ] **CL-SHOW-ONLY — Show-only target tour.** `--show-only` / `--show-dwell-seconds` / `--show-step` on [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) plus `-T` / `-W` / `-X` pass-through on [`osx/macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh). See [plan-021](plan-021-macos-mouse-click-show-only-target-tour.md).
+- [x] **CL-SHOW-ONLY — Show-only target tour.** `--show-only` / `--show-dwell-seconds` / `--show-step` on [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) plus `-T` / `-W` / `-X` pass-through on [`osx/macos_mouse_click_loop.sh`](../../../osx/macos_mouse_click_loop.sh). Shipped 2026-05-07 in `e2b5161` (feature) and `1740443` (DEF-015 overlay primary-screen Y fix). See [plan-021](plan-021-macos-mouse-click-show-only-target-tour.md) (Shipped).
 
 ### 4.2 Cookie Clicker profile / detector
 

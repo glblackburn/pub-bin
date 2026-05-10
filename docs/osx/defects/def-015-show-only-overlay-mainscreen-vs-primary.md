@@ -10,9 +10,10 @@ isProject: false
 
 **Terminology:** **Quartz global coordinates** — `CG`-flavored coordinate space with origin at the **primary** display's **top-left**, Y increasing downward. Used by `CGWarpMouseCursorPosition`, `CGEventCreateMouseEvent`, and the click-target Y values in [`osx/config/cookie_clicker_profile.defaults.json`](../../../osx/config/cookie_clicker_profile.defaults.json). **Cocoa global coordinates** — AppKit coordinate space with origin at the **primary** display's **bottom-left**, Y increasing upward. Used by `NSWindow` frames. **Primary display** — the one marked primary in *System Settings → Displays*; first entry of `NSScreen.screens()` by AppKit convention. **Main screen** — `NSScreen.mainScreen()`; the screen with the **current keyboard focus**, NOT necessarily the primary.
 
-- **Status:** **Open** (root cause located; fix proposed; awaiting approval).
+- **Status:** **Fixed (script)** — root cause located, fix shipped, regression test added.
 - **Severity:** Medium — operator-facing miscalibration. Real clicks land at the correct profile coordinates (cursor warp + `CGEventPost` both use Quartz `(x, y)` directly), but the show-only overlay/crosshair drawn by [plan-021](../plans/plan-021-macos-mouse-click-show-only-target-tour.md) appears in the wrong place when the terminal running the script is on a non-primary display. Operators using the tour to verify coordinates may "fix" the profile to compensate for the visual offset and end up with worse real-click coordinates.
 - **Opened:** 2026-05-07
+- **Completed:** 2026-05-07
 - **Affects:** [`osx/macos_mouse_click.py`](../../../osx/macos_mouse_click.py) — `show_target_overlay` (the panel + crosshair `NSWindow` placement). Indirectly affects any operator workflow that uses **`-T`** (loop tour) or `--show-only` (direct python clicker) to validate / calibrate profile click targets. The `--show-only` cursor warp itself is unaffected; only the visual overlay is mispositioned.
 
 ---
@@ -130,5 +131,5 @@ Track the fix on plan-020 (`CL-SHOW-ONLY` in [plan-020 §4.1](../plans/plan-020-
 
 | Field | Value |
 |-------|-------|
-| Fix commit | _pending_ |
-| Closed | _pending_ |
+| Fix commit | `1740443` — `fix(osx): DEF-015 show-only overlay uses primary screen height; bump default cookie_click_count to 6000` |
+| Closed | 2026-05-07 |

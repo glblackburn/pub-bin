@@ -1,6 +1,8 @@
 # Plan 021 — macOS clicker `--show-only` target tour (overlay window + loop pass-through)
 
-**Status:** Open / In progress (2026-05-07). New plan-021+ per [`.cursorrules`](../../../.cursorrules) and [plan-020 §1](plan-020-uber-true-up.md) — no edits to frozen plan-001..019. Plan-020 §4.1 gains one checklist item (`CL-SHOW-ONLY`) that points back here.
+**Status:** **Shipped** (2026-05-07). Feature landed in `e2b5161`; multi-monitor overlay regression ([DEF-015](../defects/def-015-show-only-overlay-mainscreen-vs-primary.md)) found and fixed in `1740443` the same day. Closure recorded against [plan-020 §4.1 `CL-SHOW-ONLY`](plan-020-uber-true-up.md). New plan-021+ per [`.cursorrules`](../../../.cursorrules) and [plan-020 §1](plan-020-uber-true-up.md) — no edits to frozen plan-001..019.
+
+> **Read-only after closure.** New show-only / overlay work goes in a new defect under [`docs/osx/defects/`](../defects/) (with `related_plans:` referencing this file and `plan-020`) or a new `plan-022+`. Per [plan-020 §1.5](plan-020-uber-true-up.md), the Frozen-banner pattern only applies once plan-020 itself is wrapped; until then plan-021 stays Shipped (not Frozen).
 
 ## Goal
 
@@ -89,7 +91,7 @@ No looping inside the python process — a single tour step per invocation. The 
 ### Permissions / dependencies
 
 - Cursor warp via Quartz: only **Accessibility** (already required).
-- AppKit overlay: no extra entitlement; `pyobjc-framework-Cocoa` is required. Already present transitively via `pyobjc-framework-Quartz` in [`osx/requirements.txt`](../../../osx/requirements.txt) — verify and pin if missing.
+- AppKit overlay: no extra entitlement; `pyobjc-framework-Cocoa` is required. **Closure note (2026-05-10):** verified and pinned explicitly in [`osx/requirements.txt`](../../../osx/requirements.txt) (`pyobjc-framework-Cocoa>=11.0`) so the overlay does not silently degrade to the headless `print` fallback if a future PyObjC release stops pulling Cocoa transitively from `pyobjc-framework-Quartz`.
 
 ### `macos_mouse_click_loop.sh` — new flags
 

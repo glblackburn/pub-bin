@@ -1,5 +1,10 @@
 # Runtime dependencies for osx mouse-click tooling.
 pyobjc-framework-Quartz>=11.0
+# Cocoa is pulled transitively today via pyobjc-framework-Quartz, but plan-021's
+# --show-only AppKit overlay (NSWindow + NSTextField + NSRunLoop) silently
+# degrades to a stderr-only fallback if a future PyObjC release stops doing so.
+# Pinning explicitly closes the closure note in plan-021 §"Permissions / dependencies".
+pyobjc-framework-Cocoa>=11.0
 rich>=13.7.0,<15
 opencv-python>=4.9.0
 pytesseract>=0.3.10
