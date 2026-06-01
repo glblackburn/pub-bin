@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-18T05:51:47.281920",
+  "last_updated": "2026-05-31T18:37:10-04:00",
   "migrations": {
     "clean-emacs-files.sh": {
       "old_path": "clean_emacs_files.sh",
@@ -170,6 +170,19 @@
       "new_path": "install-cursor-agent.sh",
       "date": "2026-04-18T04:52:33-04:00",
       "detected_date": "2026-04-18T05:51:47.281897"
+    "network-tools/diagnostics/what-is-my-ip.sh": {
+      "old_path": "what-is-my-ip.sh",
+      "new_path": "network-tools/diagnostics/what-is-my-ip.sh",
+      "date": "2026-05-31T18:37:10-04:00",
+      "method": "migration_with_upgrade",
+      "notes": "Migrated from bin/. Added usage()/-h, fixed IPv6L typo, dropped unused stub vars (QUIET/VERBOSE/TEST_MODE/aws_profile/region), added -j/--json flag and geo lookup via ip-api-json.sh."
+    },
+    "network-tools/intelligence/ip-api-json.sh": {
+      "old_path": "ip-api-json.sh",
+      "new_path": "network-tools/intelligence/ip-api-json.sh",
+      "date": "2026-05-31T18:37:10-04:00",
+      "method": "migration_with_upgrade",
+      "notes": "Migrated from bin/. Added usage()/-h, getopts, IP-required validation. Behavior unchanged: curl ip-api.com/json/<ip> | jq."
     }
   }
 }

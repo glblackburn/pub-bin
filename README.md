@@ -81,6 +81,26 @@ Refer to [LinkedIn-posts/LinkedIn-style-guide.md](LinkedIn-posts/LinkedIn-style-
 
 ## Installation
 
+### PATH setup ([setup-path.sh](setup-path.sh))
+
+To make every pub-bin command available by bare name, source `setup-path.sh`
+from your shell startup file (one line, replaces any existing `PATH=...:pub-bin` entry):
+
+```bash
+. "${HOME}/data/lblackb/git/pub-bin/setup-path.sh"
+```
+
+The loader auto-discovers every subdir under pub-bin that contains an
+executable `*.sh` or `*.py` and adds it to `PATH`. Internal-only directories
+(`tests/`, `hooks/`, `config/`, `archive/`, `credential-loaders/`,
+`test_hooks/`, `.git/`) are skipped automatically. Re-sourcing is safe;
+PATH entries are deduped.
+
+To expose a new tool subdir, just drop a script into it — it will be on
+`PATH` the next time your shell starts. To intentionally keep a subdir off
+`PATH`, place it under one of the denylisted names or extend the denylist
+near the top of `setup-path.sh`.
+
 ### Installing cursor-agent
 
 The `start-cursor-agent.sh` script requires the `cursor-agent` command-line tool. Install Cursor IDE from https://cursor.sh/ - the `cursor-agent` command is included with Cursor IDE.

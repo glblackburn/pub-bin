@@ -12,6 +12,12 @@ Network diagnostic, scanning, intelligence, and capture tools.
 ## Quick Reference
 
 ### Diagnostics
+- `diagnostics/what-is-my-ip.sh [-h] [-j|--json]` - Discover this host's public IP + geo
+  - Discovers this host's public IPv4 and IPv6 addresses (via DNS queries to Cloudflare and Google) and looks up geo / ISP / ASN information for the IPv4 via `ip-api-json.sh`
+  - Default output: human-readable IPv4, IPv6, and Location/ISP summary
+  - `--json` (or `-j`) output: single JSON object `{ts, ipv4, ipv6, geo:{...}}`
+  - Log file: `~/log/ip_log/what-is-my-ip_YYYY-MM-DD_HHMMSS.log` (always written, both modes)
+  - Options: `-h` for help
 - `diagnostics/record-netstat.sh` - Network connections and ports
   - Records network connection information using `netstat -an`
   - Output: `record-netstat_YYYY-MM-DD_HHMMSS.txt`
@@ -50,6 +56,12 @@ Network diagnostic, scanning, intelligence, and capture tools.
   - Output: `ip-api-whois_<ip>_YYYY-MM-DD_HHMMSS.txt`
   - Options: `-h` for help
   - Requires: IP address as argument
+- `intelligence/ip-api-json.sh <ip>` - IP geo / ISP / ASN lookup
+  - Looks up geo, ISP, and ASN information for an IP address using the public ip-api.com API and pretty-prints the JSON via `jq`
+  - Output: pretty JSON to stdout (no file written)
+  - Options: `-h` for help
+  - Requires: IP address as argument
+  - Notes: free tier rate limit is 45 requests/minute per source IP
 
 ### Capture
 - `capture/record-tcpdump.sh` - Packet capture (requires sudo)
