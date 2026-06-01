@@ -7,7 +7,7 @@ script_dir=$(dirname $0)
 ################################################################################
 # CLI Parameters
 ################################################################################
-JSON=false
+HUMAN=false
 
 ################################################################################
 # default values
@@ -25,57 +25,58 @@ function usage {
 	echo "Message: ${message}"
     fi
     cat<<EOF
-Usage: ${script_name} [-h] [-j|--json]
+Usage: ${script_name} [-h] [-H|--human]
 
 Discover this host's public IPv4 and IPv6 addresses (via DNS to Cloudflare
 and Google) and look up geo / ISP / ASN information for the IPv4 via
-ip-api-json.sh.  All output is mirrored to ${log_dir}/.
+ip-api-json.sh.  The log file (always JSON) is written to ${log_dir}/.
 
 Options
   -h, --help       : Display this help message.
-  -j, --json       : Emit a single JSON object instead of the human-readable
-                     report.  The same log file is still written.
+  -H, --human      : Emit a human-readable report on stdout instead of the
+                     default JSON object.  The log file is JSON regardless.
 
 Output
-  Default mode: human-readable lines for IPv4, IPv6, and a one-line
+  Default mode: single JSON object { "ts": ..., "ipv4": ..., "ipv6": ...,
+                                     "geo": { ... } }
+  Human mode:   human-readable lines for IPv4, IPv6, and a one-line
                 Location/ISP summary derived from the geo lookup.
-  JSON mode:    { "ts": ..., "ipv4": ..., "ipv6": ..., "geo": { ... } }
 
 Log file
-  ${log_dir}/${script_name%.*}_<timestamp>.log
+  ${log_dir}/${script_name%.*}_<timestamp>.log  (JSON, always)
 
 Example:
-\$ ${script_name}
-\$ ${script_name} --json | jq .geo.country
+\$ ${script_name} | jq .geo.country
+\$ ${script_name} --human
 EOF
 }
 
 ################################################################################
 # get command line options
 ################################################################################
-# Translate the long --json / --help forms to their short equivalents so we
+# Translate the long --human / --help forms to their short equivalents so we
 # can keep using getopts (which does not natively understand long options).
 if [ $# -gt 0 ] ; then
     _args=()
     for _arg in "$@" ; do
         case "${_arg}" in
-            --json) _args+=("-j") ;;
-            --help) _args+=("-h") ;;
-            *)      _args+=("${_arg}") ;;
+            --human) _args+=("-H") ;;
+            --help)  _args+=("-h") ;;
+            *)       _args+=("${_arg}") ;;
         esac
     done
     set -- "${_args[@]}"
     unset _arg _args
 fi
 
-while getopts ":hj" opt; do
+while getopts ":hH" opt; do
     case ${opt} in
 	h )
             usage
             exit 0
             ;;
-	j )
-            JSON=true
+	H )
+            HUMAN=true
             ;;
 	\? )
             usage "Invalid Option: -$OPTARG"
@@ -122,16 +123,16 @@ ipv4=$(lookup_ipv4)
 ipv6=$(lookup_ipv6)
 geo=$(lookup_geo "${ipv4}")
 
-if [ "${JSON}" = "true" ] ; then
-    # Compose a single JSON object.  Use jq -n so missing fields stay null.
-    jq -n \
-        --arg ts "${ts}" \
-        --arg ipv4 "${ipv4}" \
-        --arg ipv6 "${ipv6}" \
-        --argjson geo "${geo}" \
-        '{ts: $ts, ipv4: $ipv4, ipv6: $ipv6, geo: $geo}' \
-        | tee ${log_file}
-else
+# Always compose and persist the JSON payload (single source of truth).
+jq -n \
+    --arg ts "${ts}" \
+    --arg ipv4 "${ipv4}" \
+    --arg ipv6 "${ipv6}" \
+    --argjson geo "${geo}" \
+    '{ts: $ts, ipv4: $ipv4, ipv6: $ipv6, geo: $geo}' \
+    > ${log_file}
+
+if [ "${HUMAN}" = "true" ] ; then
     # Human-readable mode: extract a short location summary from the geo
     # payload (best-effort; missing fields become empty strings).
     location=$(echo "${geo}" | jq -r '
@@ -139,15 +140,13 @@ else
         | map(select(. != null and . != ""))
         | join(", ")
     ' 2>/dev/null || true)
-    {
-        date
-        echo "IPv4: ${ipv4}"
-        echo "IPv6: ${ipv6}"
-        if [ -n "${location}" ] ; then
-            echo "Location: ${location}"
-        fi
-        cat<<EOF
-log_file=[${log_file}]
-EOF
-    } | tee ${log_file}
+    date
+    echo "IPv4: ${ipv4}"
+    echo "IPv6: ${ipv6}"
+    if [ -n "${location}" ] ; then
+        echo "Location: ${location}"
+    fi
+    echo "log_file=[${log_file}]"
+else
+    cat ${log_file}
 fi

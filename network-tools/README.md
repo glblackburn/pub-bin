@@ -12,11 +12,11 @@ Network diagnostic, scanning, intelligence, and capture tools.
 ## Quick Reference
 
 ### Diagnostics
-- `diagnostics/what-is-my-ip.sh [-h] [-j|--json]` - Discover this host's public IP + geo
+- `diagnostics/what-is-my-ip.sh [-h] [-H|--human]` - Discover this host's public IP + geo
   - Discovers this host's public IPv4 and IPv6 addresses (via DNS queries to Cloudflare and Google) and looks up geo / ISP / ASN information for the IPv4 via `ip-api-json.sh`
-  - Default output: human-readable IPv4, IPv6, and Location/ISP summary
-  - `--json` (or `-j`) output: single JSON object `{ts, ipv4, ipv6, geo:{...}}`
-  - Log file: `~/log/ip_log/what-is-my-ip_YYYY-MM-DD_HHMMSS.log` (always written, both modes)
+  - Default output: single JSON object `{ts, ipv4, ipv6, geo:{...}}`
+  - `--human` (or `-H`) output: human-readable IPv4, IPv6, and Location/ISP summary
+  - Log file: `~/log/ip_log/what-is-my-ip_YYYY-MM-DD_HHMMSS.log` (JSON, always written)
   - Options: `-h` for help
 - `diagnostics/record-netstat.sh` - Network connections and ports
   - Records network connection information using `netstat -an`
