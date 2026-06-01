@@ -4,28 +4,28 @@
 load '../test_helper.bash'
 
 @test "fix-spaces-in-filename.sh: script exists and is executable" {
-    local script_path=$(get_script_path "fix-spaces-in-filename.sh")
+    local script_path=$(get_script_path "file-tools/fix-spaces-in-filename.sh")
     [ -f "${script_path}" ]
     [ -x "${script_path}" ]
 }
 
 @test "fix-spaces-in-filename.sh: has valid bash syntax" {
     skip_if_command_missing "bash"
-    local script_path=$(get_script_path "fix-spaces-in-filename.sh")
+    local script_path=$(get_script_path "file-tools/fix-spaces-in-filename.sh")
     run bash -n "${script_path}"
     assert_success
 }
 
 @test "fix-spaces-in-filename.sh: requires file argument" {
     # Script uses set -e, so unbound variable will cause failure before "File is blank" check
-    run_script "fix-spaces-in-filename.sh"
+    run_script "file-tools/fix-spaces-in-filename.sh"
     assert_failure
     # Script will fail with unbound variable error due to set -e
     assert_output_contains "unbound variable" || assert_output_contains "File is blank"
 }
 
 @test "fix-spaces-in-filename.sh: handles non-existent file" {
-    run_script "fix-spaces-in-filename.sh" "/nonexistent/file"
+    run_script "file-tools/fix-spaces-in-filename.sh" "/nonexistent/file"
     assert_failure
     assert_output_contains "Not a file"
 }
@@ -35,7 +35,7 @@ load '../test_helper.bash'
     local test_file="${TEST_TMPDIR}/test file with spaces.txt"
     echo "test content" > "${test_file}"
     
-    run_script "fix-spaces-in-filename.sh" "${test_file}"
+    run_script "file-tools/fix-spaces-in-filename.sh" "${test_file}"
     
     assert_success
     # File should be renamed (spaces replaced with underscores)
@@ -48,7 +48,7 @@ load '../test_helper.bash'
     local test_file="${TEST_TMPDIR}/testfile.txt"
     echo "test content" > "${test_file}"
     
-    run_script "fix-spaces-in-filename.sh" "${test_file}"
+    run_script "file-tools/fix-spaces-in-filename.sh" "${test_file}"
     
     assert_success
     # File should still exist with original name

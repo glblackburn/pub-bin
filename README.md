@@ -446,7 +446,7 @@ A utility script to rename a single file by replacing non-alphanumeric character
 
 **Usage:**
 ```bash
-./fix-spaces-in-filename.sh <file>
+./file-tools/fix-spaces-in-filename.sh <file>
 ```
 
 **Details:**
@@ -457,7 +457,7 @@ A utility script to rename a single file by replacing non-alphanumeric character
 
 **Example:**
 ```bash
-./fix-spaces-in-filename.sh "my file name.txt"
+./file-tools/fix-spaces-in-filename.sh "my file name.txt"
 # Renames to: my_file_name.txt
 ```
 
@@ -476,10 +476,10 @@ A utility script to process multiple files and remove spaces from their filename
 **Usage:**
 ```bash
 # Process all files with spaces in a directory
-./fix-spaces-in-filenames.sh <directory>
+./file-tools/fix-spaces-in-filenames.sh <directory>
 
 # Process files from stdin (e.g., from find command)
-find . -type f | grep " " | ./fix-spaces-in-filenames.sh
+find . -type f | grep " " | ./file-tools/fix-spaces-in-filenames.sh
 ```
 
 **Details:**
@@ -491,10 +491,10 @@ find . -type f | grep " " | ./fix-spaces-in-filenames.sh
 **Example:**
 ```bash
 # Process all files with spaces in current directory
-./fix-spaces-in-filenames.sh .
+./file-tools/fix-spaces-in-filenames.sh .
 
 # Process specific files from find command
-find . -type f -name "*.txt" | grep " " | ./fix-spaces-in-filenames.sh
+find . -type f -name "*.txt" | grep " " | ./file-tools/fix-spaces-in-filenames.sh
 ```
 
 This script is useful for batch processing multiple files to normalize their filenames by removing spaces and special characters.

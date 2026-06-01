@@ -4,14 +4,14 @@
 load '../test_helper.bash'
 
 @test "fix-spaces-in-filenames.sh: script exists and is executable" {
-    local script_path=$(get_script_path "fix-spaces-in-filenames.sh")
+    local script_path=$(get_script_path "file-tools/fix-spaces-in-filenames.sh")
     [ -f "${script_path}" ]
     [ -x "${script_path}" ]
 }
 
 @test "fix-spaces-in-filenames.sh: has valid bash syntax" {
     skip_if_command_missing "bash"
-    local script_path=$(get_script_path "fix-spaces-in-filenames.sh")
+    local script_path=$(get_script_path "file-tools/fix-spaces-in-filenames.sh")
     run bash -n "${script_path}"
     assert_success
 }
@@ -24,7 +24,7 @@ load '../test_helper.bash'
     echo "content2" > "${test_file2}"
     
     # Run script with files from stdin
-    echo -e "${test_file1}\n${test_file2}" | run bash -c "$(get_script_path "fix-spaces-in-filenames.sh")"
+    echo -e "${test_file1}\n${test_file2}" | run bash -c "$(get_script_path "file-tools/fix-spaces-in-filenames.sh")"
     
     # Files should be renamed
     [ ! -f "${test_file1}" ]
@@ -40,7 +40,7 @@ load '../test_helper.bash'
     echo "content1" > "${test_dir}/file with spaces.txt"
     echo "content2" > "${test_dir}/another file.txt"
     
-    run_script "fix-spaces-in-filenames.sh" "${test_dir}"
+    run_script "file-tools/fix-spaces-in-filenames.sh" "${test_dir}"
     
     assert_success
     # Files should be renamed
@@ -49,7 +49,7 @@ load '../test_helper.bash'
 }
 
 @test "fix-spaces-in-filenames.sh: handles non-existent directory" {
-    run_script "fix-spaces-in-filenames.sh" "/nonexistent/dir"
+    run_script "file-tools/fix-spaces-in-filenames.sh" "/nonexistent/dir"
     assert_failure
     assert_output_contains "not a directory"
 }

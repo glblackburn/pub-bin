@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-05-31T18:37:10-04:00",
+  "last_updated": "2026-06-01T07:53:02-04:00",
   "migrations": {
     "clean-emacs-files.sh": {
       "old_path": "clean_emacs_files.sh",
@@ -183,6 +183,41 @@
       "date": "2026-05-31T18:37:10-04:00",
       "method": "migration_with_upgrade",
       "notes": "Migrated from bin/. Added usage()/-h, getopts, IP-required validation. Behavior unchanged: curl ip-api.com/json/<ip> | jq."
+    },
+    "markdown-tools/generate-md-file-and-screenshot-lists.sh": {
+      "old_path": "generate-md-file-and-screenshot-lists.sh",
+      "new_path": "markdown-tools/generate-md-file-and-screenshot-lists.sh",
+      "date": "2026-06-01T07:53:02-04:00",
+      "method": "migration_with_upgrade",
+      "notes": "Migrated from bin/. Enabled strict mode (set -euET -o pipefail) which was previously commented out. Robust script_dir via cd+pwd. No interface change."
+    },
+    "markdown-tools/convert-to-md-file-link-list.sh": {
+      "old_path": "convert-to-md-file-link-list.sh",
+      "new_path": "markdown-tools/convert-to-md-file-link-list.sh",
+      "date": "2026-06-01T07:53:02-04:00",
+      "method": "migration_with_upgrade",
+      "notes": "Migrated from bin/. Wrapped the 1-line stdin filter with standard template (usage()/-h/getopts). Core behavior unchanged: emits \"* [<file>](<file>)\" per line."
+    },
+    "markdown-tools/convert-to-md-clickable-image-list.sh": {
+      "old_path": "convert-to-md-clickable-image-list.sh",
+      "new_path": "markdown-tools/convert-to-md-clickable-image-list.sh",
+      "date": "2026-06-01T07:53:02-04:00",
+      "method": "migration_with_upgrade",
+      "notes": "Migrated from bin/. Wrapped the 1-line stdin filter with standard template (usage()/-h/getopts). Core behavior unchanged: emits \"[![<file>](<file>)](<file>)\" per line."
+    },
+    "file-tools/fix-spaces-in-filename.sh": {
+      "old_path": "fix-spaces-in-filename.sh",
+      "new_path": "file-tools/fix-spaces-in-filename.sh",
+      "date": "2026-06-01T07:53:02-04:00",
+      "method": "reorganized",
+      "notes": "Within-pub-bin reorganization: moved from top level into new file-tools/ subdir. No code change."
+    },
+    "file-tools/fix-spaces-in-filenames.sh": {
+      "old_path": "fix-spaces-in-filenames.sh",
+      "new_path": "file-tools/fix-spaces-in-filenames.sh",
+      "date": "2026-06-01T07:53:02-04:00",
+      "method": "reorganized",
+      "notes": "Within-pub-bin reorganization: moved from top level into new file-tools/ subdir. No code change. Internally calls ${script_dir}/fix-spaces-in-filename.sh which moved with it."
     }
   }
 }

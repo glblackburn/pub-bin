@@ -158,8 +158,8 @@ The following scripts have BATS tests:
 - `clean-emacs-files.sh` - Remove emacs backup files
 - `clean-screenshots.sh` - Archive screenshots
 - `check-ai-readmes.sh` - Check AI-related READMEs
-- `fix-spaces-in-filename.sh` - Fix spaces in single filename
-- `fix-spaces-in-filenames.sh` - Fix spaces in multiple filenames
+- `file-tools/fix-spaces-in-filename.sh` - Fix spaces in single filename
+- `file-tools/fix-spaces-in-filenames.sh` - Fix spaces in multiple filenames
 - `greynoise-lookup.sh` - Query GreyNoise API
 - `google-example-lookup.sh` - Example GreyNoise lookup
 - `monitor-ai-agent-progress.sh` - Monitor AI agent activity
