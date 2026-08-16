@@ -1,7 +1,8 @@
 # Plan 001 — `load-ssh-key.sh` reads SSH key passphrases from KeePassXC
 
-**Status:** **Implemented** (2026-08-16) — all 32 unit tests pass (16 pre-existing + 16 new);
-real-database end-to-end run still pending the user. First plan in the `docs/plans/` sequence; the
+**Status:** **Implemented** (2026-08-16) — all 34 unit tests pass (16 pre-existing + 16 new for
+KeePassXC + 2 for the `-l` follow-up). Verified end-to-end against the real database: both encrypted
+keys load from one master-password prompt. First plan in the `docs/plans/` sequence; the
 `plan-001`..`plan-021` numbering under [`docs/osx/plans/`](../osx/plans/README.md) is that product's
 own frozen sequence and is untouched by this work. Per [`.cursorrules`](../../.cursorrules) rule 3
 this file is the canonical copy — `~/.claude/plans/` must never be the only one.
@@ -25,9 +26,15 @@ this file is the canonical copy — `~/.claude/plans/` must never be the only on
   `${bats_args[@]+"${bats_args[@]}"}`.
 - **`assert_output_contains` matches with `=~` (regex)**, so `[` and `]` in expected strings are
   character classes; the new tests escape them.
-- **Pre-existing quirk left alone** (out of scope, worth a future fix): `list-loaded-keys` counts
-  lines of `ssh-add -l` output, so an empty agent reports
-  `Currently loaded SSH keys (1): The agent has no identities.`
+- **`-l` output fixed (follow-up, 2026-08-16).** Two defects reported after the first commit:
+  `list-loaded-keys` counted output lines rather than fingerprints, so an empty agent reported
+  `Currently loaded SSH keys (1): The agent has no identities.` followed by a bogus
+  `Error: Failed to list SSH keys` (`ssh-add -l` exits 1 on an empty agent). And because
+  `ssh-add -l` prints each key's *comment* - identical across all of this user's keys - there was
+  no way to tell which key was loaded. `-l` now counts `SHA256:` lines and maps each fingerprint
+  back to its file via a new `find-key-file-by-fingerprint`, printing the path relative to
+  `${SSH_DIR}` (so keys in subdirectories stay distinct) or `<unknown key file>` for keys loaded
+  from elsewhere. Two tests added to `test_list_option.bats`; suite is now 34 tests.
 
 ## Goal
 

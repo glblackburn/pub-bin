@@ -489,6 +489,33 @@ function add-key-with-askpass {
 	ssh-add -t "${timeout}" "${key_file}" < /dev/null
 }
 
+function find-key-file-by-fingerprint {
+    local fingerprint=$1
+    local candidate=""
+    local candidate_fingerprint=""
+
+    if [[ -z "${fingerprint}" ]] || [[ ! -d "${SSH_DIR}" ]] ; then
+	echo ""
+	return 1
+    fi
+
+    while IFS= read -r candidate ; do
+	if [[ -z "${candidate}" ]] ; then
+	    continue
+	fi
+	candidate_fingerprint=$(get-key-fingerprint "${candidate}")
+	if [[ "${candidate_fingerprint}" == "${fingerprint}" ]] ; then
+	    # Report the path relative to SSH_DIR so keys in subdirectories stay
+	    # distinguishable without printing the whole path
+	    echo "${candidate#${SSH_DIR}/}"
+	    return 0
+	fi
+    done < <(find-ssh-keys "${SSH_DIR}" 2>/dev/null)
+
+    echo ""
+    return 1
+}
+
 function load-ssh-key {
     local key_file=$1
     local timeout=$2
@@ -576,6 +603,9 @@ EOF
 function list-loaded-keys {
     local loaded_keys=""
     local key_count=0
+    local key_line=""
+    local key_fingerprint=""
+    local key_file=""
 
     # If SSH_AUTH_SOCK is already set in environment, verify the agent is actually running
     # If not, try to load from config file
@@ -625,20 +655,32 @@ function list-loaded-keys {
 	return 1
     fi
 
-    # Get list of loaded keys
-    loaded_keys=$(ssh-add -l 2>/dev/null || echo "")
-    key_count=$(echo "${loaded_keys}" | grep -v '^$' | wc -l | tr -d ' ')
+    # Get list of loaded keys.  ssh-add -l exits 1 and prints "The agent has no
+    # identities." for an empty agent, so count fingerprint lines rather than
+    # output lines - otherwise an empty agent reports one key and an error.
+    loaded_keys=$(ssh-add -l 2>/dev/null || true)
+    key_count=$(echo "${loaded_keys}" | grep -c "SHA256:" || true)
+    key_count=$(echo "${key_count}" | tr -d ' ')
 
     if [[ "${key_count}" -eq 0 ]] ; then
 	echo "No SSH keys are currently loaded in the agent" >&2
 	return 0
     fi
 
-    echo "Currently loaded SSH keys (${key_count}):" >&2
-    ssh-add -l 2>/dev/null || {
-	echo "Error: Failed to list SSH keys" >&2
-	return 1
-    }
+    # ssh-add -l reports each key's comment, which is often identical across
+    # keys, so map every fingerprint back to the file it came from.
+    echo "Currently loaded SSH keys (${key_count}) in ${SSH_DIR}:" >&2
+    while IFS= read -r key_line ; do
+	if [[ "${key_line}" != *SHA256:* ]] ; then
+	    continue
+	fi
+	key_fingerprint=$(echo "${key_line}" | awk '{print $2}')
+	key_file=$(find-key-file-by-fingerprint "${key_fingerprint}") || key_file=""
+	if [[ -z "${key_file}" ]] ; then
+	    key_file="<unknown key file>"
+	fi
+	echo "${key_file} : ${key_line}"
+    done < <(echo "${loaded_keys}")
 
     return 0
 }
