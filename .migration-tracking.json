@@ -1,223 +1,119 @@
 {
-  "last_updated": "2026-06-01T07:53:02-04:00",
+  "last_updated": "2026-07-09T11:16:16.278858",
   "migrations": {
-    "clean-emacs-files.sh": {
-      "old_path": "clean_emacs_files.sh",
-      "new_path": "clean-emacs-files.sh",
-      "date": "2025-11-02T04:30:32-05:00",
-      "old_date": "2020-04-18T10:36:53-04:00",
-      "detected_date": "2025-12-06T19:45:22.558638",
-      "method": "retro_calculation_normalized"
-    },
-    "shell-template.sh": {
-      "old_path": "shell-template.sh",
-      "new_path": "shell-template.sh",
-      "date": "2025-11-02T04:30:32-05:00",
-      "old_date": "2024-03-21T08:49:03-04:00",
-      "detected_date": "2025-12-06T19:45:22.558712",
-      "method": "retro_calculation"
-    },
-    "rename-email.sh": {
-      "old_path": "rename-email.sh",
-      "new_path": "rename-email.sh",
-      "date": "2025-11-03T20:46:42-05:00",
-      "old_date": "2024-09-25T10:14:38-04:00",
-      "detected_date": "2025-12-06T19:45:22.558734",
-      "method": "retro_calculation"
-    },
-    "load-ssh-key.sh": {
-      "old_path": "load_ssh_key.sh",
-      "new_path": "load-ssh-key.sh",
-      "date": "2025-11-05T03:12:41-05:00",
-      "old_date": "2020-04-01T10:00:46-04:00",
-      "detected_date": "2025-12-06T19:45:22.558749",
-      "method": "retro_calculation_normalized"
-    },
-    "fix-spaces-in-filename.sh": {
-      "old_path": "fix-spaces-in-filename.sh",
-      "new_path": "fix-spaces-in-filename.sh",
-      "date": "2025-11-06T14:02:38-05:00",
-      "old_date": "2024-05-16T11:54:06-04:00",
-      "detected_date": "2025-12-06T19:45:22.558761",
-      "method": "retro_calculation"
-    },
-    "fix-spaces-in-filenames.sh": {
-      "old_path": "fix-spaces-in-filenames.sh",
-      "new_path": "fix-spaces-in-filenames.sh",
-      "date": "2025-11-06T14:02:38-05:00",
-      "old_date": "2024-05-25T17:05:39-04:00",
-      "detected_date": "2025-12-06T19:45:22.558771",
-      "method": "retro_calculation"
-    },
-    "clean-screenshots.sh": {
-      "old_path": "clean-screenshots.sh",
-      "new_path": "clean-screenshots.sh",
-      "date": "2025-11-11T03:02:12-05:00",
-      "old_date": "2020-06-04T07:30:58-04:00",
-      "detected_date": "2025-12-06T19:45:22.558785",
-      "method": "retro_calculation"
-    },
-    "network-tools/scanning/record-nmap.sh": {
-      "old_path": "record-nmap.sh",
-      "new_path": "network-tools/scanning/record-nmap.sh",
-      "date": "2025-12-06T19:45:13.790218",
-      "detected_date": "2025-12-06T19:45:13.790419"
-    },
-    "system-tools/record-uptime.sh": {
-      "old_path": "record-uptime.sh",
-      "new_path": "system-tools/record-uptime.sh",
-      "date": "2025-12-06T19:45:13.790171",
-      "detected_date": "2025-12-06T19:45:13.790442"
-    },
-    "network-tools/intelligence/record-whois.sh": {
-      "old_path": "record-whois.sh",
-      "new_path": "network-tools/intelligence/record-whois.sh",
-      "date": "2025-12-06T19:45:13.790225",
-      "detected_date": "2025-12-06T19:45:13.790459"
-    },
-    "network-tools/diagnostics/record-network-config.sh": {
-      "old_path": "netmon/record-network-config.sh",
-      "new_path": "network-tools/diagnostics/record-network-config.sh",
-      "date": "2025-12-06T19:45:13.790228",
-      "detected_date": "2025-12-06T19:45:13.790475"
-    },
-    "network-tools/diagnostics/record-nslookup.sh": {
-      "old_path": "record-nslookup.sh",
-      "new_path": "network-tools/diagnostics/record-nslookup.sh",
-      "date": "2025-12-06T19:45:13.790241",
-      "detected_date": "2025-12-06T19:45:13.790568"
-    },
-    "network-tools/capture/record-tcpdump.sh": {
-      "old_path": "netmon/record-tcpdump.sh",
-      "new_path": "network-tools/capture/record-tcpdump.sh",
-      "date": "2025-12-06T19:45:13.790247",
-      "detected_date": "2025-12-06T19:45:13.790604"
-    },
-    "system-tools/record-log-show.sh": {
-      "old_path": "record-log-show.sh",
-      "new_path": "system-tools/record-log-show.sh",
-      "date": "2025-12-06T19:45:13.790253",
-      "detected_date": "2025-12-06T19:45:13.790627"
-    },
-    "network-tools/diagnostics/record-netstat.sh": {
-      "old_path": "record-netstat.sh",
-      "new_path": "network-tools/diagnostics/record-netstat.sh",
-      "date": "2025-12-06T19:45:13.790256",
-      "detected_date": "2025-12-06T19:45:13.790639"
-    },
-    "network-tools/intelligence/record-ip-api-json.sh": {
-      "old_path": "record-ip-api-json.sh",
-      "new_path": "network-tools/intelligence/record-ip-api-json.sh",
-      "date": "2025-12-06T19:45:13.790221",
-      "detected_date": "2025-12-06T19:45:13.790650"
-    },
-    "network-tools/diagnostics/sort-netstat-tcp.sh": {
-      "old_path": "sort-netstat-tcp.sh",
-      "new_path": "network-tools/diagnostics/sort-netstat-tcp.sh",
-      "date": "2025-12-06T20:20:56.458785",
-      "detected_date": "2025-12-06T20:20:56.459191"
-    },
-    "trufflehog/scripts/trufflehog-local-git-repos.sh": {
-      "old_path": "trufflehog/trufflehog-local-git-repos.sh",
-      "new_path": "trufflehog/scripts/trufflehog-local-git-repos.sh",
+    "trufflehog/scripts/trufflehog-analyze-results.py": {
+      "old_path": "trufflehog/trufflehog-analyze-results.py",
+      "new_path": "trufflehog/scripts/trufflehog-analyze-results.py",
       "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293608"
+      "detected_date": "2026-07-09T11:16:16.278742"
     },
-    "trufflehog/scripts/trufflehog-detokenize-secrets.py": {
-      "old_path": "trufflehog/trufflehog-detokenize-secrets.py",
-      "new_path": "trufflehog/scripts/trufflehog-detokenize-secrets.py",
-      "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293688"
-    },
-    "trufflehog/scripts/trufflehog-show-raw-results.sh": {
-      "old_path": "trufflehog/trufflehog-show-raw-results.sh",
-      "new_path": "trufflehog/scripts/trufflehog-show-raw-results.sh",
-      "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293762"
-    },
-    "trufflehog/scripts/trufflehog-rotate-aws-key.py": {
-      "old_path": "trufflehog/trufflehog-rotate-aws-key.py",
-      "new_path": "trufflehog/scripts/trufflehog-rotate-aws-key.py",
-      "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293782"
-    },
-    "trufflehog/scripts/audit-sensitive-data.py": {
-      "old_path": "trufflehog/audit-sensitive-data.py",
-      "new_path": "trufflehog/scripts/audit-sensitive-data.py",
-      "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293821"
+    "network-tools/diagnostics/what-is-my-ip.sh": {
+      "old_path": "what-is-my-ip.sh",
+      "new_path": "network-tools/diagnostics/what-is-my-ip.sh",
+      "date": "2026-06-01T07:17:55-04:00",
+      "detected_date": "2026-07-09T11:16:16.278753"
     },
     "trufflehog/scripts/trufflehog-tokenize-secrets.py": {
       "old_path": "trufflehog/trufflehog-tokenize-secrets.py",
       "new_path": "trufflehog/scripts/trufflehog-tokenize-secrets.py",
       "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293849"
+      "detected_date": "2026-07-09T11:16:16.278761"
     },
-    "trufflehog/scripts/trufflehog-analyze-results.py": {
-      "old_path": "trufflehog/trufflehog-analyze-results.py",
-      "new_path": "trufflehog/scripts/trufflehog-analyze-results.py",
+    "trufflehog/scripts/audit-sensitive-data.py": {
+      "old_path": "trufflehog/audit-sensitive-data.py",
+      "new_path": "trufflehog/scripts/audit-sensitive-data.py",
       "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293867"
+      "detected_date": "2026-07-09T11:16:16.278768"
     },
-    "trufflehog/scripts/trufflehog-sum-uniq-raw-results.sh": {
-      "old_path": "trufflehog/trufflehog-sum-uniq-raw-results.sh",
-      "new_path": "trufflehog/scripts/trufflehog-sum-uniq-raw-results.sh",
+    "system-tools/record-log-show.sh": {
+      "old_path": "record-log-show.sh",
+      "new_path": "system-tools/record-log-show.sh",
+      "date": "2025-12-06T20:09:53-05:00",
+      "detected_date": "2026-07-09T11:16:16.278772"
+    },
+    "trufflehog/scripts/trufflehog-local-git-repos.sh": {
+      "old_path": "trufflehog/trufflehog-local-git-repos.sh",
+      "new_path": "trufflehog/scripts/trufflehog-local-git-repos.sh",
       "date": "2025-12-18T20:26:28-05:00",
-      "detected_date": "2025-12-22T08:36:14.293922"
+      "detected_date": "2026-07-09T11:16:16.278779"
     },
     "install-cursor-agent.sh": {
       "old_path": "cursor/install-cursor-agent.sh",
       "new_path": "install-cursor-agent.sh",
       "date": "2026-04-18T04:52:33-04:00",
-      "detected_date": "2026-04-18T05:51:47.281897"
-    "network-tools/diagnostics/what-is-my-ip.sh": {
-      "old_path": "what-is-my-ip.sh",
-      "new_path": "network-tools/diagnostics/what-is-my-ip.sh",
-      "date": "2026-05-31T18:37:10-04:00",
-      "method": "migration_with_upgrade",
-      "notes": "Migrated from bin/. Added usage()/-h, fixed IPv6L typo, dropped unused stub vars (QUIET/VERBOSE/TEST_MODE/aws_profile/region), added -j/--json flag and geo lookup via ip-api-json.sh."
+      "detected_date": "2026-07-09T11:16:16.278786"
     },
-    "network-tools/intelligence/ip-api-json.sh": {
-      "old_path": "ip-api-json.sh",
-      "new_path": "network-tools/intelligence/ip-api-json.sh",
-      "date": "2026-05-31T18:37:10-04:00",
-      "method": "migration_with_upgrade",
-      "notes": "Migrated from bin/. Added usage()/-h, getopts, IP-required validation. Behavior unchanged: curl ip-api.com/json/<ip> | jq."
-    },
-    "markdown-tools/generate-md-file-and-screenshot-lists.sh": {
-      "old_path": "generate-md-file-and-screenshot-lists.sh",
-      "new_path": "markdown-tools/generate-md-file-and-screenshot-lists.sh",
-      "date": "2026-06-01T07:53:02-04:00",
-      "method": "migration_with_upgrade",
-      "notes": "Migrated from bin/. Enabled strict mode (set -euET -o pipefail) which was previously commented out. Robust script_dir via cd+pwd. No interface change."
-    },
-    "markdown-tools/convert-to-md-file-link-list.sh": {
-      "old_path": "convert-to-md-file-link-list.sh",
-      "new_path": "markdown-tools/convert-to-md-file-link-list.sh",
-      "date": "2026-06-01T07:53:02-04:00",
-      "method": "migration_with_upgrade",
-      "notes": "Migrated from bin/. Wrapped the 1-line stdin filter with standard template (usage()/-h/getopts). Core behavior unchanged: emits \"* [<file>](<file>)\" per line."
-    },
-    "markdown-tools/convert-to-md-clickable-image-list.sh": {
-      "old_path": "convert-to-md-clickable-image-list.sh",
-      "new_path": "markdown-tools/convert-to-md-clickable-image-list.sh",
-      "date": "2026-06-01T07:53:02-04:00",
-      "method": "migration_with_upgrade",
-      "notes": "Migrated from bin/. Wrapped the 1-line stdin filter with standard template (usage()/-h/getopts). Core behavior unchanged: emits \"[![<file>](<file>)](<file>)\" per line."
+    "network-tools/diagnostics/record-nslookup.sh": {
+      "old_path": "record-nslookup.sh",
+      "new_path": "network-tools/diagnostics/record-nslookup.sh",
+      "date": "2025-12-06T20:09:53-05:00",
+      "detected_date": "2026-07-09T11:16:16.278790"
     },
     "file-tools/fix-spaces-in-filename.sh": {
       "old_path": "fix-spaces-in-filename.sh",
       "new_path": "file-tools/fix-spaces-in-filename.sh",
-      "date": "2026-06-01T07:53:02-04:00",
-      "method": "reorganized",
-      "notes": "Within-pub-bin reorganization: moved from top level into new file-tools/ subdir. No code change."
+      "date": "2026-06-01T08:46:19-04:00",
+      "detected_date": "2026-07-09T11:16:16.278796"
+    },
+    "network-tools/intelligence/ip-api-json.sh": {
+      "old_path": "ip-api-json.sh",
+      "new_path": "network-tools/intelligence/ip-api-json.sh",
+      "date": "2026-06-01T07:17:55-04:00",
+      "detected_date": "2026-07-09T11:16:16.278800"
+    },
+    "trufflehog/scripts/trufflehog-detokenize-secrets.py": {
+      "old_path": "trufflehog/trufflehog-detokenize-secrets.py",
+      "new_path": "trufflehog/scripts/trufflehog-detokenize-secrets.py",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2026-07-09T11:16:16.278808"
+    },
+    "network-tools/intelligence/record-whois.sh": {
+      "old_path": "record-whois.sh",
+      "new_path": "network-tools/intelligence/record-whois.sh",
+      "date": "2025-12-06T20:09:53-05:00",
+      "detected_date": "2026-07-09T11:16:16.278813"
+    },
+    "trufflehog/scripts/trufflehog-sum-uniq-raw-results.sh": {
+      "old_path": "trufflehog/trufflehog-sum-uniq-raw-results.sh",
+      "new_path": "trufflehog/scripts/trufflehog-sum-uniq-raw-results.sh",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2026-07-09T11:16:16.278819"
+    },
+    "network-tools/diagnostics/record-network-config.sh": {
+      "old_path": "netmon/record-network-config.sh",
+      "new_path": "network-tools/diagnostics/record-network-config.sh",
+      "date": "2025-12-06T20:09:53-05:00",
+      "detected_date": "2026-07-09T11:16:16.278825"
+    },
+    "trufflehog/scripts/trufflehog-show-raw-results.sh": {
+      "old_path": "trufflehog/trufflehog-show-raw-results.sh",
+      "new_path": "trufflehog/scripts/trufflehog-show-raw-results.sh",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2026-07-09T11:16:16.278831"
+    },
+    "network-tools/scanning/record-nmap.sh": {
+      "old_path": "record-nmap.sh",
+      "new_path": "network-tools/scanning/record-nmap.sh",
+      "date": "2025-12-06T20:09:53-05:00",
+      "detected_date": "2026-07-09T11:16:16.278835"
+    },
+    "network-tools/intelligence/record-ip-api-json.sh": {
+      "old_path": "record-ip-api-json.sh",
+      "new_path": "network-tools/intelligence/record-ip-api-json.sh",
+      "date": "2025-12-06T20:09:53-05:00",
+      "detected_date": "2026-07-09T11:16:16.278839"
+    },
+    "trufflehog/scripts/trufflehog-rotate-aws-key.py": {
+      "old_path": "trufflehog/trufflehog-rotate-aws-key.py",
+      "new_path": "trufflehog/scripts/trufflehog-rotate-aws-key.py",
+      "date": "2025-12-18T20:26:28-05:00",
+      "detected_date": "2026-07-09T11:16:16.278847"
     },
     "file-tools/fix-spaces-in-filenames.sh": {
       "old_path": "fix-spaces-in-filenames.sh",
       "new_path": "file-tools/fix-spaces-in-filenames.sh",
-      "date": "2026-06-01T07:53:02-04:00",
-      "method": "reorganized",
-      "notes": "Within-pub-bin reorganization: moved from top level into new file-tools/ subdir. No code change. Internally calls ${script_dir}/fix-spaces-in-filename.sh which moved with it."
+      "date": "2026-06-01T08:46:19-04:00",
+      "detected_date": "2026-07-09T11:16:16.278852"
     }
   }
 }
