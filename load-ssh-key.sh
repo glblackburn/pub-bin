@@ -668,7 +668,8 @@ function list-loaded-keys {
     fi
 
     # ssh-add -l reports each key's comment, which is often identical across
-    # keys, so map every fingerprint back to the file it came from.
+    # keys, so map every fingerprint back to the file it came from.  The file
+    # name is appended rather than prefixed so the ssh-add columns stay aligned.
     echo "Currently loaded SSH keys (${key_count}) in ${SSH_DIR}:" >&2
     while IFS= read -r key_line ; do
 	if [[ "${key_line}" != *SHA256:* ]] ; then
@@ -679,7 +680,7 @@ function list-loaded-keys {
 	if [[ -z "${key_file}" ]] ; then
 	    key_file="<unknown key file>"
 	fi
-	echo "${key_file} : ${key_line}"
+	echo "${key_line} : ${key_file}"
     done < <(echo "${loaded_keys}")
 
     return 0

@@ -59,8 +59,8 @@ load '../test_helper.bash'
 
     assert_success
     assert_key_count 2
-    assert_output_contains "list_alpha_key : "
-    assert_output_contains "list_beta_key : "
+    assert_output_contains ": list_alpha_key"
+    assert_output_contains ": list_beta_key"
 }
 
 @test "load-ssh-key.sh -l: reports an empty agent as zero keys" {

@@ -424,7 +424,7 @@ source ./load-ssh-key.sh [options]
 - Returns error code 1 if any keys fail to load
 - The `-K` option kills all existing ssh-agent processes and starts a new one
 - The `-l` option works when sourced or executed directly, detecting dead agents gracefully
-- `-l` maps each loaded fingerprint back to its file under `~/.ssh` (shown relative to that directory), because `ssh-add -l` only reports key comments, which are frequently identical across keys. A key loaded from outside `~/.ssh` shows as `<unknown key file>`
+- `-l` appends the key file each loaded fingerprint came from (relative to `~/.ssh`), because `ssh-add -l` only reports key comments, which are frequently identical across keys. The file name goes on the right so the `ssh-add -l` columns stay aligned. A key loaded from outside `~/.ssh` shows as `<unknown key file>`
 
 **Behavior:**
 1. Parses CLI options (timeout, directory, config, key list, kill agent, list keys, quiet, verbose)
