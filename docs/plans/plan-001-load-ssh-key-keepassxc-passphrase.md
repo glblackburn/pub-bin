@@ -1,7 +1,7 @@
 # Plan 001 — `load-ssh-key.sh` reads SSH key passphrases from KeePassXC
 
-**Status:** **Implemented** (2026-08-16) — all 34 unit tests pass (16 pre-existing + 16 new for
-KeePassXC + 2 for the `-l` follow-up). Verified end-to-end against the real database: both encrypted
+**Status:** **Implemented** (2026-08-16) — all 36 unit tests pass (16 pre-existing + 16 new for
+KeePassXC + 4 for the `-l` / listing follow-ups). Verified end-to-end against the real database: both encrypted
 keys load from one master-password prompt. First plan in the `docs/plans/` sequence; the
 `plan-001`..`plan-021` numbering under [`docs/osx/plans/`](../osx/plans/README.md) is that product's
 own frozen sequence and is untouched by this work. Per [`.cursorrules`](../../.cursorrules) rule 3
@@ -34,7 +34,26 @@ this file is the canonical copy — `~/.claude/plans/` must never be the only on
   no way to tell which key was loaded. `-l` now counts `SHA256:` lines and maps each fingerprint
   back to its file via a new `find-key-file-by-fingerprint`, printing the path relative to
   `${SSH_DIR}` (so keys in subdirectories stay distinct) or `<unknown key file>` for keys loaded
-  from elsewhere. Two tests added to `test_list_option.bats`; suite is now 34 tests.
+  from elsewhere. Two tests added to `test_list_option.bats`.
+
+- **Listing consolidated (follow-up, 2026-08-16).** `load-ssh-key` printed
+  `Listing all loaded keys:` plus a raw `ssh-add -l` dump after *every* already-loaded key, so a
+  two-key run showed the same list twice, in a different format from `-l`. The per-key dumps are
+  gone; the agent contents are now reported once at the end of the run (suppressed by `-q`) through
+  the same `show-loaded-keys` used by `-l`. Related duplication removed at the same time:
+  `get-agent-key-list` is now the single caller of `ssh-add -l`; `count-lines-matching` replaces
+  three hand-rolled `grep -c … || echo 0` counters (that idiom prints `0\n0` on a zero count, which
+  broke a numeric comparison during this refactor); `is-valid-ssh-key` delegates to
+  `get-key-fingerprint` instead of repeating its `ssh-keygen` pipeline, and `load-ssh-key` now reads
+  the fingerprint once instead of twice; and `resolve-agent-env` replaces `list-loaded-keys`'
+  hand-rolled `eval export` parse of the agent config with the same sourcing the main flow uses.
+  Two tests added (listing appears exactly once per run; `-q` suppresses it) - suite is now 36.
+- **Suite hang fixed.** The full runner intermittently ran past 600s while every file passed in
+  seconds individually. Cause: tests that reach the interactive fallback let `ssh-add` prompt on
+  `/dev/tty` (stdin redirection cannot prevent that), so the run blocked whenever a terminal was
+  available. `test_helper.bash` `setup()` now exports `SSH_ASKPASS=/usr/bin/false` and
+  `SSH_ASKPASS_REQUIRE=force`, making that path fail immediately. Three consecutive full runs:
+  36/36 in ~55s each.
 
 ## Goal
 

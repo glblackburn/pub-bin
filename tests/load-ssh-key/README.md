@@ -25,6 +25,15 @@ tests/load-ssh-key/
     └── YYYYMMDD_HHMMSS/      # Timestamped test run folders
 ```
 
+## Why the suite never prompts
+
+`setup()` exports `SSH_ASKPASS=/usr/bin/false` and `SSH_ASKPASS_REQUIRE=force`. Any test that
+reaches `load-ssh-key.sh`'s interactive fallback (a passphrase-protected key with no KeePassXC
+entry, for example) would otherwise have `ssh-add` prompt on `/dev/tty` - which stdin redirection
+cannot prevent - and the run would block until it timed out. Forcing an askpass program that always
+fails turns that into an immediate, deterministic failure. Without this guard the suite hangs
+intermittently depending on whether a terminal happens to be available.
+
 ## Mocking keepassxc-cli
 
 `test_keepassxc.bats` never touches a real KeePassXC database. `create_mock_keepassxc_cli`

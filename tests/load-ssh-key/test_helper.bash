@@ -101,6 +101,12 @@ setup() {
     # Override HOME to use test directory
     export HOME="${TEST_TMPDIR}"
     
+    # Never let a test block on an interactive passphrase prompt. ssh-add reads
+    # the passphrase from /dev/tty, not stdin, so redirecting input is not
+    # enough - force it through an askpass program that always fails instead.
+    export SSH_ASKPASS="/usr/bin/false"
+    export SSH_ASKPASS_REQUIRE="force"
+    
     # Kill any existing ssh-agents from previous tests
     pkill -9 ssh-agent 2>/dev/null || true
     unset SSH_AGENT_PID

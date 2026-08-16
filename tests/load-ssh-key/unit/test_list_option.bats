@@ -81,3 +81,43 @@ load '../test_helper.bash'
     assert_output_not_contains "Failed to list SSH keys"
     assert_key_count 0
 }
+
+@test "load-ssh-key.sh: reports the agent contents once per run" {
+    kill_all_ssh_agents
+    local key_one=$(create_test_ssh_key "list_once_one")
+    local key_two=$(create_test_ssh_key "list_once_two")
+
+    # Run that loads both keys
+    run_load_ssh_key -k "${key_one},${key_two}"
+    assert_success
+    local header_count=$(echo "$output" | grep -c "Currently loaded SSH keys" || true)
+    [ "$header_count" -eq 1 ] || {
+        echo "Expected 1 key listing, found ${header_count}" >&2
+        echo "Output: $output" >&2
+        return 1
+    }
+
+    # Run where both keys are already loaded - still one listing, not one per key
+    run_load_ssh_key -k "${key_one},${key_two}"
+    assert_success
+    assert_output_contains "Key already loaded: list_once_one"
+    assert_output_contains "Key already loaded: list_once_two"
+    header_count=$(echo "$output" | grep -c "Currently loaded SSH keys" || true)
+    [ "$header_count" -eq 1 ] || {
+        echo "Expected 1 key listing, found ${header_count}" >&2
+        echo "Output: $output" >&2
+        return 1
+    }
+    assert_key_count 2
+}
+
+@test "load-ssh-key.sh -q: does not print the key listing" {
+    kill_all_ssh_agents
+    local test_key=$(create_test_ssh_key "list_quiet_key")
+
+    run_load_ssh_key -k "${test_key}" -q
+
+    assert_success
+    assert_output_not_contains "Currently loaded SSH keys"
+    assert_key_count 0
+}

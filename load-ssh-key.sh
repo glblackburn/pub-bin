@@ -232,13 +232,37 @@ function get-key-fingerprint {
     echo "${fingerprint}"
 }
 
+function get-agent-key-list {
+    # Single place that asks the agent what it holds.  ssh-add -l exits 1 and
+    # prints "The agent has no identities." for an empty agent, so callers must
+    # look for SHA256: lines rather than trusting the exit code or line count.
+    ssh-add -l 2>/dev/null || true
+}
+
+function count-lines-matching {
+    # Count matching lines from stdin.  grep -c exits 1 when the count is zero
+    # and still prints "0", so the status is swallowed rather than replaced with
+    # a second "0" - which would make the caller compare "0\n0" as a number.
+    local pattern=$1
+    local count=""
+
+    count=$(grep -c -- "${pattern}" 2>/dev/null || true)
+    count=$(echo "${count}" | tr -d '[:space:]')
+
+    echo "${count:-0}"
+}
+
+function count-agent-keys {
+    local loaded_keys=$1
+
+    echo "${loaded_keys}" | count-lines-matching "SHA256:"
+}
+
 function is-key-loaded {
     local fingerprint=$1
-    local loaded_keys=""
     local key_count=0
 
-    loaded_keys=$(ssh-add -l 2>/dev/null || echo "")
-    key_count=$(echo "${loaded_keys}" | grep -F "${fingerprint}" | grep -v '^$' | wc -l | tr -d ' ')
+    key_count=$(get-agent-key-list | count-lines-matching "${fingerprint}")
 
     if [[ "${key_count}" -ge 1 ]] ; then
 	return 0
@@ -249,12 +273,9 @@ function is-key-loaded {
 
 function is-valid-ssh-key {
     local key_file=$1
-    local fingerprint=""
 
-    # Try to get fingerprint - if it fails, file is not a valid SSH key
-    fingerprint=$(ssh-keygen -l -E sha256 -f "${key_file}" 2>/dev/null | awk '{print $2}' || echo "")
-    
-    if [[ -z "${fingerprint}" ]] ; then
+    # A file is a key exactly when a fingerprint can be read from it
+    if [[ -z "$(get-key-fingerprint "${key_file}")" ]] ; then
 	return 1
     else
 	return 0
@@ -529,17 +550,11 @@ function load-ssh-key {
 	return 1
     fi
 
-    # Check if file is a valid SSH key before processing
-    if ! is-valid-ssh-key "${key_file}" ; then
-	${VERBOSE} && echo "Skipping non-key file: ${key_file}" >&2
-	return 0  # Return success - not an error, just skip it
-    fi
-
+    # One fingerprint read doubles as the "is this really a key?" check
     fingerprint=$(get-key-fingerprint "${key_file}")
     if [[ -z "${fingerprint}" ]] ; then
-	# This should not happen if is-valid-ssh-key passed, but handle it anyway
-	${VERBOSE} && echo "Warning: Could not get fingerprint for: ${key_file}" >&2
-	return 0  # Skip it, don't count as error
+	${VERBOSE} && echo "Skipping non-key file: ${key_file}" >&2
+	return 0  # Return success - not an error, just skip it
     fi
 
     ${VERBOSE} && cat<<EOF >&2
@@ -547,15 +562,14 @@ key_file=[${key_file}]
 KEY_CHECK=[${fingerprint}]
 EOF
 
+    # The agent contents are reported once at the end of the run by
+    # show-loaded-keys, not after every individual key.
     if is-key-loaded "${fingerprint}" ; then
 	${QUIET} || echo "Key already loaded: ${key_basename}" >&2
-	${QUIET} || echo "Listing all loaded keys:" >&2
-	${QUIET} || ssh-add -l >&2 || true
 	return 0
     fi
 
-    ${VERBOSE} && echo "Key not found. Listing all loaded keys:" >&2
-    ${VERBOSE} && ssh-add -l >&2 || true
+    ${VERBOSE} && echo "Key not in agent yet: ${key_basename}" >&2
 
     ${QUIET} || echo "Adding SSH key to agent: ${key_basename}" >&2
 
@@ -600,48 +614,30 @@ EOF
     ${VERBOSE} && ps -fe | grep -e ssh-agent -e "PID" >&2 || true
 }
 
-function list-loaded-keys {
-    local loaded_keys=""
-    local key_count=0
-    local key_line=""
-    local key_fingerprint=""
-    local key_file=""
+function resolve-agent-env {
+    local possible_sockets=""
+    local agent_pids=""
 
-    # If SSH_AUTH_SOCK is already set in environment, verify the agent is actually running
-    # If not, try to load from config file
+    # A dead agent in the environment is worse than none at all
     if [[ ! -z "${SSH_AUTH_SOCK:-}" ]] && [[ ! -z "${SSH_AGENT_PID:-}" ]] ; then
-	# Check if the agent from environment is actually running
 	if ! ps -p "${SSH_AGENT_PID}" >/dev/null 2>&1 ; then
-	    # Environment points to dead agent, clear it and try config file
 	    unset SSH_AUTH_SOCK
 	    unset SSH_AGENT_PID
 	fi
     fi
 
-    # If SSH_AUTH_SOCK is not set or was cleared, try to load from config file
-    if [[ -z "${SSH_AUTH_SOCK:-}" ]] ; then
-	if [[ -e "${CONFIG}" ]] ; then
-	    # Parse config file and export variables explicitly
-	    # This works when script is executed directly (not sourced)
-	    while IFS= read -r line ; do
-		if [[ "${line}" =~ ^SSH_AUTH_SOCK= ]] ; then
-		    eval "export ${line}"
-		elif [[ "${line}" =~ ^SSH_AGENT_PID= ]] ; then
-		    eval "export ${line}"
-		fi
-	    done < "${CONFIG}" 2>/dev/null || true
-	fi
+    # Fall back to the agent config file.  Sourcing it is what the main flow
+    # does; the file exports the variables itself, so this works whether the
+    # script was sourced or executed directly.
+    if [[ -z "${SSH_AUTH_SOCK:-}" ]] && [[ -e "${CONFIG}" ]] ; then
+	. "${CONFIG}" >/dev/null 2>&1 || true
     fi
 
-    # If still no SSH_AUTH_SOCK, try to find it from running agents
+    # Last resort: look for an orphaned agent socket on disk
     if [[ -z "${SSH_AUTH_SOCK:-}" ]] ; then
-	# Try to find ssh-agent socket from common locations
-	local possible_sockets=""
 	possible_sockets=$(find /tmp /var/folders -name "agent.*" -user $(id -u) 2>/dev/null | head -1 || echo "")
 	if [[ ! -z "${possible_sockets}" ]] ; then
 	    export SSH_AUTH_SOCK="${possible_sockets}"
-	    # Try to find the PID
-	    local agent_pids=""
 	    agent_pids=$(ps -fe | grep "[s]sh-agent" | awk '{print $2}' | head -1 || echo "")
 	    if [[ ! -z "${agent_pids}" ]] ; then
 		export SSH_AGENT_PID="${agent_pids}"
@@ -649,18 +645,22 @@ function list-loaded-keys {
 	fi
     fi
 
-    # Check if agent is running
     if ! check-ssh-agent-running ; then
-	echo "SSH agent is not running" >&2
 	return 1
     fi
 
-    # Get list of loaded keys.  ssh-add -l exits 1 and prints "The agent has no
-    # identities." for an empty agent, so count fingerprint lines rather than
-    # output lines - otherwise an empty agent reports one key and an error.
-    loaded_keys=$(ssh-add -l 2>/dev/null || true)
-    key_count=$(echo "${loaded_keys}" | grep -c "SHA256:" || true)
-    key_count=$(echo "${key_count}" | tr -d ' ')
+    return 0
+}
+
+function show-loaded-keys {
+    local loaded_keys=""
+    local key_count=0
+    local key_line=""
+    local key_fingerprint=""
+    local key_file=""
+
+    loaded_keys=$(get-agent-key-list)
+    key_count=$(count-agent-keys "${loaded_keys}")
 
     if [[ "${key_count}" -eq 0 ]] ; then
 	echo "No SSH keys are currently loaded in the agent" >&2
@@ -685,6 +685,17 @@ function list-loaded-keys {
 
     return 0
 }
+
+function list-loaded-keys {
+    # -l entry point: find an agent to talk to, then print what it holds
+    if ! resolve-agent-env ; then
+	echo "SSH agent is not running" >&2
+	return 1
+    fi
+
+    show-loaded-keys
+}
+
 
 ################################################################################
 # get command line options
@@ -994,6 +1005,9 @@ trap - INT
 
 # Show status
 show-ssh-agent-status
+
+# Report the agent contents once for the whole run
+${QUIET} || show-loaded-keys
 
 # Report results
 if [[ ${error_count} -gt 0 ]] ; then

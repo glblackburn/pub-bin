@@ -355,6 +355,7 @@ A utility script to automatically load SSH keys from `~/.ssh` into the SSH agent
 - Finds all SSH private keys in `~/.ssh` directory (excludes `.pub`, `known_hosts*`, `ssh-agent.config`, `config`, `config~`, `authorized_keys`, and `ssh-copy-id.*` directories)
 - Starts or loads an existing SSH agent configuration
 - Checks if each key is already loaded in the agent by comparing fingerprints
+- Prints the agent's contents once at the end of the run (the same listing `-l` produces), suppressed by `-q`
 - Adds keys to the SSH agent with a configurable timeout (default: 8 hours)
 - Validates keys before attempting to load them (skips non-key files gracefully)
 - Supports loading specific keys or auto-detecting all keys
@@ -424,7 +425,7 @@ source ./load-ssh-key.sh [options]
 - Returns error code 1 if any keys fail to load
 - The `-K` option kills all existing ssh-agent processes and starts a new one
 - The `-l` option works when sourced or executed directly, detecting dead agents gracefully
-- `-l` appends the key file each loaded fingerprint came from (relative to `~/.ssh`), because `ssh-add -l` only reports key comments, which are frequently identical across keys. The file name goes on the right so the `ssh-add -l` columns stay aligned. A key loaded from outside `~/.ssh` shows as `<unknown key file>`
+- `-l` and the end-of-run summary share one listing function, so both formats are identical. It appends the key file each loaded fingerprint came from (relative to `~/.ssh`), because `ssh-add -l` only reports key comments, which are frequently identical across keys. The file name goes on the right so the `ssh-add -l` columns stay aligned. A key loaded from outside `~/.ssh` shows as `<unknown key file>`
 
 **Behavior:**
 1. Parses CLI options (timeout, directory, config, key list, kill agent, list keys, quiet, verbose)
