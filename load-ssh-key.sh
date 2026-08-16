@@ -8,6 +8,16 @@ set -u -o pipefail
 
 script_name=$(basename ${BASH_SOURCE[0]})
 script_dir=$(dirname ${BASH_SOURCE[0]})
+# Canonical dir is needed because the script is sourced from an arbitrary cwd
+script_real_dir=$(cd "${script_dir}" 2>/dev/null && pwd) || script_real_dir="${script_dir}"
+
+################################################################################
+# Style Conventions
+################################################################################
+# - Use ${variable} braces for all variable references
+# - Use ${HOME} instead of ~
+# - Use $(command) instead of backticks for command substitution
+################################################################################
 
 ################################################################################
 # CLI Parameters
@@ -19,6 +29,15 @@ LIST_KEYS=false
 KEY_TIMEOUT=28800
 SSH_DIR="${HOME}/.ssh"
 CONFIG="${SSH_DIR}/ssh-agent.config"
+# KeePassXC passphrase lookup.  Every value is reassigned unconditionally on each
+# sourcing so a previous sourcing cannot leak into this run.
+USE_KEEPASS=true
+KEEPASS_DB=""
+KEEPASS_DB_FROM_CLI=false
+KEEPASS_GROUP=""
+KEEPASS_CLI=""
+PUB_BIN_CONFIG="${HOME}/.config/pub-bin/config"
+ASKPASS_HELPER="${script_real_dir}/load-ssh-key-askpass.sh"
 # Reset KEY_LIST to ensure clean state when script is sourced multiple times
 unset KEY_LIST
 KEY_LIST=""
@@ -27,6 +46,13 @@ KEY_LIST=""
 # State tracking
 ################################################################################
 error_count=0
+# KeePassXC runtime state.  kp_db_password / kp_key_passphrase hold secrets and
+# are cleared by clear-key-secrets on every exit path (this script is sourced,
+# so leftovers would persist in the caller's interactive shell).
+KEEPASS_ENABLED=false
+keepassxc_cli=""
+kp_db_password=""
+kp_key_passphrase=""
 
 ################################################################################
 # Functions
@@ -38,7 +64,8 @@ function usage {
 	echo "" >&2
     fi
     cat<<EOF
-Usage: . ${script_name} [-hqlvK] [-t <timeout>] [-d <ssh_dir>] [-c <config>] [-k <key_list>]
+Usage: . ${script_name} [-hqlvKN] [-t <timeout>] [-d <ssh_dir>] [-c <config>] [-k <key_list>]
+       [-D <keepass_db>] [-G <keepass_group>]
 
 Load SSH keys from ~/.ssh into the SSH agent. This script must be sourced
 (using . or source) to load the SSH agent environment variables into your
@@ -52,15 +79,26 @@ Options
   -d <dir>         : SSH directory to search for keys (Default: ${SSH_DIR})
   -c <config>      : SSH agent config file path (Default: ${CONFIG})
   -k <key_list>    : Comma-separated list of specific keys to load (Default: auto-detect all)
+  -D <keepass_db>  : KeePassXC .kdbx database used to look up key passphrases
+                     (Default: keepassxc_db in ${PUB_BIN_CONFIG})
+  -G <group>       : KeePassXC group holding the key entries (Default: database root)
+  -N               : No KeePassXC. Prompt interactively for key passphrases.
   -K               : Kill current SSH agent and start a new one
   -l               : List currently loaded SSH keys and exit
   -q               : Quiet mode. Output as little as possible.
-  -v               : Verbose output. Show detailed information.
+  -v               : Verbose output. Show detailed information (never prints secrets).
+
+KeePassXC passphrase lookup is used automatically when keepassxc-cli and a
+database are available. Each KeePassXC entry title must match the private key
+file name; the master password is prompted for once per run. Without KeePassXC
+the script falls back to ssh-add prompting for each passphrase.
 
 Example:
 . ${script_name} -t 3600
 . ${script_name} -K  # Kill current agent and reload all keys
 . ${script_name} -l  # List currently loaded keys
+. ${script_name} -D ${HOME}/keepassxc.kdbx -G ssh-keys
+. ${script_name} -N  # Skip KeePassXC, type passphrases interactively
 ${script_name} -l    # List keys (can be executed directly)
 EOF
 }
@@ -223,6 +261,234 @@ function is-valid-ssh-key {
     fi
 }
 
+function read-pub-bin-config-value {
+    local key=$1
+    local value=""
+
+    if [[ ! -e "${PUB_BIN_CONFIG}" ]] ; then
+	echo ""
+	return 0
+    fi
+
+    # Only the simple key="value" form written by config/config.sh is supported.
+    # Read with grep instead of sourcing: this script is sourced into the user's
+    # interactive shell and must not execute or export the whole config file.
+    value=$(grep -E "^[[:space:]]*${key}=" "${PUB_BIN_CONFIG}" 2>/dev/null \
+	| tail -1 \
+	| cut -d '=' -f 2- \
+	| sed -e 's/^"//' -e 's/"$//' || echo "")
+
+    echo "${value}"
+}
+
+function find-keepassxc-cli {
+    local candidate=""
+    local candidates=""
+
+    if [[ ! -z "${KEEPASS_CLI}" ]] ; then
+	if [[ -x "${KEEPASS_CLI}" ]] ; then
+	    echo "${KEEPASS_CLI}"
+	    return 0
+	fi
+	echo "Error: keepassxc_cli is not executable: ${KEEPASS_CLI}" >&2
+	return 1
+    fi
+
+    candidate=$(command -v keepassxc-cli 2>/dev/null || echo "")
+    if [[ ! -z "${candidate}" ]] ; then
+	echo "${candidate}"
+	return 0
+    fi
+
+    # keepassxc-cli ships inside the macOS app bundle and is not on PATH
+    candidates="/Applications/KeePassXC.app/Contents/MacOS/keepassxc-cli
+${HOME}/Applications/KeePassXC.app/Contents/MacOS/keepassxc-cli
+/opt/homebrew/bin/keepassxc-cli
+/usr/local/bin/keepassxc-cli"
+
+    while IFS= read -r candidate ; do
+	if [[ -x "${candidate}" ]] ; then
+	    echo "${candidate}"
+	    return 0
+	fi
+    done < <(echo "${candidates}")
+
+    return 1
+}
+
+function key-requires-passphrase {
+    local key_file=$1
+
+    # rc 0 (plus the public key on stdout) when the key has no passphrase;
+    # rc 255 ("incorrect passphrase supplied") when it does.  A key ssh-keygen
+    # cannot parse also reports "protected" here; load-ssh-key already gates on
+    # is-valid-ssh-key, so the worst case is a pointless KeePassXC lookup
+    # followed by the normal interactive prompt.
+    if ssh-keygen -y -P "" -f "${key_file}" >/dev/null 2>&1 ; then
+	return 1
+    fi
+
+    return 0
+}
+
+function clear-key-secrets {
+    # Overwrite before dropping the names.  This script is sourced, so a secret
+    # left behind would live in the caller's interactive shell.
+    kp_db_password=""
+    kp_key_passphrase=""
+    unset kp_db_password
+    unset kp_key_passphrase
+
+    return 0
+}
+
+function ensure-keepassxc-unlocked {
+    local max_attempts=3
+    local attempt=0
+    local saved_stty=""
+    local entered=""
+
+    ${KEEPASS_ENABLED} || return 1
+    if [[ ! -z "${kp_db_password:-}" ]] ; then
+	return 0
+    fi
+
+    # db-info is the only reliable master-password check: with -q, keepassxc-cli
+    # is silent and returns 1 for both a bad password and a missing entry, so a
+    # per-entry failure cannot be classified unless the password is known good.
+    if [[ ! -z "${LOAD_SSH_KEY_DB_PASSWORD:-}" ]] ; then
+	# Non-interactive path (tests, automation): one attempt, never prompt
+	kp_db_password="${LOAD_SSH_KEY_DB_PASSWORD}"
+	if printf '%s\n' "${kp_db_password}" \
+	    | "${keepassxc_cli}" db-info -q "${KEEPASS_DB}" >/dev/null 2>&1 ; then
+	    ${VERBOSE} && echo "KeePassXC unlocked using LOAD_SSH_KEY_DB_PASSWORD" >&2
+	    return 0
+	fi
+	kp_db_password=""
+	cat<<EOF >&2
+Error: LOAD_SSH_KEY_DB_PASSWORD did not unlock the KeePassXC database
+KEEPASS_DB=[${KEEPASS_DB}]
+Falling back to interactive ssh-add passphrase prompts.
+EOF
+	KEEPASS_ENABLED=false
+	return 1
+    fi
+
+    if [[ ! -r /dev/tty ]] ; then
+	${VERBOSE} && echo "No /dev/tty available for the KeePassXC prompt" >&2
+	KEEPASS_ENABLED=false
+	return 1
+    fi
+
+    while [[ ${attempt} -lt ${max_attempts} ]] ; do
+	attempt=$((attempt + 1))
+	saved_stty=$(stty -g < /dev/tty 2>/dev/null || echo "")
+	# Restore terminal echo if the read is interrupted.  The trap is removed
+	# again below: a lingering trap would live on in the caller's shell.
+	trap 'stty "${saved_stty}" < /dev/tty 2>/dev/null || stty echo < /dev/tty 2>/dev/null ; trap - INT' INT
+	stty -echo < /dev/tty
+	echo -n "KeePassXC master password for $(basename "${KEEPASS_DB}"): " >&2
+	IFS= read -r entered < /dev/tty || entered=""
+	stty echo < /dev/tty
+	if [[ ! -z "${saved_stty}" ]] ; then
+	    stty "${saved_stty}" < /dev/tty 2>/dev/null || true
+	fi
+	trap - INT
+	echo "" >&2
+
+	if [[ -z "${entered}" ]] ; then
+	    echo "Empty password entered; skipping KeePassXC lookups" >&2
+	    KEEPASS_ENABLED=false
+	    return 1
+	fi
+
+	if printf '%s\n' "${entered}" \
+	    | "${keepassxc_cli}" db-info -q "${KEEPASS_DB}" >/dev/null 2>&1 ; then
+	    kp_db_password="${entered}"
+	    entered=""
+	    ${VERBOSE} && echo "KeePassXC database unlocked" >&2
+	    return 0
+	fi
+
+	entered=""
+	echo "Error: could not unlock KeePassXC database (attempt ${attempt} of ${max_attempts})" >&2
+    done
+
+    cat<<EOF >&2
+Error: KeePassXC database could not be unlocked after ${max_attempts} attempts
+KEEPASS_DB=[${KEEPASS_DB}]
+Falling back to interactive ssh-add passphrase prompts.
+EOF
+    KEEPASS_ENABLED=false
+    clear-key-secrets
+    kp_db_password=""
+    kp_key_passphrase=""
+
+    return 1
+}
+
+function keepassxc-get-passphrase {
+    local entry_title=$1
+    local group=""
+    local entry_path=""
+
+    kp_key_passphrase=""
+
+    ensure-keepassxc-unlocked || return 1
+
+    group="${KEEPASS_GROUP}"
+    group="${group#/}"
+    group="${group%/}"
+    entry_path="${entry_title}"
+    if [[ ! -z "${group}" ]] ; then
+	entry_path="${group}/${entry_title}"
+    fi
+
+    ${VERBOSE} && echo "KeePassXC lookup: entry_path=[${entry_path}]" >&2
+
+    # printf is a bash builtin, so the master password never appears in argv.
+    # A here-string (<<<) is deliberately NOT used: bash implements it with a
+    # temp file, which would write the secret to disk.
+    kp_key_passphrase=$(printf '%s\n' "${kp_db_password}" \
+	| "${keepassxc_cli}" show -q -s -a Password "${KEEPASS_DB}" "${entry_path}" 2>/dev/null \
+	|| echo "")
+
+    if [[ -z "${kp_key_passphrase}" ]] && [[ ! -z "${group}" ]] ; then
+	# Retry at the database root in case the entry is not filed in the group
+	${VERBOSE} && echo "KeePassXC lookup: retrying entry_path=[${entry_title}]" >&2
+	kp_key_passphrase=$(printf '%s\n' "${kp_db_password}" \
+	    | "${keepassxc_cli}" show -q -s -a Password "${KEEPASS_DB}" "${entry_title}" 2>/dev/null \
+	    || echo "")
+    fi
+
+    if [[ -z "${kp_key_passphrase}" ]] ; then
+	kp_key_passphrase=""
+	return 1
+    fi
+
+    return 0
+}
+
+function add-key-with-askpass {
+    local key_file=$1
+    local timeout=$2
+
+    if [[ ! -x "${ASKPASS_HELPER}" ]] ; then
+	echo "Error: askpass helper is not executable: ${ASKPASS_HELPER}" >&2
+	return 1
+    fi
+
+    # The passphrase is a per-command environment assignment: it is set only in
+    # ssh-add's environment (and inherited by the askpass child), never exported
+    # into the caller's sourced shell.  DISPLAY is set for OpenSSH < 8.4, which
+    # ignores SSH_ASKPASS_REQUIRE.  </dev/null keeps ssh-add off the tty.
+    SSH_ASKPASS="${ASKPASS_HELPER}" \
+	SSH_ASKPASS_REQUIRE=force \
+	DISPLAY="${DISPLAY:-:0}" \
+	LOAD_SSH_KEY_PASSPHRASE="${kp_key_passphrase}" \
+	ssh-add -t "${timeout}" "${key_file}" < /dev/null
+}
+
 function load-ssh-key {
     local key_file=$1
     local timeout=$2
@@ -265,6 +531,30 @@ EOF
     ${VERBOSE} && ssh-add -l >&2 || true
 
     ${QUIET} || echo "Adding SSH key to agent: ${key_basename}" >&2
+
+    if ${KEEPASS_ENABLED} && key-requires-passphrase "${key_file}" ; then
+	if keepassxc-get-passphrase "${key_basename}" ; then
+	    ${VERBOSE} && echo "Using KeePassXC passphrase for: ${key_basename}" >&2
+	    if add-key-with-askpass "${key_file}" "${timeout}" ; then
+		kp_key_passphrase=""
+		return 0
+	    fi
+	    kp_key_passphrase=""
+	    cat<<EOF >&2
+Error: Failed to add key to agent: ${key_file}
+The KeePassXC passphrase for entry [${key_basename}] was rejected by ssh-add.
+Update the entry, or re-run with -N to type the passphrase.
+EOF
+	    return 1
+	fi
+	kp_key_passphrase=""
+	${QUIET} || cat<<EOF >&2
+No KeePassXC entry found for: ${key_basename}
+KEEPASS_GROUP=[${KEEPASS_GROUP}]
+Falling back to interactive passphrase prompt.
+EOF
+    fi
+
     ssh-add -t "${timeout}" "${key_file}" || {
 	echo "Error: Failed to add key to agent: ${key_file}" >&2
 	return 1
@@ -358,7 +648,7 @@ function list-loaded-keys {
 ################################################################################
 # Reset OPTIND in case script is sourced multiple times
 OPTIND=1
-while getopts ":t:d:c:k:hqlvK" opt; do
+while getopts ":t:d:c:k:D:G:hqlvKN" opt; do
     case ${opt} in
 	t )
             KEY_TIMEOUT=$OPTARG
@@ -373,6 +663,16 @@ while getopts ":t:d:c:k:hqlvK" opt; do
 	k )
             KEY_LIST=$OPTARG
             ${VERBOSE} && echo "DEBUG: -k option parsed, KEY_LIST set to: [${KEY_LIST}]" >&2
+            ;;
+	D )
+            KEEPASS_DB=$OPTARG
+            KEEPASS_DB_FROM_CLI=true
+            ;;
+	G )
+            KEEPASS_GROUP=$OPTARG
+            ;;
+	N )
+            USE_KEEPASS=false
             ;;
 	K )
             KILL_AGENT=true
@@ -399,6 +699,48 @@ done
 shift $((OPTIND -1))
 
 ################################################################################
+# KeePassXC configuration
+################################################################################
+# CLI options win over the config file.  Neither the database path nor the group
+# name is a secret, so both live in the public pub-bin config.
+if [[ -z "${KEEPASS_DB}" ]] ; then
+    KEEPASS_DB=$(read-pub-bin-config-value keepassxc_db)
+fi
+if [[ -z "${KEEPASS_GROUP}" ]] ; then
+    KEEPASS_GROUP=$(read-pub-bin-config-value keepassxc_group)
+fi
+if [[ -z "${KEEPASS_CLI}" ]] ; then
+    KEEPASS_CLI=$(read-pub-bin-config-value keepassxc_cli)
+fi
+KEEPASS_DB="${KEEPASS_DB/#\~/${HOME}}"
+
+# Activate KeePassXC only when everything it needs is present.  Every other case
+# falls back to ssh-add prompting interactively, which is the historic behavior.
+if ! ${USE_KEEPASS} ; then
+    ${VERBOSE} && echo "KeePassXC disabled by -N" >&2
+elif [[ -z "${KEEPASS_DB}" ]] ; then
+    ${VERBOSE} && echo "KeePassXC not configured (keepassxc_db unset)" >&2
+elif [[ ! -e "${KEEPASS_DB}" ]] ; then
+    if ${KEEPASS_DB_FROM_CLI} ; then
+	usage "KeePassXC database does not exist: ${KEEPASS_DB}"
+	return 1 2>/dev/null || exit 1
+    fi
+    echo "Warning: keepassxc_db does not exist: ${KEEPASS_DB}" >&2
+elif ! keepassxc_cli=$(find-keepassxc-cli) ; then
+    ${QUIET} || echo "Warning: keepassxc-cli not found; passphrases will be prompted for" >&2
+elif [[ ! -x "${ASKPASS_HELPER}" ]] ; then
+    # Repo root is on PATH via setup-path.sh, so try that before giving up
+    ASKPASS_HELPER=$(command -v load-ssh-key-askpass.sh 2>/dev/null || echo "")
+    if [[ -x "${ASKPASS_HELPER}" ]] ; then
+	KEEPASS_ENABLED=true
+    else
+	${QUIET} || echo "Warning: load-ssh-key-askpass.sh not found; passphrases will be prompted for" >&2
+    fi
+else
+    KEEPASS_ENABLED=true
+fi
+
+################################################################################
 # Validation
 ################################################################################
 if [[ -z "${KEY_TIMEOUT}" ]] || [[ "${KEY_TIMEOUT}" -le 0 ]] ; then
@@ -418,6 +760,11 @@ KEY_TIMEOUT=[${KEY_TIMEOUT}]
 CONFIG=[${CONFIG}]
 SSH_DIR=[${SSH_DIR}]
 KILL_AGENT=[${KILL_AGENT}]
+KEEPASS_ENABLED=[${KEEPASS_ENABLED}]
+KEEPASS_DB=[${KEEPASS_DB}]
+KEEPASS_GROUP=[${KEEPASS_GROUP}]
+keepassxc_cli=[${keepassxc_cli}]
+ASKPASS_HELPER=[${ASKPASS_HELPER}]
 ================================================================================
 EOF
 
@@ -549,6 +896,11 @@ else
     ${VERBOSE} && echo "SSH agent is running" >&2
 fi
 
+# Clear secrets if the run is interrupted while keys are being loaded.  Only
+# an INT trap is used: an EXIT trap installed while sourcing would fire at
+# the end of the caller's shell session and could clobber the user's own trap.
+trap 'clear-key-secrets ; trap - INT' INT
+
 # Get list of keys to load
 ${VERBOSE} && echo "KEY_LIST before check: [${KEY_LIST}]" >&2
 
@@ -559,19 +911,23 @@ if [[ -z "${KEY_LIST}" ]] ; then
 	return 1 2>/dev/null || exit 1
     }
     ${VERBOSE} && echo "Found keys: [${KEY_LIST}]" >&2
-    # Load each key from find output (newline-separated)
-    echo "${KEY_LIST}" | while IFS= read -r key_file ; do
+    # Load each key from find output (newline-separated).  Process substitution
+    # keeps the loop body in this shell so error_count and the KeePassXC master
+    # password are not confined to a subshell.  The list is read on FD 3 so that
+    # ssh-add (which inherits stdin) cannot consume the remaining key names.
+    while IFS= read -r key_file <&3 ; do
 	if [[ -z "${key_file}" ]] ; then
 	    continue
 	fi
 	if ! load-ssh-key "${key_file}" "${KEY_TIMEOUT}" ; then
-	    ((error_count++))
+	    error_count=$((error_count + 1))
 	fi
-    done
+    done 3< <(echo "${KEY_LIST}")
 else
     ${VERBOSE} && echo "KEY_LIST is set: [${KEY_LIST}], processing specified keys..." >&2
-    # Convert comma-separated list and load each key
-    echo "${KEY_LIST}" | tr ',' '\n' | while IFS= read -r key_file ; do
+    # Convert comma-separated list and load each key.  FD 3 keeps ssh-add from
+    # consuming the remaining key names off stdin.
+    while IFS= read -r key_file <&3 ; do
 	if [[ -z "${key_file}" ]] ; then
 	    continue
 	fi
@@ -583,10 +939,15 @@ else
 	fi
 	${VERBOSE} && echo "Processing key from KEY_LIST: [${key_file}]" >&2
 	if ! load-ssh-key "${key_file}" "${KEY_TIMEOUT}" ; then
-	    ((error_count++))
+	    error_count=$((error_count + 1))
 	fi
-    done
+    done 3< <(echo "${KEY_LIST}" | tr ',' '\n')
 fi
+
+# Secrets are no longer needed.  This script is sourced, so clearing them
+# here is what keeps a passphrase out of the caller's interactive shell.
+clear-key-secrets
+trap - INT
 
 # Show status
 show-ssh-agent-status

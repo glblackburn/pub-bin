@@ -12,15 +12,42 @@ tests/load-ssh-key/
 ├── test_helper.bash          # BATS helper functions and setup
 ├── helpers/                   # Test helper functions
 │   ├── assertions.bash       # Custom assertion functions
-│   └── ssh-helpers.bash      # SSH-specific helper functions
+│   ├── ssh-helpers.bash      # SSH-specific helper functions
+│   ├── keepassxc-helpers.bash # Mock keepassxc-cli setup
+│   └── mock-keepassxc-cli.sh # Mock keepassxc-cli executable
 ├── unit/                     # Unit tests
 │   ├── test_k_option.bats    # Tests for -k option
 │   ├── test_list_option.bats # Tests for -l option
-│   └── test_kill_option.bats # Tests for -K option
+│   ├── test_kill_option.bats # Tests for -K option
+│   └── test_keepassxc.bats   # Tests for KeePassXC passphrase lookup
 ├── integration/              # Integration tests (future)
 └── test-runs/               # Test output directory (git-ignored)
     └── YYYYMMDD_HHMMSS/      # Timestamped test run folders
 ```
+
+## Mocking keepassxc-cli
+
+`test_keepassxc.bats` never touches a real KeePassXC database. `create_mock_keepassxc_cli`
+(in `helpers/keepassxc-helpers.bash`) copies `helpers/mock-keepassxc-cli.sh` to
+`${TEST_TMPDIR}/mockbin/keepassxc-cli` and prepends that directory to `PATH`. `load-ssh-key.sh`
+probes `command -v keepassxc-cli` first, so nothing in the script under test needs a hook.
+
+```bash
+local kdbx=$(create_mock_kdbx)                       # empty file; only its existence is checked
+create_mock_keepassxc_cli "master-pw" "my_key=key-passphrase"
+export LOAD_SSH_KEY_DB_PASSWORD="master-pw"          # supplies the master password without a tty
+run_load_ssh_key -k "${key}" -D "${kdbx}" -v
+cleanup_mock_keepassxc_cli
+```
+
+The mock mimics the real CLI closely enough to be meaningful: it reads the database password from
+stdin, supports `db-info -q` (password check) and `show -q -s -a Password <db> <entry>`, and fails
+silently with exit code 1 - which is exactly why `load-ssh-key.sh` validates the master password up
+front rather than trying to classify per-entry failures. `mock_keepassxc_call_count` asserts the
+mock was not called at all (used by the `-N` and unencrypted-key tests).
+
+`LOAD_SSH_KEY_DB_PASSWORD` exists so these tests can run without a controllable terminal. Real use
+should rely on the interactive prompt.
 
 ## Installation
 

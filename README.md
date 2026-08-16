@@ -184,6 +184,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [start-cursor-agent.sh](#start-cursor-agentsh)
 - [rename-email.sh](#rename-emailsh)
 - [load-ssh-key.sh](#load-ssh-keysh)
+- [load-ssh-key-askpass.sh](#load-ssh-key-askpasssh)
 - [fix-spaces-in-filename.sh](#fix-spaces-in-filenamesh)
 - [fix-spaces-in-filenames.sh](#fix-spaces-in-filenamessh)
 - [check-ai-readmes.sh](#check-ai-readmesh)
@@ -357,6 +358,7 @@ A utility script to automatically load SSH keys from `~/.ssh` into the SSH agent
 - Adds keys to the SSH agent with a configurable timeout (default: 8 hours)
 - Validates keys before attempting to load them (skips non-key files gracefully)
 - Supports loading specific keys or auto-detecting all keys
+- Looks up passphrases for encrypted keys in KeePassXC, so a run needs one master-password prompt instead of one prompt per key
 - Can kill existing agent and start a new one
 - Can list currently loaded keys
 - Reports errors if any keys are missing or cannot be loaded
@@ -378,6 +380,9 @@ source ./load-ssh-key.sh [options]
 - `-d <dir>` : SSH directory to search for keys (Default: `~/.ssh`)
 - `-c <config>` : SSH agent config file path (Default: `~/.ssh/ssh-agent.config`)
 - `-k <key_list>` : Comma-separated list of specific keys to load (Default: auto-detect all)
+- `-D <keepass_db>` : KeePassXC `.kdbx` database used to look up key passphrases (Default: `keepassxc_db` from `~/.config/pub-bin/config`)
+- `-G <group>` : KeePassXC group holding the key entries (Default: database root)
+- `-N` : No KeePassXC. Prompt interactively for key passphrases.
 - `-K` : Kill current SSH agent and start a new one
 - `-l` : List currently loaded SSH keys and exit (works when sourced or executed directly)
 - `-q` : Quiet mode. Output as little as possible.
@@ -402,6 +407,12 @@ source ./load-ssh-key.sh [options]
 
 # Verbose mode to see detailed processing
 . ./load-ssh-key.sh -v
+
+# Use a specific KeePassXC database and group for passphrases
+. ./load-ssh-key.sh -D ~/keepassxc.kdbx -G ssh-keys
+
+# Skip KeePassXC and type passphrases interactively
+. ./load-ssh-key.sh -N
 ```
 
 **Details:**
@@ -429,9 +440,58 @@ source ./load-ssh-key.sh [options]
 
 This script is useful for automatically loading SSH keys into your SSH agent session without manually adding each key, with support for selective key loading and agent management.
 
+**KeePassXC passphrase integration:**
+
+Encrypted keys normally make `ssh-add` stop and prompt for each one. When KeePassXC is available the script fetches each passphrase from the database instead, so a run costs a single master-password prompt.
+
+Setup:
+
+1. Store each key's passphrase in KeePassXC with the **entry title matching the private key file name** (for example an entry titled `id_ed25519` for `~/.ssh/id_ed25519`). The passphrase goes in the entry's `Password` field.
+2. Point the script at the database, either per-run with `-D`, or once in `~/.config/pub-bin/config`:
+   ```
+   keepassxc_db="/Users/me/keepassxc.kdbx"
+   keepassxc_group="ssh-keys"
+   ```
+   `keepassxc_group` is optional; if the entry is not found inside the group, the database root is searched as well. `keepassxc_cli` can be set if `keepassxc-cli` lives somewhere unusual - otherwise the script checks `PATH`, `/Applications/KeePassXC.app/Contents/MacOS/`, and the Homebrew locations. Neither value is a secret, which is why they live in the public config.
+3. Source the script as usual. The master password is prompted for on the terminal with echo disabled, once, and only when at least one encrypted key actually needs loading.
+
+How the passphrase reaches `ssh-add`:
+- `load-ssh-key-askpass.sh` is used as `SSH_ASKPASS` with `SSH_ASKPASS_REQUIRE=force` (OpenSSH 8.4+).
+- The passphrase is passed as a per-command environment assignment on the `ssh-add` line only. It is never exported into your shell, never written to disk, and never appears in a command line (`ps`).
+- The master password is piped to `keepassxc-cli` with `printf` (a shell builtin). Here-strings are deliberately avoided because bash backs them with a temp file.
+- `-v` prints entry paths and key names, never a secret. Secrets are cleared from the shell when the run ends, and on `Ctrl-C` during key loading.
+
+Fallback behavior - any of these falls back to `ssh-add` prompting, exactly as before:
+- `keepassxc-cli` is not installed, or `keepassxc_db` is not configured
+- the configured database file does not exist (a missing path given with `-D` is a hard error, since it was asked for explicitly)
+- the master password is wrong (3 attempts, then KeePassXC is skipped for the rest of the run)
+- no KeePassXC entry matches a key (that key alone falls back; other keys still use KeePassXC)
+- `-N` was given
+
+If an entry is found but `ssh-add` rejects the passphrase, that key is reported as an error rather than silently prompting, so a stale entry is visible instead of hanging an unattended run.
+
+Limitations:
+- A passphrase with meaningful trailing whitespace or newlines cannot be used (command substitution strips them).
+- An entry with an empty `Password` field is indistinguishable from a missing entry.
+- Each encrypted key costs one database open, which is intentionally slow (Argon2, roughly a second per key).
+- `LOAD_SSH_KEY_DB_PASSWORD` can supply the master password non-interactively for automation and tests. It makes one attempt and never prompts. Prefer the terminal prompt for normal use.
+
 **Related resources:**
 - See [SSH Key Usage Pitfalls](tips-and-tricks.md#ssh-key-usage-pitfalls) in [tips-and-tricks.md](tips-and-tricks.md) for information about common SSH key and agent pitfalls.
 - See [tests/load-ssh-key/README.md](tests/load-ssh-key/README.md) for testing framework documentation.
+- See [docs/plans/plan-001-load-ssh-key-keepassxc-passphrase.md](docs/plans/plan-001-load-ssh-key-keepassxc-passphrase.md) for the design of the KeePassXC integration.
+
+### load-ssh-key-askpass.sh
+
+The `SSH_ASKPASS` helper used by [load-ssh-key.sh](#load-ssh-keysh). Not meant to be run by hand.
+
+**What it does:**
+- Prints the value of `LOAD_SSH_KEY_PASSPHRASE` on stdout, which is how `ssh-add` collects a passphrase when `SSH_ASKPASS_REQUIRE=force` is set
+- Exits 1 with an error on stderr if that variable is unset, so `ssh-add` fails instead of trying an empty passphrase
+- Ignores its argument (`ssh-add` passes the prompt text as `$1`)
+- Never logs the passphrase, writes it to disk, or echoes it to a terminal
+
+`load-ssh-key.sh` sets `LOAD_SSH_KEY_PASSPHRASE` as a per-command environment assignment on its `ssh-add` invocation, so the value exists only in that process and its askpass child. See [KeePassXC passphrase integration](#load-ssh-keysh) for the full flow.
 
 ### fix-spaces-in-filename.sh
 

@@ -177,7 +177,8 @@ main() {
     
     # Run bats and capture both stdout and stderr, preserving exit code
     set +e  # Don't exit on error
-    bats_output=$("${BATS_CMD}" "${bats_args[@]}" "${test_files[@]}" 2>&1)
+    # ${arr[@]+"${arr[@]}"} keeps an empty array from tripping set -u on bash 3.2
+    bats_output=$("${BATS_CMD}" ${bats_args[@]+"${bats_args[@]}"} "${test_files[@]}" 2>&1)
     bats_exit_code=$?
     set -e  # Re-enable exit on error
     

@@ -2,6 +2,7 @@
 
 - [Set different ssh keys for multiple GitHub users](#set-different-ssh-keys-for-multiple-github-users)
 - [SSH Key Usage Pitfalls](#ssh-key-usage-pitfalls)
+- [Feeding a passphrase to ssh-add without a tty](#feeding-a-passphrase-to-ssh-add-without-a-tty)
 - [Apache Infrastructure Downtime Report](#apache-infrastructure-downtime-report)
 - [Markdown Viewer Chrome Extension](#markdown-viewer-chrome-extension)
 
@@ -37,6 +38,17 @@ This article covers common problems and solutions when using SSH agents, includi
 * https://security.stackexchange.com/questions/101783/are-there-any-risks-associated-with-ssh-agent-forwarding
 
 A Stack Exchange discussion about security risks associated with SSH agent forwarding, including potential vulnerabilities and best practices.
+
+## Feeding a passphrase to ssh-add without a tty
+
+`ssh-add` will not read a passphrase from stdin - it opens `/dev/tty`, or calls the program named by
+`SSH_ASKPASS`. Since OpenSSH 8.4, `SSH_ASKPASS_REQUIRE=force` makes it use that program even when a
+terminal is available, which removes the old `DISPLAY=:0` trick. See
+[load-ssh-key.sh](README.md#load-ssh-keysh) for a working example.
+
+Passing the secret to the askpass helper through a per-command environment assignment
+(`VAR=value ssh-add ...`) keeps it out of the shell's own environment and out of `ps` output. On
+macOS, `ps -E` cannot read another process's environment at all, even for your own processes.
 
 * https://infra.apache.org/blog/apache_org_downtime_report.html
 
