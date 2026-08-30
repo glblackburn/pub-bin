@@ -6,6 +6,16 @@ script_dir=$(dirname $0)
 
 email_file="${1}"
 
+# Already renamed?  Skip if the file name already starts with a
+# YYYY-MM-DD_HHMMSS_ stamp, otherwise the stamp gets duplicated.
+if [[ $(basename "${email_file}") =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{6}_ ]] ; then
+  cat<<EOF
+email_file=[${email_file}]
+already renamed, skipping
+EOF
+  exit 0
+fi
+
 #Date: Mon, 21 Oct 2024 14:12:28 +0000
 #Date: 17 Dec 2024 13:21:32 -0500
 #email_date=$(cat "${email_file}" | grep -e "^Date:" | head -1 | sed 's/Date: [A-z]*, //; s/\r//' )
