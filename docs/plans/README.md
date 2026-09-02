@@ -13,4 +13,5 @@ Plans filed here use their own **`plan-###-….md`** sequence, independent of th
 | Plan | Status | Summary |
 | --- | --- | --- |
 | [plan-001 — load-ssh-key.sh KeePassXC passphrases](plan-001-load-ssh-key-keepassxc-passphrase.md) | **Implemented** (2026-08-16) | `load-ssh-key.sh` fetches each key's passphrase from KeePassXC via `keepassxc-cli` and feeds it to `ssh-add` through an `SSH_ASKPASS` helper — one master-password prompt per run, graceful fallback to today's interactive prompt. |
+| [plan-002 — secure-volume.sh mounts secured volumes](plan-002-secure-volume-mount.md) | **Proposed** (2026-09-01) | `secure-volume.sh` mounts, unmounts, and reports FileVault-encrypted APFS volumes discovered from a directory of symlinks, so the script stays free of any environment-specific path. The volume passphrase comes from KeePassXC via `keepassxc-cli`, falling back to an interactive prompt when no database is configured — never the macOS keychain. |
 
