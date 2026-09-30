@@ -190,6 +190,7 @@ Refer to [README-AI-CODING-STANDARDS.md](README-AI-CODING-STANDARDS.md) for deta
 - [check-ai-readmes.sh](#check-ai-readmesh)
 - [monitor-ai-agent-progress.sh](#monitor-ai-agent-progresssh)
 - [clean-screenshots.sh](#clean-screenshotssh)
+- [clean-downloads.sh](#clean-downloadssh)
 - [azure/show-location-authenticationDetails.sh](#azureshow-location-authenticationdetailssh)
 - [greynoise/greynoise-lookup.sh](#greynoisegreynoise-lookupsh)
 - [trufflehog/trufflehog-local-git-repos.sh](#trufflehogtrufflehog-local-git-repossh)
@@ -717,6 +718,36 @@ A utility script to clean up screenshot files from Desktop (or specified source 
 ```
 
 This script is useful for keeping your Desktop clean by automatically organizing screenshots into timestamped archive directories.
+
+### clean-downloads.sh
+
+A utility script to clean up the Downloads folder by moving everything in it into a timestamped archive directory.
+
+**What it does:**
+- Moves every top-level file and directory in the source directory (default: `~/Downloads`) into `old/YYYY-MM-DD_HHMMSS/`
+- Leaves the `old/` archive directory itself and dot files (`.DS_Store`, `.localized`) in place
+- Lists each item with `ls -ld` before moving it
+- Does nothing (and creates no archive directory) when there is nothing to move
+- Supports dry run mode to preview changes without making them
+
+**Usage:**
+```bash
+./clean-downloads.sh [-hn] [-s <src_dir>]
+```
+
+**Options:**
+- `-h` : Display help message
+- `-s <dir>` : Directory to clean (Default: `~/Downloads`)
+- `-n` : Dry run mode (show what would be done without making changes)
+
+**Examples:**
+```bash
+# Default: archive everything in ~/Downloads
+./clean-downloads.sh
+
+# Dry run to see what would be moved
+./clean-downloads.sh -n
+```
 
 ### azure/show-location-authenticationDetails.sh
 
