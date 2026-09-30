@@ -117,10 +117,12 @@ fi
 ################################################################################
 # Main script logic
 ################################################################################
+# Resolve to an absolute path so the printed archive dir works from anywhere
+SRC_DIR=$(cd "${SRC_DIR}" && pwd)
 cd "${SRC_DIR}"
 
 timestamp=$(date +%Y-%m-%d_%H%M%S)
-archive_dir="${ARCHIVE_NAME}/${timestamp}"
+archive_dir="${SRC_DIR}/${ARCHIVE_NAME}/${timestamp}"
 
 cat<<EOF
 ================================================================================

@@ -39,6 +39,7 @@ create a script, I will specificly note that.
 - **[greynoise/README.md](greynoise/README.md)** - GreyNoise API lookup utilities
 - **[trufflehog/README.md](trufflehog/README.md)** - Trufflehog secret scanning scripts
 - **[arecibo-message/README.md](arecibo-message/README.md)** - Arecibo Message decoding project
+- **[tests/scripts/README.md](tests/scripts/README.md)** - BATS test suite documentation for general scripts (run with `./tests/scripts/run-tests.sh`)
 - **[tests/load-ssh-key/README.md](tests/load-ssh-key/README.md)** - BATS test suite documentation for load-ssh-key.sh
 - **[tests/record-scripts/README.md](tests/record-scripts/README.md)** - BATS test suite documentation for record*.sh scripts
 

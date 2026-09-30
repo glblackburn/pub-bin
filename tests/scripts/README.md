@@ -16,6 +16,7 @@ tests/scripts/
 │   ├── test_clean_emacs_files.bats
 │   ├── test_clean_screenshots.bats
 │   ├── test_check_ai_readmes.bats
+│   ├── test_clean_downloads.bats
 │   ├── test_fix_spaces_in_filename.bats
 │   ├── test_fix_spaces_in_filenames.bats
 │   ├── test_greynoise_lookup.bats
@@ -54,6 +55,24 @@ bats --version
 ```
 
 ## Running Tests
+
+Run commands from the repository root.
+
+### Using the Test Runner
+
+```bash
+# Run all unit tests
+./tests/scripts/run-tests.sh
+
+# Run only tests whose name matches a pattern
+./tests/scripts/run-tests.sh -f "clean-downloads"
+
+# Verbose output
+./tests/scripts/run-tests.sh -v
+
+# All options
+./tests/scripts/run-tests.sh -h
+```
 
 ### Using BATS Directly
 
@@ -107,7 +126,7 @@ load '../test_helper.bash'
 
 - `assert_success()` - Verify exit code is 0
 - `assert_failure()` - Verify exit code is non-zero
-- `assert_output_contains <string>` - Verify output contains string
+- `assert_output_contains <pattern>` - Verify output matches a bash regex (`=~`); escape or avoid regex characters such as `[`, `(`, `*`
 - `assert_file_exists <path>` - Verify file exists
 - `assert_file_contains <path> <string>` - Verify file contains string
 - `assert_file_not_empty <path>` - Verify file is not empty
@@ -136,7 +155,7 @@ load '../test_helper.bash'
 
 1. **One test file per script** - Keep tests organized
 2. **Use descriptive test names** - `@test "script-name: what it tests"`
-3. **Isolate test environment** - Use TEST_TMPDIR for test files
+3. **Isolate test environment** - Use `BATS_TEST_TMPDIR` for per-test files. `TEST_TMPDIR` is created once per file in `setup_file()` and shared by every test in that file
 4. **Test both success and failure** - Cover error paths
 5. **Keep tests fast** - Use temporary files, avoid I/O when possible
 6. **Clean up after tests** - Use `teardown()` functions
@@ -157,6 +176,7 @@ The following scripts have BATS tests:
 
 - `clean-emacs-files.sh` - Remove emacs backup files
 - `clean-screenshots.sh` - Archive screenshots
+- `clean-downloads.sh` - Archive the Downloads folder
 - `check-ai-readmes.sh` - Check AI-related READMEs
 - `file-tools/fix-spaces-in-filename.sh` - Fix spaces in single filename
 - `file-tools/fix-spaces-in-filenames.sh` - Fix spaces in multiple filenames
